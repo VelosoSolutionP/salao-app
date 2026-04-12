@@ -4,10 +4,8 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -25,8 +23,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent } from "@/components/ui/card";
-import { Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
 
 const schema = z.object({
   name: z.string().min(2, "Mínimo 2 caracteres"),
@@ -46,9 +43,14 @@ const schema = z.object({
 
 type FormData = z.infer<typeof schema>;
 
+const inputClass =
+  "h-12 rounded-xl border-gray-200 bg-gray-50/50 text-sm focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:border-transparent";
+
 export function RegistroForm() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -73,21 +75,10 @@ export function RegistroForm() {
         return;
       }
 
-      const result = await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false,
+      toast.success("Conta criada com sucesso!", {
+        description: "Faça login para acessar o sistema.",
       });
-
-      if (result?.error) {
-        toast.error("Conta criada! Faça login.");
-        router.push("/login");
-        return;
-      }
-
-      toast.success("Conta criada com sucesso!");
-      router.push(data.role === "OWNER" ? "/dashboard" : "/agendar");
-      router.refresh();
+      router.push("/login");
     } catch {
       toast.error("Erro ao criar conta");
     } finally {
@@ -96,142 +87,182 @@ export function RegistroForm() {
   }
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Tipo de conta</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="CLIENT">Cliente</SelectItem>
-                      <SelectItem value="OWNER">Dono de Salão</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-            {role === "OWNER" && (
-              <FormField
-                control={form.control}
-                name="salonName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nome do salão</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Barbearia do João" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        {/* Account type */}
+        <FormField
+          control={form.control}
+          name="role"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-sm font-semibold text-gray-700">Tipo de conta</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <FormControl>
+                  <SelectTrigger className={inputClass}>
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="CLIENT">Cliente — Quero agendar serviços</SelectItem>
+                  <SelectItem value="OWNER">Proprietário — Tenho um salão</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        {/* Salon name (owner only) */}
+        {role === "OWNER" && (
+          <FormField
+            control={form.control}
+            name="salonName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold text-gray-700">Nome do salão</FormLabel>
+                <FormControl>
+                  <Input className={inputClass} placeholder="Ex: Barbearia do João" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
+          />
+        )}
 
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nome completo</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Seu nome" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {/* Full name */}
+        <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel className="text-sm font-semibold text-gray-700">Nome completo</FormLabel>
+              <FormControl>
+                <Input className={inputClass} placeholder="Seu nome" autoComplete="name" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <div className="grid grid-cols-2 gap-3">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="seu@email.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        {/* Email + Phone */}
+        <div className="grid grid-cols-2 gap-3">
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold text-gray-700">Email</FormLabel>
+                <FormControl>
+                  <Input type="email" className={inputClass} placeholder="seu@email.com" autoComplete="email" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="phone"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>WhatsApp</FormLabel>
-                    <FormControl>
-                      <Input placeholder="(11) 9xxxx-xxxx" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          <FormField
+            control={form.control}
+            name="phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold text-gray-700">WhatsApp</FormLabel>
+                <FormControl>
+                  <Input className={inputClass} placeholder="(11) 9xxxx-xxxx" autoComplete="tel" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Senha</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+        {/* Password + Confirm */}
+        <div className="grid grid-cols-2 gap-3">
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold text-gray-700">Senha</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      type={showPw ? "text" : "password"}
+                      className={`${inputClass} pr-11`}
+                      placeholder="••••••"
+                      autoComplete="new-password"
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      onClick={() => setShowPw((v) => !v)}
+                    >
+                      {showPw ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirmar</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+          <FormField
+            control={form.control}
+            name="confirmPassword"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold text-gray-700">Confirmar</FormLabel>
+                <FormControl>
+                  <div className="relative">
+                    <Input
+                      type={showConfirm ? "text" : "password"}
+                      className={`${inputClass} pr-11`}
+                      placeholder="••••••"
+                      autoComplete="new-password"
+                      {...field}
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      onClick={() => setShowConfirm((v) => !v)}
+                    >
+                      {showConfirm ? <EyeOff size={17} /> : <Eye size={17} />}
+                    </button>
+                  </div>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Criando conta...
-                </>
-              ) : (
-                "Criar conta"
-              )}
-            </Button>
-          </form>
-        </Form>
+        <Button
+          type="submit"
+          className="w-full h-12 rounded-xl text-sm font-black mt-2 gap-2"
+          style={{
+            background: loading ? "#6d28d9" : "linear-gradient(135deg,#7c3aed,#6d28d9)",
+            boxShadow: "0 4px 20px rgba(109,40,217,.35)",
+          }}
+          disabled={loading}
+        >
+          {loading ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <>
+              <UserPlus className="w-4 h-4" />
+              Criar conta grátis
+            </>
+          )}
+        </Button>
 
-        <p className="text-center text-sm text-gray-500 mt-4">
-          Já tem conta?{" "}
-          <Link href="/login" className="text-violet-600 hover:underline font-medium">
-            Entrar
-          </Link>
+        <p className="text-center text-[11px] text-gray-400 pt-1">
+          Ao criar sua conta você concorda com os nossos{" "}
+          <span className="text-violet-600 font-semibold">Termos de Uso</span>.
         </p>
-      </CardContent>
-    </Card>
+      </form>
+    </Form>
   );
 }
