@@ -1,0 +1,453 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────
+// AUTH & USERS
+// ─────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  emailVerified DateTime?
+  phone         String?
+  passwordHash  String?
+  image         String?
+  role          Role      @default(CLIENT)
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts         Account[]
+  sessions         Session[]
+  colaborador      Colaborador?
+  cliente          Cliente?
+  salon            Salon?
+  notifConfig      NotifConfig?
+  movimentosEstoque MovimentoEstoque[]
+
+  @@map("users")
+}
+
+enum Role {
+  OWNER
+  BARBER
+  CLIENT
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+// ─────────────────────────────────────────
+// SALON
+// ─────────────────────────────────────────
+
+model Salon {
+  id         String     @id @default(cuid())
+  ownerId    String     @unique
+  name       String
+  slug       String     @unique
+  phone      String?
+  address    String?
+  city       String?
+  logoUrl    String?
+  coverUrl   String?
+  timezone   String     @default("America/Sao_Paulo")
+  currency   String     @default("BRL")
+  pixKey     String?
+  pixKeyType PixKeyType?
+  active     Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  owner         User           @relation(fields: [ownerId], references: [id])
+  colaboradores Colaborador[]
+  servicos      Servico[]
+  agendamentos  Agendamento[]
+  transacoes    Transacao[]
+  campanhas     Campanha[]
+  horarios      HorarioSalon[]
+  produtos      Produto[]
+
+  @@map("salons")
+}
+
+enum PixKeyType {
+  CPF
+  CNPJ
+  EMAIL
+  PHONE
+  RANDOM
+}
+
+model HorarioSalon {
+  id        String  @id @default(cuid())
+  salonId   String
+  diaSemana Int
+  abre      String
+  fecha     String
+  fechado   Boolean @default(false)
+
+  salon Salon @relation(fields: [salonId], references: [id], onDelete: Cascade)
+
+  @@unique([salonId, diaSemana])
+  @@map("horarios_salon")
+}
+
+// ─────────────────────────────────────────
+// STAFF
+// ─────────────────────────────────────────
+
+model Colaborador {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  salonId     String
+  bio         String?
+  specialties String[]
+  comissao    Decimal  @default(0.40) @db.Decimal(5, 2)
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  salon         Salon                @relation(fields: [salonId], references: [id])
+  agendamentos  Agendamento[]
+  horarios      HorarioColaborador[]
+  bloqueios     BloqueioAgenda[]
+  servicosOffer ColaboradorServico[]
+
+  @@map("colaboradores")
+}
+
+model HorarioColaborador {
+  id            String  @id @default(cuid())
+  colaboradorId String
+  diaSemana     Int
+  inicio        String
+  fim           String
+  ativo         Boolean @default(true)
+
+  colaborador Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+
+  @@unique([colaboradorId, diaSemana])
+  @@map("horarios_colaborador")
+}
+
+model BloqueioAgenda {
+  id            String   @id @default(cuid())
+  colaboradorId String
+  inicio        DateTime
+  fim           DateTime
+  motivo        String?
+
+  colaborador Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+
+  @@map("bloqueios_agenda")
+}
+
+// ─────────────────────────────────────────
+// SERVICES
+// ─────────────────────────────────────────
+
+model Servico {
+  id        String   @id @default(cuid())
+  salonId   String
+  nome      String
+  descricao String?
+  preco     Decimal  @db.Decimal(10, 2)
+  duracao   Int
+  categoria String?
+  imageUrl  String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  salon         Salon                @relation(fields: [salonId], references: [id])
+  agendamentos  AgendamentoServico[]
+  colaboradores ColaboradorServico[]
+
+  @@map("servicos")
+}
+
+model ColaboradorServico {
+  colaboradorId String
+  servicoId     String
+  precoCustom   Decimal? @db.Decimal(10, 2)
+
+  colaborador Colaborador @relation(fields: [colaboradorId], references: [id], onDelete: Cascade)
+  servico     Servico     @relation(fields: [servicoId], references: [id], onDelete: Cascade)
+
+  @@id([colaboradorId, servicoId])
+  @@map("colaborador_servico")
+}
+
+// ─────────────────────────────────────────
+// CLIENTS
+// ─────────────────────────────────────────
+
+model Cliente {
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  salonId      String?
+  notas        String?   @db.Text
+  dataNasc     DateTime?
+  genero       String?
+  totalGasto   Decimal   @default(0) @db.Decimal(10, 2)
+  totalVisitas Int       @default(0)
+  ultimaVisita DateTime?
+  createdAt    DateTime  @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agendamentos Agendamento[]
+
+  @@map("clientes")
+}
+
+// ─────────────────────────────────────────
+// APPOINTMENTS
+// ─────────────────────────────────────────
+
+model Agendamento {
+  id                   String            @id @default(cuid())
+  salonId              String
+  clienteId            String?
+  colaboradorId        String
+  inicio               DateTime
+  fim                  DateTime
+  status               AgendamentoStatus @default(PENDENTE)
+  observacoes          String?           @db.Text
+  totalPrice           Decimal           @db.Decimal(10, 2)
+  pagamento            MetodoPagamento?
+  pagamentoStatus      PagamentoStatus   @default(PENDENTE)
+  pixTxid              String?
+  canceladoMotivo      String?
+  lembrete1hEnviado    Boolean           @default(false)
+  lembrete24hEnviado   Boolean           @default(false)
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  salon       Salon                @relation(fields: [salonId], references: [id])
+  cliente     Cliente?             @relation(fields: [clienteId], references: [id])
+  colaborador Colaborador          @relation(fields: [colaboradorId], references: [id])
+  servicos    AgendamentoServico[]
+  transacao   Transacao?
+
+  @@index([salonId, inicio])
+  @@index([colaboradorId, inicio])
+  @@index([clienteId])
+  @@map("agendamentos")
+}
+
+model AgendamentoServico {
+  agendamentoId String
+  servicoId     String
+  preco         Decimal @db.Decimal(10, 2)
+  duracao       Int
+
+  agendamento Agendamento @relation(fields: [agendamentoId], references: [id], onDelete: Cascade)
+  servico     Servico     @relation(fields: [servicoId], references: [id])
+
+  @@id([agendamentoId, servicoId])
+  @@map("agendamento_servico")
+}
+
+enum AgendamentoStatus {
+  PENDENTE
+  CONFIRMADO
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+  NAO_COMPARECEU
+}
+
+enum MetodoPagamento {
+  DINHEIRO
+  CARTAO_CREDITO
+  CARTAO_DEBITO
+  PIX
+  TRANSFERENCIA
+}
+
+enum PagamentoStatus {
+  PENDENTE
+  PAGO
+  ESTORNADO
+}
+
+// ─────────────────────────────────────────
+// FINANCIAL
+// ─────────────────────────────────────────
+
+model Transacao {
+  id             String          @id @default(cuid())
+  salonId        String
+  agendamentoId  String?         @unique
+  tipo           TipoTransacao
+  descricao      String
+  valor          Decimal         @db.Decimal(10, 2)
+  metodo         MetodoPagamento?
+  categoria      String?
+  dataTransacao  DateTime        @default(now())
+  comprovante    String?
+  createdAt      DateTime        @default(now())
+
+  salon       Salon        @relation(fields: [salonId], references: [id])
+  agendamento Agendamento? @relation(fields: [agendamentoId], references: [id])
+
+  @@index([salonId, dataTransacao])
+  @@map("transacoes")
+}
+
+enum TipoTransacao {
+  RECEITA
+  DESPESA
+}
+
+// ─────────────────────────────────────────
+// NOTIFICATIONS
+// ─────────────────────────────────────────
+
+model NotifConfig {
+  id               String  @id @default(cuid())
+  userId           String  @unique
+  emailAtivo       Boolean @default(true)
+  whatsappAtivo    Boolean @default(true)
+  pushAtivo        Boolean @default(false)
+  pushSubscription Json?
+  lembrete1h       Boolean @default(true)
+  lembrete24h      Boolean @default(true)
+  lembreteConfirm  Boolean @default(true)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notif_configs")
+}
+
+// ─────────────────────────────────────────
+// MARKETING
+// ─────────────────────────────────────────
+
+model Campanha {
+  id           String       @id @default(cuid())
+  salonId      String
+  nome         String
+  descricao    String?      @db.Text
+  tipo         TipoCampanha
+  desconto     Decimal?     @db.Decimal(5, 2)
+  tipoDesconto TipoDesconto?
+  codigo       String?      @unique
+  validaDe     DateTime?
+  validaAte    DateTime?
+  ativa        Boolean      @default(true)
+  usosMax      Int?
+  usosAtuais   Int          @default(0)
+  servicoIds   String[]
+  createdAt    DateTime     @default(now())
+
+  salon Salon @relation(fields: [salonId], references: [id])
+
+  @@map("campanhas")
+}
+
+enum TipoCampanha {
+  DESCONTO
+  FIDELIDADE
+  PRIMEIRO_AGENDAMENTO
+  ANIVERSARIO
+  PACOTE
+}
+
+enum TipoDesconto {
+  PERCENTUAL
+  FIXO
+}
+
+// ─────────────────────────────────────────
+// ESTOQUE
+// ─────────────────────────────────────────
+
+model Produto {
+  id          String   @id @default(cuid())
+  salonId     String
+  nome        String
+  descricao   String?
+  categoria   String?
+  marca       String?
+  unidade     String   @default("un")
+  precoCompra Decimal? @db.Decimal(10, 2)
+  precoVenda  Decimal? @db.Decimal(10, 2)
+  estoque     Int      @default(0)
+  estoqueMin  Int      @default(5)
+  codigo      String?
+  ativo       Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  salon      Salon              @relation(fields: [salonId], references: [id])
+  movimentos MovimentoEstoque[]
+
+  @@index([salonId])
+  @@map("produtos")
+}
+
+model MovimentoEstoque {
+  id         String        @id @default(cuid())
+  produtoId  String
+  tipo       TipoMovimento
+  quantidade Int
+  observacao String?
+  userId     String
+  createdAt  DateTime      @default(now())
+
+  produto Produto @relation(fields: [produtoId], references: [id], onDelete: Cascade)
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@map("movimentos_estoque")
+}
+
+enum TipoMovimento {
+  ENTRADA
+  SAIDA
+  AJUSTE
+}
