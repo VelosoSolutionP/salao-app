@@ -1,0 +1,16 @@
+{
+  "name": "Salão Pro",
+  "short_name": "Salão Pro",
+  "description": "Sistema de gestão para salões e barbearias",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "any",
+      "type": "image/x-icon"
+    }
+  ]
+}
