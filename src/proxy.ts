@@ -6,11 +6,17 @@ const PUBLIC_PATHS = [
   "/login",
   "/registro",
   "/recuperar-senha",
+  "/esqueci-senha",
+  "/redefinir-senha",
   "/api/auth",
   "/_next",
   "/favicon.ico",
   "/icons",
   "/sw.js",
+  "/manifest.json",
+  "/manifest.webmanifest",
+  "/robots.txt",
+  "/sitemap.xml",
 ];
 
 export async function proxy(request: NextRequest) {
