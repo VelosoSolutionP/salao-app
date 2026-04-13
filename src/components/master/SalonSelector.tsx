@@ -87,8 +87,8 @@ export function SalonSelector() {
           <Scissors className="w-5 h-5 text-white" />
         </div>
         <div>
-          <p className="text-white font-black text-sm leading-tight">Toniq</p>
-          <p className="text-violet-400/60 text-[10px] font-semibold tracking-widest uppercase">Toniq · Painel Master</p>
+          <p className="text-white font-black text-sm leading-tight">Veloso Solution</p>
+          <p className="text-violet-400/60 text-[10px] font-semibold tracking-widest uppercase">Veloso Solution · Painel Master</p>
         </div>
       </div>
 

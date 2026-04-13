@@ -8,13 +8,13 @@ import { InstallBanner } from "@/components/shared/InstallBanner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "Toniq", template: "%s | Toniq" },
+  title: { default: "Veloso Solution", template: "%s | Veloso Solution" },
   description: "Sistema completo de gestão para salão e barbearia — agenda, equipe, financeiro.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Toniq",
+    title: "Veloso Solution",
     startupImage: "/icon-512.png",
   },
   icons: {

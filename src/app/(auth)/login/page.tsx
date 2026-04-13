@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/LoginForm";
 
-export const metadata: Metadata = { title: "Entrar — Toniq" };
+export const metadata: Metadata = { title: "Entrar — Veloso Solution" };
 
 export default function LoginPage() {
   return (
@@ -39,7 +39,7 @@ export default function LoginPage() {
             </svg>
           </div>
           <div>
-            <p className="text-white font-black text-base leading-tight tracking-tight">Toniq</p>
+            <p className="text-white font-black text-base leading-tight tracking-tight">Veloso Solution</p>
             <p className="text-violet-400/70 text-[10px] font-semibold tracking-widest uppercase mt-0.5">Controle Total de Salões</p>
           </div>
         </div>
@@ -152,13 +152,13 @@ export default function LoginPage() {
               <line x1="8.12" y1="8.12" x2="12" y2="12"/>
             </svg>
           </div>
-          <span className="font-black text-gray-900 text-base tracking-tight">Toniq</span>
+          <span className="font-black text-gray-900 text-base tracking-tight">Veloso Solution</span>
         </div>
 
         <div className="w-full max-w-sm mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <p className="text-xs font-black uppercase tracking-widest text-violet-500 mb-2">Toniq</p>
+            <p className="text-xs font-black uppercase tracking-widest text-violet-500 mb-2">Veloso Solution</p>
             <h2 className="text-[2rem] font-black text-gray-900 tracking-tight leading-tight">
               Bem-vindo de volta!
             </h2>
@@ -171,7 +171,7 @@ export default function LoginPage() {
 
           {/* Footer */}
           <p className="text-center text-[11px] text-gray-300 mt-8">
-            © {new Date().getFullYear()} Toniq · Todos os direitos reservados
+            © {new Date().getFullYear()} Veloso Solution · Todos os direitos reservados
           </p>
         </div>
       </div>

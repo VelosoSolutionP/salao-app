@@ -83,7 +83,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     staleTime: 60_000,
     enabled: role === "OWNER" || role === "BARBER",
   });
-  const salonName = configData?.name ?? "Toniq";
+  const salonName = configData?.name ?? "Veloso Solution";
 
   return (
     <div

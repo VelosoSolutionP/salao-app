@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: "Configurações" };
 
 export default async function ConfiguracoesPage() {
   const session = await auth();
-  const salon = await prisma.salon.findUnique({
+  const salon = await prisma.salon.findFirst({
     where: { ownerId: session!.user.id },
     include: { horarios: { orderBy: { diaSemana: "asc" } } },
   });

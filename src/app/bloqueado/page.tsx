@@ -43,7 +43,7 @@ function BloqueadoContent() {
           >
             <Scissors className="w-4 h-4 text-white" />
           </div>
-          <span className="font-black text-white text-sm tracking-tight">Toniq</span>
+          <span className="font-black text-white text-sm tracking-tight">Veloso Solution</span>
         </div>
 
         {/* Message */}
@@ -62,7 +62,7 @@ function BloqueadoContent() {
             >
               <p className="text-amber-400 text-xs font-black uppercase tracking-wide mb-2">Como renovar</p>
               <p className="text-zinc-400 text-xs leading-relaxed">
-                Entre em contato com a equipe Toniq para ativar seu plano e ter acesso ilimitado ao sistema.
+                Entre em contato com a equipe Veloso Solution para ativar seu plano e ter acesso ilimitado ao sistema.
               </p>
             </div>
           </>
@@ -83,8 +83,8 @@ function BloqueadoContent() {
           className="rounded-2xl p-4 mb-8"
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
         >
-          <p className="text-zinc-500 text-xs mb-1">Suporte Toniq</p>
-          <p className="text-violet-400 text-sm font-bold">contato@toniq.com.br</p>
+          <p className="text-zinc-500 text-xs mb-1">Suporte Veloso Solution</p>
+          <p className="text-violet-400 text-sm font-bold">contato@velosolution.com.br</p>
         </div>
 
         <button

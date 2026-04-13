@@ -17,7 +17,7 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-export const metadata: Metadata = { title: "Dashboard — Toniq" };
+export const metadata: Metadata = { title: "Dashboard — Veloso Solution" };
 
 // ─── Greeting helper ─────────────────────────────────────────────────────────
 

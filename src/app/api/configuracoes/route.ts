@@ -27,7 +27,7 @@ export async function GET() {
   const { session, error } = await requireRole(["OWNER"]);
   if (error) return error;
 
-  const salon = await prisma.salon.findUnique({
+  const salon = await prisma.salon.findFirst({
     where: { ownerId: session!.user.id },
     include: { horarios: { orderBy: { diaSemana: "asc" } } },
   });
