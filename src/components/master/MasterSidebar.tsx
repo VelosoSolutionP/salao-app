@@ -14,19 +14,19 @@ import {
 } from "lucide-react";
 
 const NAV = [
-  { href: "/master", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { href: "/master/saloes", label: "Salões", icon: Store },
-  { href: "/master/financeiro", label: "Financeiro", icon: DollarSign },
+  { href: "/master",              label: "Dashboard",    icon: LayoutDashboard, exact: true },
+  { href: "/master/saloes",       label: "Salões",       icon: Store },
+  { href: "/master/financeiro",   label: "Financeiro",   icon: DollarSign },
   { href: "/master/revendedores", label: "Revendedores", icon: UserCheck },
-  { href: "/master/usuarios", label: "Usuários", icon: Users },
+  { href: "/master/usuarios",     label: "Usuários",     icon: Users },
 ];
 
-export function MasterSidebar() {
+export function MasterSidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
 
   return (
     <aside
-      className="w-56 flex-shrink-0 flex flex-col min-h-screen"
+      className="w-60 flex flex-col h-full"
       style={{ background: "#0e0b1a", borderRight: "1px solid rgba(255,255,255,0.07)" }}
     >
       {/* Logo */}
@@ -53,6 +53,7 @@ export function MasterSidebar() {
             <Link
               key={href}
               href={href}
+              onClick={onClose}
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
               style={
                 active
