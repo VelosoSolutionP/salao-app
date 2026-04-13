@@ -1,18 +1,16 @@
 /**
- * WhatsApp notification helper.
+ * WhatsApp notification helper — Z-API
  * Configure via environment variables:
- *   EVOLUTION_API_URL     = https://your-evolution-instance.com
- *   EVOLUTION_API_KEY     = your-api-key
- *   EVOLUTION_API_INSTANCE = your-instance-name
+ *   ZAPI_INSTANCE_ID  = seu instance ID do z-api.io
+ *   ZAPI_TOKEN        = seu client token do z-api.io
  */
 
 export async function sendWhatsApp(phone: string, message: string): Promise<boolean> {
-  const apiUrl = process.env.EVOLUTION_API_URL;
-  const apiKey = process.env.EVOLUTION_API_KEY;
-  const instance = process.env.EVOLUTION_API_INSTANCE;
+  const instanceId = process.env.ZAPI_INSTANCE_ID;
+  const token = process.env.ZAPI_TOKEN;
 
-  if (!apiUrl || !apiKey || !instance) {
-    console.log("[WhatsApp] Not configured. Would send to:", phone, "->", message.slice(0, 60));
+  if (!instanceId || !token) {
+    console.log("[WhatsApp] Z-API não configurado. Mensagem para:", phone, "->", message.slice(0, 60));
     return false;
   }
 
@@ -20,11 +18,18 @@ export async function sendWhatsApp(phone: string, message: string): Promise<bool
   const number = clean.startsWith("55") ? clean : `55${clean}`;
 
   try {
-    const res = await fetch(`${apiUrl}/message/sendText/${instance}`, {
-      method: "POST",
-      headers: { apikey: apiKey, "Content-Type": "application/json" },
-      body: JSON.stringify({ number, textMessage: { text: message } }),
-    });
+    const res = await fetch(
+      `https://api.z-api.io/instances/${instanceId}/token/${token}/send-text`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Client-Token": token },
+        body: JSON.stringify({ phone: number, message }),
+      }
+    );
+    if (!res.ok) {
+      const err = await res.text();
+      console.error("[WhatsApp] Z-API error:", err);
+    }
     return res.ok;
   } catch (e) {
     console.error("[WhatsApp] Error:", e);
