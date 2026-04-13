@@ -61,11 +61,16 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // MASTER → must select a salon before entering the dashboard
+  // MASTER → has its own panel at /master/*
   if (role === "MASTER") {
+    // Always allow /master/* and /api/*
+    if (pathname.startsWith("/master") || pathname.startsWith("/api/")) {
+      return NextResponse.next();
+    }
+    // Allow regular dashboard routes only when a salon is selected
     const activeSalonId = request.cookies.get("active_salon_id")?.value;
-    if (!activeSalonId && !pathname.startsWith("/selecionar-salao") && !pathname.startsWith("/api/")) {
-      return NextResponse.redirect(new URL("/selecionar-salao", request.url));
+    if (!activeSalonId) {
+      return NextResponse.redirect(new URL("/master", request.url));
     }
     return NextResponse.next();
   }

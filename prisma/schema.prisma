@@ -112,8 +112,53 @@ model Salon {
   campanhas     Campanha[]
   horarios      HorarioSalon[]
   produtos      Produto[]
+  contratos     ContratoSalao[]
 
   @@map("salons")
+}
+
+// ─────────────────────────────────────────
+// MASTER — PLATAFORMA
+// ─────────────────────────────────────────
+
+model ContratoSalao {
+  id          String   @id @default(cuid())
+  salonId     String
+  salon       Salon    @relation(fields: [salonId], references: [id])
+  valorMensal Decimal  @db.Decimal(10, 2)
+  diaVencimento Int    @default(10)   // dia do mês para cobrar
+  ativo       Boolean  @default(true)
+  observacao  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  pagamentos  PagamentoContrato[]
+
+  @@map("contratos_salao")
+}
+
+model PagamentoContrato {
+  id         String   @id @default(cuid())
+  contratoId String
+  contrato   ContratoSalao @relation(fields: [contratoId], references: [id])
+  valor      Decimal  @db.Decimal(10, 2)
+  referencia String   // "2025-04" = mês/ano
+  pago       Boolean  @default(false)
+  pagoEm     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@map("pagamentos_contrato")
+}
+
+model GastoPlataforma {
+  id        String   @id @default(cuid())
+  descricao String
+  valor     Decimal  @db.Decimal(10, 2)
+  categoria String   @default("Geral")
+  data      DateTime @default(now())
+  createdAt DateTime @default(now())
+
+  @@map("gastos_plataforma")
 }
 
 enum PixKeyType {
