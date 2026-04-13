@@ -8,7 +8,7 @@ import { startOfMonth, endOfMonth, eachDayOfInterval, format } from "date-fns";
 export async function GET(req: NextRequest) {
   const { session, error } = await requireRole(["OWNER"]);
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const { searchParams } = req.nextUrl;

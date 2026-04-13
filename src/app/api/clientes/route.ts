@@ -7,7 +7,7 @@ import { requireRole, requireSalon } from "@/lib/auth-guard";
 export async function GET(req: NextRequest) {
   const { session, error } = await requireRole(["OWNER", "BARBER"]);
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const { searchParams } = req.nextUrl;
@@ -56,7 +56,7 @@ const createSchema = z.object({
 export async function POST(req: NextRequest) {
   const { session, error } = await requireRole(["OWNER", "BARBER"]);
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const body = await req.json().catch(() => null);

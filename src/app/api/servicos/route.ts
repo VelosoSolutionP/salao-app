@@ -17,7 +17,7 @@ const schema = z.object({
 export async function GET(req: NextRequest) {
   const { session, error } = await requireRole(["OWNER", "BARBER", "CLIENT"]);
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const cacheKey = CK.SERVICOS(salonId!);
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { session, error } = await requireRole(["OWNER"]);
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const body = await req.json();

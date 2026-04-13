@@ -9,7 +9,7 @@ export async function GET(_req: NextRequest) {
   const { session, error } = await requireAuth();
   if (error) return error;
 
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const stream = createSSEStream(salonId!);

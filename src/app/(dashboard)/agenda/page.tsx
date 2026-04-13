@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AgendaView } from "@/components/agenda/AgendaView";
+import { AgendaTabs } from "@/components/agenda/AgendaTabs";
 
 export const metadata: Metadata = { title: "Agenda" };
 
@@ -10,7 +10,7 @@ export default function AgendaPage() {
         <h1 className="text-2xl font-bold text-gray-900">Agenda</h1>
         <p className="text-gray-500 text-sm">Gerencie todos os agendamentos em tempo real</p>
       </div>
-      <AgendaView />
+      <AgendaTabs />
     </div>
   );
 }

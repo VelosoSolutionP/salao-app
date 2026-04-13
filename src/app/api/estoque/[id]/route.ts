@@ -26,7 +26,7 @@ const movimentoSchema = z.object({
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { session, error } = await requireAuth();
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const { id } = await params;
@@ -65,7 +65,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { session, error } = await requireAuth();
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const { id } = await params;

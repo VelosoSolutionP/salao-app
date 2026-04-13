@@ -20,7 +20,7 @@ export async function GET(
   const { id } = await params;
   const { session, error } = await requireRole(["OWNER", "BARBER"]);
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const collab = await prisma.colaborador.findFirst({
@@ -45,7 +45,7 @@ export async function PATCH(
   const { id } = await params;
   const { session, error } = await requireRole(["OWNER"]);
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const body = await req.json();
@@ -84,7 +84,7 @@ export async function DELETE(
   const { id } = await params;
   const { session, error } = await requireRole(["OWNER"]);
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   await prisma.colaborador.updateMany({

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
-import { useQuery } from "@tanstack/react-query";
 import { cn, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -21,6 +20,7 @@ import {
   Package,
   ChevronRight,
 } from "lucide-react";
+import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
 
 type NavItem = {
   href: string;
@@ -74,14 +74,6 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const { data: session } = useSession();
   const role = session?.user?.role ?? "CLIENT";
 
-  const { data: salonData } = useQuery({
-    queryKey: ["salon-name"],
-    queryFn: () => fetch("/api/configuracoes").then((r) => r.json()),
-    staleTime: 60_000,
-    enabled: role === "OWNER",
-  });
-  const salonName = salonData?.name ?? "Salão Pro";
-
   return (
     <div
       className="flex flex-col h-full select-none"
@@ -99,10 +91,8 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           >
             <Scissors className="w-[18px] h-[18px] text-white" />
           </div>
-          <div className="min-w-0">
-            <p className="font-black text-white text-sm leading-tight tracking-tight truncate">
-              {salonName}
-            </p>
+          <div className="min-w-0 flex-1">
+            <SalonSwitcher />
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[10px] text-zinc-500 font-semibold">Online</span>

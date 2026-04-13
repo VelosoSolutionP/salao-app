@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import type { Role } from "@prisma/client";
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 export type AuthSession = {
   user: {
@@ -43,16 +44,21 @@ export async function requireRole(
   return { session: result.session, error: null };
 }
 
-export function requireSalon(session: AuthSession):
-  { salonId: string; error: null } | { salonId: null; error: Response } {
-  if (!session?.user?.salonId) {
+/** Returns the active salonId — checks the multi-salon cookie first, then falls back to the session JWT. */
+export async function requireSalon(
+  session: AuthSession
+): Promise<{ salonId: string; error: null } | { salonId: null; error: Response }> {
+  // Multi-salon: honour the cookie set by /api/saloes/switch
+  const cookieStore = await cookies();
+  const cookieSalonId = cookieStore.get("active_salon_id")?.value;
+
+  const salonId = cookieSalonId || session?.user?.salonId || null;
+
+  if (!salonId) {
     return {
       salonId: null,
-      error: NextResponse.json(
-        { error: "Salão não configurado" },
-        { status: 400 }
-      ),
+      error: NextResponse.json({ error: "Salão não configurado" }, { status: 400 }),
     };
   }
-  return { salonId: session.user.salonId, error: null };
+  return { salonId, error: null };
 }

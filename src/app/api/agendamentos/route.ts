@@ -27,7 +27,7 @@ const ratelimit = new Ratelimit({
 export async function GET(req: NextRequest) {
   const { session, error } = await requireAuth();
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const { searchParams } = req.nextUrl;
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { session, error } = await requireAuth();
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   // Rate limit by user (only in production with Upstash)

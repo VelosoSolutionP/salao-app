@@ -27,7 +27,7 @@ model User {
   sessions         Session[]
   colaborador      Colaborador?
   cliente          Cliente?
-  salon            Salon?
+  salons           Salon[]
   notifConfig      NotifConfig?
   movimentosEstoque MovimentoEstoque[]
 
@@ -85,7 +85,7 @@ model VerificationToken {
 
 model Salon {
   id         String     @id @default(cuid())
-  ownerId    String     @unique
+  ownerId    String
   name       String
   slug       String     @unique
   phone      String?

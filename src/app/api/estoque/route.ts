@@ -20,7 +20,7 @@ const produtoSchema = z.object({
 export async function GET() {
   const { session, error } = await requireAuth();
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const produtos = await prisma.produto.findMany({
@@ -39,7 +39,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const { session, error } = await requireAuth();
   if (error) return error;
-  const { salonId, error: salonError } = requireSalon(session!);
+  const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
 
   const body = await req.json();
