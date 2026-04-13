@@ -4,6 +4,9 @@ import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/utils";
+import { addDays } from "date-fns";
+
+const TRIAL_DAYS = 30;
 
 const schema = z.object({
   name: z.string().min(2),
@@ -49,6 +52,8 @@ export async function POST(req: NextRequest) {
         passwordHash,
         phone,
         role,
+        // OWNER starts a 30-day free trial; CLIENT has no restriction
+        trialExpires: role === "OWNER" ? addDays(new Date(), TRIAL_DAYS) : null,
       },
     });
 

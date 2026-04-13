@@ -20,6 +20,8 @@ model User {
   image         String?
   role          Role      @default(CLIENT)
   active        Boolean   @default(true)
+  blocked       Boolean   @default(false)           // manually blocked by MASTER
+  trialExpires  DateTime?                           // null = no trial limit
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 

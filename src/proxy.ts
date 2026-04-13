@@ -4,10 +4,11 @@ import type { NextRequest } from "next/server";
 
 const PUBLIC_PATHS = [
   "/login",
-  "/registro",
+  "/registro",        // kept for potential future admin-invite flow
   "/recuperar-senha",
   "/esqueci-senha",
   "/redefinir-senha",
+  "/bloqueado",       // trial/blocked page — always accessible
   "/api/auth",
   "/_next",
   "/favicon.ico",
@@ -34,7 +35,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const role = session.user.role;
+  const { role, blocked, trialExpires } = session.user as {
+    role: string;
+    blocked: boolean;
+    trialExpires: string | null;
+  };
+
+  // ── Trial / block check (skip for MASTER — never restricted) ────────────
+  if (role !== "MASTER" && !pathname.startsWith("/api/")) {
+    if (blocked) {
+      return NextResponse.redirect(new URL("/bloqueado?motivo=bloqueado", request.url));
+    }
+    if (trialExpires && new Date(trialExpires) < new Date()) {
+      return NextResponse.redirect(new URL("/bloqueado?motivo=trial", request.url));
+    }
+  }
+
+  // ── Role routing ─────────────────────────────────────────────────────────
 
   // CLIENT → only /agendar
   if (role === "CLIENT") {
@@ -50,7 +67,6 @@ export async function proxy(request: NextRequest) {
     if (!activeSalonId && !pathname.startsWith("/selecionar-salao") && !pathname.startsWith("/api/")) {
       return NextResponse.redirect(new URL("/selecionar-salao", request.url));
     }
-    // MASTER has access to everything — no further restrictions
     return NextResponse.next();
   }
 

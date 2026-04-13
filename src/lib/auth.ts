@@ -13,12 +13,16 @@ declare module "next-auth" {
       email: string;
       role: Role;
       salonId: string | null;
+      blocked: boolean;
+      trialExpires: string | null; // ISO date string
       image?: string | null;
     };
   }
   interface User {
     role: Role;
     salonId: string | null;
+    blocked: boolean;
+    trialExpires: string | null;
   }
 }
 
@@ -63,6 +67,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           image: user.image,
           role: user.role,
           salonId: user.salons?.[0]?.id ?? null,
+          blocked: user.blocked,
+          trialExpires: user.trialExpires?.toISOString() ?? null,
         };
       },
     }),
@@ -73,6 +79,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.role = user.role;
         token.salonId = user.salonId;
+        token.blocked = user.blocked;
+        token.trialExpires = user.trialExpires;
       }
       return token;
     },
@@ -80,6 +88,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       session.user.id = token.id as string;
       session.user.role = token.role as Role;
       session.user.salonId = token.salonId as string | null;
+      session.user.blocked = token.blocked as boolean;
+      session.user.trialExpires = token.trialExpires as string | null;
       return session;
     },
   },

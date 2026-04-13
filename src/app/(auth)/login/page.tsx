@@ -169,25 +169,6 @@ export default function LoginPage() {
 
           <LoginForm />
 
-          <p className="text-center text-sm text-gray-400 mt-6">
-            Não tem conta?{" "}
-            <Link href="/registro" className="text-violet-600 hover:text-violet-700 font-bold transition-colors">
-              Criar conta grátis
-            </Link>
-          </p>
-
-          {/* Demo credentials */}
-          <div
-            className="mt-8 p-4 rounded-2xl"
-            style={{ background: "rgba(109,40,217,0.05)", border: "1px solid rgba(109,40,217,0.1)" }}
-          >
-            <p className="text-xs font-black text-violet-700 mb-2 uppercase tracking-wide">Acesso demonstração</p>
-            <div className="space-y-1 text-xs text-violet-600 font-mono">
-              <p>dono@salao.com · 123456</p>
-              <p>pedro@salao.com · 123456</p>
-            </div>
-          </div>
-
           {/* Footer */}
           <p className="text-center text-[11px] text-gray-300 mt-8">
             © {new Date().getFullYear()} MSB Solution · Todos os direitos reservados
