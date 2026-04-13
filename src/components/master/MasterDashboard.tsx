@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Store, Users, TrendingUp, DollarSign, ShieldOff, Clock,
-  CheckCircle, XCircle, ChevronRight, BarChart3,
+  CheckCircle, XCircle, BarChart3,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -49,7 +49,6 @@ function StatusBadge({ owner }: { owner: DashData["saloesRecentes"][0]["owner"] 
 
 export function MasterDashboard() {
   const qc = useQueryClient();
-  const router = useRouter();
   const [actionId, setActionId] = useState<string | null>(null);
 
   const { data, isLoading } = useQuery<DashData>({
@@ -76,14 +75,6 @@ export function MasterDashboard() {
     }
   }
 
-  async function enterSalon(salonId: string) {
-    await fetch("/api/saloes/switch", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ salonId }),
-    });
-    router.push("/dashboard");
-  }
 
   if (isLoading) {
     return (
@@ -236,14 +227,6 @@ export function MasterDashboard() {
                   {salon.owner.blocked
                     ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
                     : <XCircle className="w-3.5 h-3.5 text-red-400" />}
-                </button>
-                <button
-                  title="Entrar como este salão"
-                  onClick={() => enterSalon(salon.id)}
-                  className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
-                  style={{ background: "rgba(255,255,255,0.05)" }}
-                >
-                  <ChevronRight className="w-3.5 h-3.5 text-zinc-400" />
                 </button>
               </div>
             </div>

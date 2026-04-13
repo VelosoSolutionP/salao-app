@@ -2,9 +2,8 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
-  Plus, Search, ChevronRight, XCircle, CheckCircle,
+  Plus, Search, XCircle, CheckCircle,
   Clock, DollarSign, Loader2, X, Store,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -43,7 +42,6 @@ function StatusBadge({ owner }: { owner: SalonItem["owner"] }) {
 
 export function MasterSaloes() {
   const qc = useQueryClient();
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
   const [contratoModal, setContratoModal] = useState<SalonItem | null>(null);
@@ -128,14 +126,6 @@ export function MasterSaloes() {
     }
   }
 
-  async function enterSalon(salonId: string) {
-    await fetch("/api/saloes/switch", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ salonId }),
-    });
-    router.push("/dashboard");
-  }
 
   return (
     <div className="p-6 space-y-5 max-w-6xl mx-auto">
@@ -248,15 +238,6 @@ export function MasterSaloes() {
                     {salon.owner.blocked
                       ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
                       : <XCircle className="w-3.5 h-3.5 text-red-400" />}
-                  </button>
-                  {/* Enter */}
-                  <button
-                    title="Acessar este salão"
-                    onClick={() => enterSalon(salon.id)}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-violet-500/20"
-                    style={{ background: "rgba(124,58,237,0.1)" }}
-                  >
-                    <ChevronRight className="w-3.5 h-3.5 text-violet-400" />
                   </button>
                 </div>
               </div>
