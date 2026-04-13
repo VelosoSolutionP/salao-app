@@ -45,7 +45,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
               <Scissors className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="font-black text-white text-sm tracking-tight">
-              Salão Pro
+              Toniq
             </span>
           </div>
         </header>

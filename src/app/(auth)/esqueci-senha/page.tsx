@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { EsqueciSenhaForm } from "@/components/auth/EsqueciSenhaForm";
 
-export const metadata: Metadata = { title: "Esqueci minha senha — MSB Solution" };
+export const metadata: Metadata = { title: "Esqueci minha senha — Toniq" };
 
 export default function EsqueciSenhaPage() {
   return (
@@ -39,7 +39,7 @@ export default function EsqueciSenhaPage() {
               </div>
               <Link href="/login">
                 <span className="font-black text-gray-900 text-sm tracking-tight hover:text-violet-700 transition-colors">
-                  MSB Solution
+                  Toniq
                 </span>
               </Link>
             </div>
@@ -57,7 +57,7 @@ export default function EsqueciSenhaPage() {
         </div>
 
         <p className="text-center text-[11px] text-zinc-600 mt-6">
-          © {new Date().getFullYear()} MSB Solution · Todos os direitos reservados
+          © {new Date().getFullYear()} Toniq · Todos os direitos reservados
         </p>
       </div>
     </div>

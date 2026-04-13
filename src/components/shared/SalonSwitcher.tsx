@@ -49,13 +49,13 @@ export function SalonSwitcher({ displayName }: { displayName?: string }) {
   });
 
   const activeSalon = salons.find((s) => s.id === activeSalonId) ?? salons[0];
-  const name = activeSalon?.name ?? displayName ?? "Salão Pro";
+  const name = activeSalon?.name ?? displayName ?? "Toniq";
 
   // Non-MASTER: just show the name
   if (!isMaster) {
     return (
       <p className="font-black text-white text-sm leading-tight tracking-tight truncate">
-        {displayName ?? "Salão Pro"}
+        {displayName ?? "Toniq"}
       </p>
     );
   }

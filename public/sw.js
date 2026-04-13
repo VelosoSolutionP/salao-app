@@ -1,7 +1,7 @@
-// MSB Salão Pro — Service Worker
+// Toniq — Service Worker
 // Estratégia: network-first com fallback de cache para assets estáticos
 
-const CACHE = "msb-salao-v1";
+const CACHE = "toniq-v1";
 const OFFLINE_URL = "/";
 
 // Assets que sempre queremos em cache

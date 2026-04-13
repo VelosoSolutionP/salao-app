@@ -8,13 +8,13 @@ import { InstallBanner } from "@/components/shared/InstallBanner";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "MSB Salão Pro", template: "%s | MSB Salão Pro" },
+  title: { default: "Toniq", template: "%s | Toniq" },
   description: "Sistema completo de gestão para salão e barbearia — agenda, equipe, financeiro.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Salão Pro",
+    title: "Toniq",
     startupImage: "/icon-512.png",
   },
   icons: {
