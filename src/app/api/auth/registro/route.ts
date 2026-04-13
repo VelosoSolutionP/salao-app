@@ -14,8 +14,8 @@ const schema = z.object({
   password: z.string().min(6),
   phone: z.string().optional(),
   role: z.enum(["OWNER", "CLIENT"]).default("CLIENT"),
-  // Only for OWNER
   salonName: z.string().optional(),
+  refCode: z.string().optional(), // código de indicação do revendedor
 });
 
 export async function POST(req: NextRequest) {
@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { name, email, password, phone, role, salonName } = parsed.data;
+  const { name, email, password, phone, role, salonName, refCode } = parsed.data;
 
   const existing = await prisma.user.findUnique({
     where: { email: email.toLowerCase() },
@@ -65,11 +65,27 @@ export async function POST(req: NextRequest) {
 
     if (role === "OWNER" && salonName) {
       const slug = slugify(salonName);
+
+      // Resolve referral code
+      let indicacaoId: string | undefined;
+      if (refCode) {
+        const revendedor = await tx.revendedor.findUnique({
+          where: { codigo: refCode.toUpperCase(), ativo: true },
+        });
+        if (revendedor) {
+          const indicacao = await tx.indicacao.create({
+            data: { revendedorId: revendedor.id, status: "CONVERTIDA" },
+          });
+          indicacaoId = indicacao.id;
+        }
+      }
+
       const salon = await tx.salon.create({
         data: {
           ownerId: newUser.id,
           name: salonName,
           slug: `${slug}-${Date.now()}`,
+          ...(indicacaoId && { indicacaoId }),
         },
       });
 

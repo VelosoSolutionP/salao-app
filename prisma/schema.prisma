@@ -104,6 +104,9 @@ model Salon {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
+  indicacaoId  String?    @unique
+  indicacao    Indicacao? @relation(fields: [indicacaoId], references: [id])
+
   owner         User           @relation(fields: [ownerId], references: [id])
   colaboradores Colaborador[]
   servicos      Servico[]
@@ -143,9 +146,13 @@ model PagamentoContrato {
   contrato   ContratoSalao @relation(fields: [contratoId], references: [id])
   valor      Decimal  @db.Decimal(10, 2)
   referencia String   // "2025-04" = mês/ano
+  vencimento DateTime?
   pago       Boolean  @default(false)
   pagoEm     DateTime?
+  notificado Boolean  @default(false)  // WhatsApp sent
   createdAt  DateTime @default(now())
+
+  comissoes  Comissao[]
 
   @@map("pagamentos_contrato")
 }
@@ -159,6 +166,59 @@ model GastoPlataforma {
   createdAt DateTime @default(now())
 
   @@map("gastos_plataforma")
+}
+
+// ─────────────────────────────────────────
+// REVENDEDORES / INDICAÇÕES
+// ─────────────────────────────────────────
+
+model Revendedor {
+  id         String   @id @default(cuid())
+  nome       String
+  email      String?
+  telefone   String?
+  codigo     String   @unique
+  percentual Decimal  @db.Decimal(5, 2) @default(10)
+  ativo      Boolean  @default(true)
+  observacao String?
+  createdAt  DateTime @default(now())
+
+  indicacoes Indicacao[]
+  comissoes  Comissao[]
+
+  @@map("revendedores")
+}
+
+model Indicacao {
+  id           String     @id @default(cuid())
+  revendedorId String
+  revendedor   Revendedor @relation(fields: [revendedorId], references: [id])
+  status       String     @default("PENDENTE") // PENDENTE, CONVERTIDA
+  createdAt    DateTime   @default(now())
+
+  salon     Salon?
+  comissoes Comissao[]
+
+  @@map("indicacoes")
+}
+
+model Comissao {
+  id           String    @id @default(cuid())
+  revendedorId String
+  revendedor   Revendedor @relation(fields: [revendedorId], references: [id])
+  indicacaoId  String
+  indicacao    Indicacao  @relation(fields: [indicacaoId], references: [id])
+  pagamentoId  String
+  pagamento    PagamentoContrato @relation(fields: [pagamentoId], references: [id])
+  valor        Decimal   @db.Decimal(10, 2)
+  percentual   Decimal   @db.Decimal(5, 2)
+  ehBonus      Boolean   @default(false) // primeiros 2 contratos = 100%
+  referencia   String
+  pago         Boolean   @default(false)
+  pagoEm       DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@map("comissoes")
 }
 
 enum PixKeyType {

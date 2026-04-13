@@ -10,12 +10,14 @@ import {
   Users,
   LogOut,
   Scissors,
+  UserCheck,
 } from "lucide-react";
 
 const NAV = [
   { href: "/master", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/master/saloes", label: "Salões", icon: Store },
   { href: "/master/financeiro", label: "Financeiro", icon: DollarSign },
+  { href: "/master/revendedores", label: "Revendedores", icon: UserCheck },
   { href: "/master/usuarios", label: "Usuários", icon: Users },
 ];
 

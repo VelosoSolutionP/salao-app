@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,9 +48,16 @@ const inputClass =
 
 export function RegistroForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [refCode, setRefCode] = useState<string | null>(null);
+
+  useEffect(() => {
+    const ref = searchParams.get("ref");
+    if (ref) setRefCode(ref.toUpperCase());
+  }, [searchParams]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -65,7 +72,7 @@ export function RegistroForm() {
       const res = await fetch("/api/auth/registro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, refCode }),
       });
 
       const json = await res.json();
@@ -89,6 +96,14 @@ export function RegistroForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+
+        {/* Referral banner */}
+        {refCode && (
+          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm" style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)" }}>
+            <span className="text-violet-500">🎁</span>
+            <span className="text-violet-700 font-semibold text-xs">Indicação ativa — código <strong>{refCode}</strong></span>
+          </div>
+        )}
 
         {/* Account type */}
         <FormField

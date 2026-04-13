@@ -1,10 +1,7 @@
-// Toniq — Service Worker
-// Estratégia: network-first com fallback de cache para assets estáticos
-
-const CACHE = "toniq-v1";
+// Veloso Solution — Service Worker v2
+const CACHE = "veloso-v2";
 const OFFLINE_URL = "/";
 
-// Assets que sempre queremos em cache
 const PRECACHE = [
   "/",
   "/login",
@@ -13,7 +10,6 @@ const PRECACHE = [
   "/icon-512.png",
 ];
 
-// ── Install ──────────────────────────────────────────────────────────────────
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) => cache.addAll(PRECACHE))
@@ -21,7 +17,6 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-// ── Activate ─────────────────────────────────────────────────────────────────
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -31,12 +26,10 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// ── Fetch ─────────────────────────────────────────────────────────────────────
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Skip non-GET, API calls, and cross-origin requests
   if (
     request.method !== "GET" ||
     url.pathname.startsWith("/api/") ||
@@ -45,12 +38,10 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Network-first for navigation (pages)
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
         .then((res) => {
-          // Clone and cache successful responses
           const clone = res.clone();
           caches.open(CACHE).then((c) => c.put(request, clone));
           return res;
@@ -60,7 +51,6 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Cache-first for static assets (_next/static, images, icons)
   if (
     url.pathname.startsWith("/_next/static") ||
     url.pathname.startsWith("/icons") ||
