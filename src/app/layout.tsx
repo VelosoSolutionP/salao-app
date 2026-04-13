@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/providers/Providers";
 import { PwaInit } from "@/components/shared/PwaInit";
 import { InstallBanner } from "@/components/shared/InstallBanner";
+import { NotificationInit } from "@/components/shared/NotificationInit";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -39,6 +40,7 @@ export default function RootLayout({
       <body className={`${inter.className} h-full antialiased`}>
         <Providers>
           <PwaInit />
+          <NotificationInit />
           {children}
           <InstallBanner />
         </Providers>

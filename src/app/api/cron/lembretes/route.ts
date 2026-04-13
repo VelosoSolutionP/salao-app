@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { addHours } from "date-fns";
+import { addHours, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { sendPush } from "@/lib/push";
 
 // Vercel Cron: runs every 30 minutes
 // Configure in vercel.json: { "crons": [{ "path": "/api/cron/lembretes", "schedule": "*/30 * * * *" }] }
@@ -59,9 +61,26 @@ export async function GET(req: NextRequest) {
         where: { userId: agendamento.cliente.userId },
       }) : null;
 
-      if (notifConfig?.lembrete24h && notifConfig.emailAtivo) {
-        // Send email reminder (Resend)
-        // await sendReminderEmail(agendamento, "24h");
+      // Push notification para o cliente
+      if (agendamento.cliente?.userId) {
+        const hora = format(agendamento.inicio, "HH:mm", { locale: ptBR });
+        const dia = format(agendamento.inicio, "EEEE", { locale: ptBR });
+        await sendPush(agendamento.cliente.userId, {
+          title: "📅 Lembrete de agendamento",
+          body: `Seu horário é ${dia === format(new Date(), "EEEE", { locale: ptBR }) ? "hoje" : "amanhã"} às ${hora} em ${agendamento.salon.name}`,
+          url: "/agendar",
+        });
+      }
+
+      // Push para o barbeiro/colaborador
+      if (agendamento.colaborador?.userId) {
+        const hora = format(agendamento.inicio, "HH:mm", { locale: ptBR });
+        const clienteNome = agendamento.cliente?.user?.name ?? "Cliente";
+        await sendPush(agendamento.colaborador.userId, {
+          title: "✂️ Agendamento amanhã",
+          body: `${clienteNome} às ${hora}`,
+          url: "/agenda",
+        });
       }
 
       await prisma.agendamento.update({
@@ -82,8 +101,14 @@ export async function GET(req: NextRequest) {
         where: { userId: agendamento.cliente.userId },
       }) : null;
 
-      if (notifConfig?.lembrete1h && notifConfig.emailAtivo) {
-        // await sendReminderEmail(agendamento, "1h");
+      // Push 1h antes — só para o cliente
+      if (agendamento.cliente?.userId) {
+        const hora = format(agendamento.inicio, "HH:mm", { locale: ptBR });
+        await sendPush(agendamento.cliente.userId, {
+          title: "⏰ Seu horário é em 1 hora!",
+          body: `${hora} em ${agendamento.salon.name} — não se esqueça!`,
+          url: "/agendar",
+        });
       }
 
       await prisma.agendamento.update({

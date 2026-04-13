@@ -1,5 +1,5 @@
-// Veloso Solution — Service Worker v2
-const CACHE = "veloso-v2";
+// Veloso Solution — Service Worker v3
+const CACHE = "veloso-v3";
 const OFFLINE_URL = "/";
 
 const PRECACHE = [
@@ -26,6 +26,32 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
+// ── Push Notifications ────────────────────────────────────────────────────────
+self.addEventListener("push", (event) => {
+  const data = event.data?.json() ?? {};
+  event.waitUntil(
+    self.registration.showNotification(data.title ?? "Veloso Solution", {
+      body: data.body ?? "",
+      icon: data.icon ?? "/icon-192.png",
+      badge: "/icon-192.png",
+      data: { url: data.url ?? "/" },
+      vibrate: [200, 100, 200],
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url ?? "/";
+  event.waitUntil(
+    clients.matchAll({ type: "window" }).then((list) => {
+      const w = list.find((c) => c.url === url && "focus" in c);
+      return w ? w.focus() : clients.openWindow(url);
+    })
+  );
+});
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
