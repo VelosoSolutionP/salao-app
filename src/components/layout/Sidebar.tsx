@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
+import { useQuery } from "@tanstack/react-query";
 import { cn, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -33,37 +34,38 @@ type NavItem = {
 const navGroups: Array<{ label?: string; items: NavItem[] }> = [
   {
     items: [
-      { href: "/dashboard",    label: "Dashboard",     icon: LayoutDashboard, roles: ["OWNER", "BARBER"] },
-      { href: "/agenda",       label: "Agenda",        icon: CalendarDays,    roles: ["OWNER", "BARBER"] },
-      { href: "/clientes",     label: "Clientes",      icon: Users,           roles: ["OWNER", "BARBER"] },
+      { href: "/dashboard",    label: "Dashboard",     icon: LayoutDashboard, roles: ["OWNER", "BARBER", "MASTER"] },
+      { href: "/agenda",       label: "Agenda",        icon: CalendarDays,    roles: ["OWNER", "BARBER", "MASTER"] },
+      { href: "/clientes",     label: "Clientes",      icon: Users,           roles: ["OWNER", "BARBER", "MASTER"] },
     ],
   },
   {
     label: "Gestão",
     items: [
-      { href: "/servicos",     label: "Serviços",      icon: Scissors,        roles: ["OWNER"] },
-      { href: "/equipe",       label: "Equipe",        icon: UserCheck,       roles: ["OWNER"] },
-      { href: "/estoque",      label: "Estoque",       icon: Package,         roles: ["OWNER"] },
+      { href: "/servicos",     label: "Serviços",      icon: Scissors,        roles: ["OWNER", "MASTER"] },
+      { href: "/equipe",       label: "Equipe",        icon: UserCheck,       roles: ["OWNER", "MASTER"] },
+      { href: "/estoque",      label: "Estoque",       icon: Package,         roles: ["OWNER", "MASTER"] },
     ],
   },
   {
     label: "Financeiro",
     items: [
-      { href: "/financeiro",   label: "Financeiro",    icon: DollarSign,      roles: ["OWNER"] },
-      { href: "/relatorios",   label: "Relatórios",    icon: BarChart3,       roles: ["OWNER"] },
-      { href: "/marketing",    label: "Marketing",     icon: Megaphone,       roles: ["OWNER"] },
+      { href: "/financeiro",   label: "Financeiro",    icon: DollarSign,      roles: ["OWNER", "MASTER"] },
+      { href: "/relatorios",   label: "Relatórios",    icon: BarChart3,       roles: ["OWNER", "MASTER"] },
+      { href: "/marketing",    label: "Marketing",     icon: Megaphone,       roles: ["OWNER", "MASTER"] },
     ],
   },
   {
     label: "Sistema",
     items: [
-      { href: "/notificacoes", label: "Notificações",  icon: Bell,            roles: ["OWNER", "BARBER"] },
-      { href: "/configuracoes",label: "Configurações", icon: Settings,        roles: ["OWNER"] },
+      { href: "/notificacoes", label: "Notificações",  icon: Bell,            roles: ["OWNER", "BARBER", "MASTER"] },
+      { href: "/configuracoes",label: "Configurações", icon: Settings,        roles: ["OWNER", "MASTER"] },
     ],
   },
 ];
 
 function roleLabel(role?: string): string {
+  if (role === "MASTER") return "Admin Master";
   if (role === "OWNER") return "Proprietário";
   if (role === "BARBER") return "Barbeiro · Cabeleireiro";
   return "Usuário";
@@ -73,6 +75,15 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = session?.user?.role ?? "CLIENT";
+
+  // Salon name for OWNER/BARBER (MASTER uses SalonSwitcher which fetches its own data)
+  const { data: configData } = useQuery({
+    queryKey: ["salon-name"],
+    queryFn: () => fetch("/api/configuracoes").then((r) => r.json()),
+    staleTime: 60_000,
+    enabled: role === "OWNER" || role === "BARBER",
+  });
+  const salonName = configData?.name ?? "Salão Pro";
 
   return (
     <div
@@ -92,7 +103,14 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             <Scissors className="w-[18px] h-[18px] text-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <SalonSwitcher />
+            {/* MASTER: salon switcher dropdown; others: static name */}
+            {role === "MASTER" ? (
+              <SalonSwitcher />
+            ) : (
+              <p className="font-black text-white text-sm leading-tight tracking-tight truncate">
+                {salonName}
+              </p>
+            )}
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[10px] text-zinc-500 font-semibold">Online</span>

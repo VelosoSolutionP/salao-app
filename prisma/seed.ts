@@ -138,7 +138,8 @@ async function main() {
   console.log("\n🌱  Seed MSB Solution — iniciando...\n");
 
   // ── 1. Hashes de senha ───────────────────────────────────────────────────
-  const [hDono, hBarb, hCli] = await Promise.all([
+  const [hMaster, hDono, hBarb, hCli] = await Promise.all([
+    bcrypt.hash("msb@master2025", 12),
     bcrypt.hash("msb@2025",  12),
     bcrypt.hash("barb@2025", 12),
     bcrypt.hash("cli@2025",  12),
@@ -146,6 +147,20 @@ async function main() {
 
   // ── 2. Usuários ──────────────────────────────────────────────────────────
   console.log("👤  Usuários...");
+
+  // Usuário MASTER — acesso total ao sistema, cadastra salões para clientes
+  await prisma.user.upsert({
+    where:  { id: "seed-user-master" },
+    update: { passwordHash: hMaster },
+    create: {
+      id: "seed-user-master",
+      name: "Admin MSB",
+      email: "master@msbsolution.com",
+      passwordHash: hMaster,
+      phone: "11900000000",
+      role: "MASTER",
+    },
+  });
 
   const owner = await prisma.user.upsert({
     where:  { id: ID.userOwner },

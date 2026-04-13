@@ -36,11 +36,25 @@ export async function proxy(request: NextRequest) {
 
   const role = session.user.role;
 
-  // Route protection by role
-  if (pathname.startsWith("/dashboard") && role === "CLIENT") {
-    return NextResponse.redirect(new URL("/agendar", request.url));
+  // CLIENT → only /agendar
+  if (role === "CLIENT") {
+    if (!pathname.startsWith("/agendar") && !pathname.startsWith("/api/")) {
+      return NextResponse.redirect(new URL("/agendar", request.url));
+    }
+    return NextResponse.next();
   }
 
+  // MASTER → must select a salon before entering the dashboard
+  if (role === "MASTER") {
+    const activeSalonId = request.cookies.get("active_salon_id")?.value;
+    if (!activeSalonId && !pathname.startsWith("/selecionar-salao") && !pathname.startsWith("/api/")) {
+      return NextResponse.redirect(new URL("/selecionar-salao", request.url));
+    }
+    // MASTER has access to everything — no further restrictions
+    return NextResponse.next();
+  }
+
+  // OWNER-only management routes (BARBER gets redirected to agenda)
   if (
     (pathname.startsWith("/relatorios") ||
       pathname.startsWith("/financeiro") ||

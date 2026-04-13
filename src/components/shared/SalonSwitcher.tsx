@@ -1,26 +1,33 @@
 "use client";
 
+/**
+ * SalonSwitcher — only rendered for MASTER role.
+ * Shows all salons, highlights the active one, and allows switching
+ * or creating a new salon inline.
+ */
+
 import { useState, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
-import { ChevronDown, Plus, Check, Loader2, Scissors } from "lucide-react";
+import { ChevronDown, Plus, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 interface SalonItem {
   id: string;
   name: string;
-  slug: string;
   active: boolean;
 }
 
-function readActiveSalonCookie(): string | null {
+function readCookie(): string | null {
   if (typeof document === "undefined") return null;
-  const match = document.cookie.split(";").find((c) => c.trim().startsWith("active_salon_id="));
-  return match ? match.trim().split("=")[1] : null;
+  const m = document.cookie.split(";").find((c) => c.trim().startsWith("active_salon_id="));
+  return m ? m.trim().split("=")[1] : null;
 }
 
-export function SalonSwitcher() {
+export function SalonSwitcher({ displayName }: { displayName?: string }) {
   const { data: session } = useSession();
+  const router = useRouter();
   const [open, setOpen] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [activeSalonId, setActiveSalonId] = useState<string | null>(null);
@@ -29,24 +36,26 @@ export function SalonSwitcher() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    setActiveSalonId(readActiveSalonCookie());
+    setActiveSalonId(readCookie());
   }, []);
+
+  const isMaster = session?.user?.role === "MASTER";
 
   const { data: salons = [] } = useQuery<SalonItem[]>({
     queryKey: ["my-salons"],
     queryFn: () => fetch("/api/saloes").then((r) => r.json()),
-    enabled: session?.user?.role === "OWNER",
+    enabled: isMaster,
     staleTime: 60_000,
   });
 
   const activeSalon = salons.find((s) => s.id === activeSalonId) ?? salons[0];
-  const displayName = activeSalon?.name ?? "Salão Pro";
+  const name = activeSalon?.name ?? displayName ?? "Salão Pro";
 
-  // Single salon — just show name
-  if (session?.user?.role !== "OWNER" || salons.length <= 1) {
+  // Non-MASTER: just show the name
+  if (!isMaster) {
     return (
       <p className="font-black text-white text-sm leading-tight tracking-tight truncate">
-        {displayName}
+        {displayName ?? "Salão Pro"}
       </p>
     );
   }
@@ -63,7 +72,7 @@ export function SalonSwitcher() {
       if (!res.ok) throw new Error(data.error);
       setActiveSalonId(salonId);
       setOpen(false);
-      toast.success(`Trocado para: ${data.name}`);
+      toast.success(`Gerenciando: ${data.name}`);
       qc.invalidateQueries();
       window.location.reload();
     } catch {
@@ -84,10 +93,10 @@ export function SalonSwitcher() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro");
-      await qc.invalidateQueries({ queryKey: ["my-salons"] });
-      await switchTo(data.id);
+      qc.invalidateQueries({ queryKey: ["my-salons"] });
       setCreating(false);
       setNewName("");
+      await switchTo(data.id);
     } catch (e: any) {
       toast.error(e.message ?? "Erro ao criar salão");
     } finally {
@@ -102,7 +111,7 @@ export function SalonSwitcher() {
         className="flex items-center gap-1.5 group w-full"
       >
         <p className="font-black text-white text-sm leading-tight tracking-tight truncate flex-1 text-left">
-          {displayName}
+          {name}
         </p>
         <ChevronDown
           className={`w-3 h-3 text-zinc-500 group-hover:text-zinc-300 transition-all flex-shrink-0 ${open ? "rotate-180" : ""}`}
@@ -111,15 +120,13 @@ export function SalonSwitcher() {
 
       {open && (
         <>
-          {/* Backdrop */}
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-
           <div
             className="absolute left-0 top-full mt-2 w-56 rounded-xl shadow-2xl z-50 overflow-hidden"
             style={{ background: "#12102a", border: "1px solid rgba(255,255,255,0.1)" }}
           >
             <p className="px-3 py-2 text-[9px] font-black uppercase tracking-widest text-zinc-600">
-              Seus Salões
+              Salões cadastrados
             </p>
 
             {salons.map((s) => {
@@ -141,7 +148,6 @@ export function SalonSwitcher() {
                     {s.name}
                   </span>
                   {isActive && <Check className="w-3 h-3 text-violet-400 flex-shrink-0" />}
-                  {switching && !isActive && <Loader2 className="w-3 h-3 text-zinc-600 animate-spin flex-shrink-0" />}
                 </button>
               );
             })}
@@ -188,6 +194,14 @@ export function SalonSwitcher() {
                 </button>
               )}
             </div>
+
+            {/* Back to selector */}
+            <button
+              onClick={() => { setOpen(false); router.push("/selecionar-salao"); }}
+              className="w-full px-3 py-2.5 text-left text-[10px] text-zinc-600 hover:text-zinc-400 transition-colors border-t border-white/5 mt-1"
+            >
+              ← Voltar à seleção de salão
+            </button>
           </div>
         </>
       )}

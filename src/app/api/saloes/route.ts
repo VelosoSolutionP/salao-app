@@ -2,28 +2,57 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth-guard";
+import { requireAuth } from "@/lib/auth-guard";
 
 const createSchema = z.object({
   name: z.string().min(2, "Mínimo 2 caracteres"),
+  city: z.string().optional(),
 });
 
 export async function GET() {
-  const { session, error } = await requireRole(["OWNER"]);
+  const { session, error } = await requireAuth();
   if (error) return error;
 
-  const salons = await prisma.salon.findMany({
-    where: { ownerId: session!.user.id },
-    select: { id: true, name: true, slug: true, logoUrl: true, active: true },
-    orderBy: { createdAt: "asc" },
-  });
+  const role = session!.user.role;
 
-  return NextResponse.json(salons);
+  if (role === "MASTER") {
+    // MASTER sees all salons
+    const salons = await prisma.salon.findMany({
+      select: { id: true, name: true, slug: true, city: true, logoUrl: true, active: true },
+      orderBy: { createdAt: "asc" },
+    });
+    return NextResponse.json(salons);
+  }
+
+  if (role === "OWNER") {
+    const salons = await prisma.salon.findMany({
+      where: { ownerId: session!.user.id },
+      select: { id: true, name: true, slug: true, city: true, logoUrl: true, active: true },
+      orderBy: { createdAt: "asc" },
+    });
+    return NextResponse.json(salons);
+  }
+
+  // BARBER / CLIENT — return the salon they belong to
+  if (role === "BARBER") {
+    const colab = await prisma.colaborador.findUnique({
+      where: { userId: session!.user.id },
+      include: { salon: { select: { id: true, name: true, slug: true, city: true, logoUrl: true, active: true } } },
+    });
+    return NextResponse.json(colab?.salon ? [colab.salon] : []);
+  }
+
+  return NextResponse.json([]);
 }
 
 export async function POST(req: NextRequest) {
-  const { session, error } = await requireRole(["OWNER"]);
+  const { session, error } = await requireAuth();
   if (error) return error;
+
+  // Only MASTER can register new salons
+  if (session!.user.role !== "MASTER") {
+    return NextResponse.json({ error: "Sem permissão" }, { status: 403 });
+  }
 
   const body = await req.json();
   const parsed = createSchema.safeParse(body);
@@ -42,8 +71,9 @@ export async function POST(req: NextRequest) {
 
   const salon = await prisma.salon.create({
     data: {
-      ownerId: session!.user.id,
+      ownerId: session!.user.id, // master owns it until transferred
       name: parsed.data.name,
+      city: parsed.data.city,
       slug,
     },
   });
