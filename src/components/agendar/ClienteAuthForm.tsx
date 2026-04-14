@@ -5,7 +5,6 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Eye, EyeOff, Loader2, UserPlus, LogIn } from "lucide-react";
 
@@ -242,12 +241,11 @@ function LoginForm({ onSuccess }: { onSuccess: () => void }) {
 // ─── ClienteAuthForm (exported) ───────────────────────────────────────────────
 
 export function ClienteAuthForm() {
-  const router = useRouter();
   const [tab, setTab] = useState<"cadastro" | "login">("cadastro");
 
   function onSuccess() {
-    router.push("/agendar");
-    router.refresh();
+    // Root page redirects based on role: CLIENT → /agendar, others → /dashboard
+    window.location.href = "/";
   }
 
   return (
