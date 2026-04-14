@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import { AgendarView } from "@/components/agendar/AgendarView";
+import { SalonPicker } from "@/components/agendar/SalonPicker";
 import { ClienteNav } from "@/components/agendar/ClienteNav";
 import { prisma } from "@/lib/prisma";
 
@@ -50,7 +50,6 @@ export default async function AgendarPage() {
     updatedAt: s.updatedAt.toISOString(),
   }));
 
-  const salon = serialized[0];
   const firstName = session.user.name?.split(" ")[0] ?? "você";
 
   // Check for pending fines on this client
@@ -87,32 +86,7 @@ export default async function AgendarPage() {
       <div className="relative max-w-md mx-auto px-4 pt-10 pb-32">
         <ClienteNav name={firstName} />
 
-        {/* Salon header */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-white/10 backdrop-blur-sm rounded-3xl mb-3 ring-1 ring-white/20 shadow-xl">
-            <span className="text-2xl">✂️</span>
-          </div>
-          <h1 className="text-xl font-black text-white tracking-tight">
-            {salon?.name ?? "Salão"}
-          </h1>
-          <p className="text-violet-200 mt-1 text-sm">Escolha um serviço para começar</p>
-        </div>
-
-        {/* Multa pendente */}
-        {totalMultaPendente > 0 && (
-          <div className="mb-4 flex items-start gap-3 px-4 py-3 bg-red-500/20 border border-red-400/30 rounded-2xl backdrop-blur-sm">
-            <span className="text-red-200 text-lg flex-shrink-0">⚠️</span>
-            <div>
-              <p className="text-white font-bold text-sm">Taxa de não comparecimento pendente</p>
-              <p className="text-red-200 text-xs mt-0.5">
-                R$ {totalMultaPendente.toFixed(2)} serão adicionados ao seu próximo agendamento,
-                conforme a política do salão.
-              </p>
-            </div>
-          </div>
-        )}
-
-        <AgendarView salons={serialized} />
+        <SalonPicker salons={serialized} totalMultaPendente={totalMultaPendente} />
       </div>
     </div>
   );
