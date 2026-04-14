@@ -1,7 +1,7 @@
 {
-  "name": "Veloso Solution",
-  "short_name": "Veloso",
-  "description": "Sistema completo de gestão para salões e barbearias — agenda online, equipe, financeiro e mais.",
+  "name": "TOQE",
+  "short_name": "TOQE",
+  "description": "TOQE — gestão precisa para salões e barbearias. Agenda, equipe, estoque e financeiro num só lugar.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

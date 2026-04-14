@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: process.env.RESEND_FROM ?? "noreply@velosolution.com.br",
+        from: process.env.RESEND_FROM ?? "noreply@toqe.com.br",
         to: email,
         subject: "Redefinição de senha — TOQE",
         html: buildEmailHtml(user.name, resetUrl),

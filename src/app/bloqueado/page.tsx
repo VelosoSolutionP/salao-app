@@ -79,7 +79,7 @@ function BloqueadoContent() {
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
         >
           <p className="text-zinc-500 text-xs mb-1">Suporte TOQE</p>
-          <p className="text-violet-400 text-sm font-bold">contato@velosolution.com.br</p>
+          <p className="text-violet-400 text-sm font-bold">contato@toqe.com.br</p>
         </div>
 
         <button
