@@ -276,7 +276,7 @@ export function EquipeView() {
                     {" · "}
                     Próprio: <strong>{(Number(c.comissaoProprioProduto) * 100).toFixed(0)}%</strong>
                   </span>
-                  <div className="flex gap-1 flex-shrink-0">
+                  <div className="flex gap-1.5 flex-shrink-0">
                     <button
                       type="button"
                       title="Editar"
@@ -289,25 +289,25 @@ export function EquipeView() {
                           bio: c.bio ?? "",
                         })
                       }
-                      className="w-7 h-7 flex items-center justify-center rounded hover:bg-violet-50 transition-colors"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-violet-100 hover:bg-violet-200 transition-colors"
                     >
-                      <Pencil className="w-3.5 h-3.5 text-violet-500" />
+                      <Pencil className="w-3.5 h-3.5 text-violet-600" />
                     </button>
                     <button
                       type="button"
                       title="Horários"
                       onClick={() => openHorarios(c)}
-                      className="w-7 h-7 flex items-center justify-center rounded hover:bg-gray-100 transition-colors"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors"
                     >
-                      <Clock className="w-3.5 h-3.5 text-gray-500" />
+                      <Clock className="w-3.5 h-3.5 text-gray-600" />
                     </button>
                     <button
                       type="button"
                       title="Remover"
                       onClick={() => deleteMutation.mutate(c.id)}
-                      className="w-7 h-7 flex items-center justify-center rounded hover:bg-red-50 transition-colors"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-50 hover:bg-red-100 transition-colors"
                     >
-                      <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                      <Trash2 className="w-3.5 h-3.5 text-red-500" />
                     </button>
                   </div>
                 </div>
