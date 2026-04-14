@@ -81,11 +81,12 @@ function ContinueButton({
 
 // ─── AgendarView ─────────────────────────────────────────────────────────────
 
-export function AgendarView({ salons }: { salons: Record<string, unknown>[] }) {
+export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<string, unknown>[]; salonId?: string }) {
   const router = useRouter();
 
   // Usa o primeiro salão ativo
   const salon = salons[0] as Record<string, unknown>;
+  const salonId = salonIdProp ?? (salon?.id as string | undefined);
 
   const [step,               setStep]               = useState<Step>("servicos");
   const [selectedServicos,   setSelectedServicos]   = useState<string[]>([]);
@@ -166,11 +167,12 @@ export function AgendarView({ salons }: { salons: Record<string, unknown>[] }) {
     if (!selectedColaborador || !selectedDate || !selectedSlot) return;
     setSubmitting(true);
     try {
+      if (!salonId) { toast.error("Salão não identificado. Volte e tente novamente."); setSubmitting(false); return; }
       const res = await fetch("/api/agendamentos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          salonId:       salon?.id as string,
+          salonId,
           colaboradorId: selectedColaborador,
           servicoIds:    selectedServicos,
           data:          format(selectedDate, "yyyy-MM-dd"),

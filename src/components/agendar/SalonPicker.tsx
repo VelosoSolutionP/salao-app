@@ -48,7 +48,7 @@ export function SalonPicker({ salons, totalMultaPendente }: Props) {
           </div>
         )}
 
-        <AgendarView salons={[selected]} />
+        <AgendarView salons={[selected]} salonId={selected.id as string} />
       </div>
     );
   }
