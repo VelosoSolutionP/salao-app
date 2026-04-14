@@ -94,8 +94,9 @@ export async function POST(req: NextRequest) {
     if (role === "OWNER" && salonName) {
       const slug = slugify(salonName);
 
-      // Resolve referral code
+      // Resolve referral code — check Revendedor first, then Indicador
       let indicacaoId: string | undefined;
+      let indicadorId: string | undefined;
       if (refCode) {
         const revendedor = await tx.revendedor.findUnique({
           where: { codigo: refCode.toUpperCase(), ativo: true },
@@ -105,6 +106,14 @@ export async function POST(req: NextRequest) {
             data: { revendedorId: revendedor.id, status: "CONVERTIDA" },
           });
           indicacaoId = indicacao.id;
+        } else {
+          // Try Indicador
+          const indicador = await tx.indicador.findUnique({
+            where: { codigo: refCode.toUpperCase(), ativo: true },
+          });
+          if (indicador) {
+            indicadorId = indicador.id;
+          }
         }
       }
 
@@ -118,6 +127,7 @@ export async function POST(req: NextRequest) {
           slug: `${slug}-${Date.now()}`,
           codigoConvite: inviteCode,
           ...(indicacaoId && { indicacaoId }),
+          ...(indicadorId && { indicadorId }),
         },
       });
 

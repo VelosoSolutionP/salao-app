@@ -134,6 +134,8 @@ model Salon {
   redeId               String?
   representante        Representante?        @relation(fields: [representanteId], references: [id])
   representanteId      String?
+  indicador            Indicador?            @relation(fields: [indicadorId], references: [id])
+  indicadorId          String?
 
   @@map("salons")
 }
@@ -263,12 +265,14 @@ model Indicador {
   nome                String
   email               String?
   telefone            String?
-  comissaoPorContrato Decimal   @db.Decimal(10, 2) @default(50) // R$ fixo por contrato
-  contratosBonus      Int       @default(2)   // quantos contratos iniciais pagam 100%
+  codigo              String    @unique  // código para link de indicação
+  comissaoPorContrato Decimal   @db.Decimal(10, 2) @default(50)
+  contratosBonus      Int       @default(2)
   observacao          String?
   ativo               Boolean   @default(true)
   createdAt           DateTime  @default(now())
 
+  salons    Salon[]
   comissoes ComissaoIndicador[]
 
   @@map("indicadores")

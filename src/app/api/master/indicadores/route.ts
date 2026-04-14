@@ -2,21 +2,23 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { nanoid } from "nanoid";
 
 export async function GET() {
   const session = await auth();
   if (session?.user?.role !== "MASTER")
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
-  const indicadores = await prisma.indicador.findMany({
+  const lista = await prisma.indicador.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       comissoes: { select: { valor: true, pago: true, ehBonus: true } },
+      salons: { select: { id: true, name: true } },
     },
   });
 
   return NextResponse.json(
-    indicadores.map((ind) => ({
+    lista.map((ind) => ({
       ...ind,
       totalComissao: ind.comissoes.reduce((s, c) => s + Number(c.valor), 0),
       totalPendente: ind.comissoes.filter((c) => !c.pago).reduce((s, c) => s + Number(c.valor), 0),
@@ -33,9 +35,12 @@ export async function POST(req: NextRequest) {
   const { nome, email, telefone, comissaoPorContrato, contratosBonus, observacao } = await req.json();
   if (!nome) return NextResponse.json({ error: "nome obrigatório" }, { status: 400 });
 
+  const codigo = nanoid(8).toUpperCase();
+
   const ind = await prisma.indicador.create({
     data: {
       nome,
+      codigo,
       email: email || null,
       telefone: telefone || null,
       comissaoPorContrato: comissaoPorContrato ?? 50,

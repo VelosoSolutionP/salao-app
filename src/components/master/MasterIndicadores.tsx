@@ -3,8 +3,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
-  Plus, X, Loader2, Users, DollarSign, CheckCircle,
-  Pencil, XCircle, ChevronDown, ChevronUp, Gift,
+  Plus, X, Loader2, Users, CheckCircle,
+  Pencil, XCircle, ChevronDown, ChevronUp, Gift, Copy, Store, Link2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -13,6 +13,7 @@ interface Indicador {
   nome: string;
   email: string | null;
   telefone: string | null;
+  codigo: string;
   comissaoPorContrato: number;
   contratosBonus: number;
   observacao: string | null;
@@ -21,6 +22,21 @@ interface Indicador {
   totalComissao: number;
   totalPendente: number;
   totalContratos: number;
+  salons: { id: string; name: string }[];
+}
+
+function CopyBtn({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }
+  return (
+    <button onClick={copy} className="p-1 text-zinc-600 hover:text-violet-400 transition-colors">
+      {copied ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+    </button>
+  );
 }
 
 const EMPTY = { nome: "", email: "", telefone: "", comissaoPorContrato: "50", contratosBonus: "2", observacao: "" };
@@ -29,6 +45,7 @@ const fmt = (v: number) => v.toLocaleString("pt-BR", { style: "currency", curren
 
 export function MasterIndicadores() {
   const qc = useQueryClient();
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const [modal, setModal] = useState<"create" | "edit" | null>(null);
   const [editing, setEditing] = useState<Indicador | null>(null);
   const [form, setForm] = useState(EMPTY);
@@ -213,6 +230,34 @@ export function MasterIndicadores() {
                   </button>
                 </div>
               </div>
+
+              {/* Link de indicação — sempre visível */}
+              <div className="px-5 py-3 border-t border-white/5">
+                <p className="text-zinc-600 text-[10px] font-semibold uppercase tracking-wider mb-1.5">Link de indicação</p>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg"
+                  style={{ background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)" }}>
+                  <Link2 className="w-3 h-3 text-violet-500 flex-shrink-0" />
+                  <code className="text-violet-300 text-xs flex-1 truncate">{baseUrl}/registro?ref={ind.codigo}</code>
+                  <CopyBtn text={`${baseUrl}/registro?ref=${ind.codigo}`} />
+                </div>
+                <p className="text-zinc-700 text-[10px] mt-1">
+                  Código: <span className="text-zinc-500 font-mono font-bold">{ind.codigo}</span>
+                  {ind.salons.length > 0 && (
+                    <span className="ml-2 text-emerald-600">· {ind.salons.length} salão(ões) convertido(s)</span>
+                  )}
+                </p>
+              </div>
+
+              {/* Salões convertidos */}
+              {ind.salons.length > 0 && (
+                <div className="px-5 pb-3 flex flex-wrap gap-2">
+                  {ind.salons.map((s) => (
+                    <span key={s.id} className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium bg-white/5 text-zinc-400">
+                      <Store className="w-3 h-3 text-zinc-600" />{s.name}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Expanded: comissões */}
               {expanded === ind.id && (
