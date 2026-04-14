@@ -76,7 +76,7 @@ export function RegistroForm() {
       const res = await fetch("/api/auth/registro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, refCode }),
+        body: JSON.stringify({ ...data, ...(refCode ? { refCode } : {}) }),
       });
 
       const json = await res.json();

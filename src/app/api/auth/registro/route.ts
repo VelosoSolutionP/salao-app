@@ -16,7 +16,7 @@ const schema = z.object({
   role: z.enum(["OWNER", "CLIENT", "BARBER"]).default("CLIENT"),
   salonName: z.string().optional(),
   codigoConvite: z.string().optional(), // código do salão para funcionários (BARBER)
-  refCode: z.string().optional(),       // código de indicação do revendedor
+  refCode: z.string().nullable().optional(), // código de indicação do revendedor
 });
 
 export async function POST(req: NextRequest) {
