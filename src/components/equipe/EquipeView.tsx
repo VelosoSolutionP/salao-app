@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, UserCheck, Loader2, Trash2, Clock, X } from "lucide-react";
+import { Plus, UserCheck, Loader2, Trash2, Clock, X, Pencil } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -54,6 +54,8 @@ export function EquipeView() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [horariosModalOpen, setHorariosModalOpen] = useState(false);
+  const [editModal, setEditModal] = useState<{ id: string; nome: string; comissaoSalaoProduto: string; comissaoProprioProduto: string; bio: string } | null>(null);
+  const [editSubmitting, setEditSubmitting] = useState(false);
   const [horarios, setHorarios] = useState<
     Record<number, { inicio: string; fim: string; ativo: boolean }>
   >({});
@@ -122,6 +124,34 @@ export function EquipeView() {
       toast.error("Erro ao adicionar");
     } finally {
       setSubmitting(false);
+    }
+  }
+
+  async function handleEdit() {
+    if (!editModal) return;
+    const salon = parseFloat(editModal.comissaoSalaoProduto);
+    const proprio = parseFloat(editModal.comissaoProprioProduto);
+    if (isNaN(salon) || salon < 0 || salon > 100) { toast.error("Comissão produto salão deve ser entre 0 e 100"); return; }
+    if (isNaN(proprio) || proprio < 0 || proprio > 100) { toast.error("Comissão produto próprio deve ser entre 0 e 100"); return; }
+
+    setEditSubmitting(true);
+    try {
+      const res = await fetch(`/api/colaboradores/${editModal.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          comissaoSalaoProduto: salon / 100,
+          comissaoProprioProduto: proprio / 100,
+          bio: editModal.bio.trim() || undefined,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) { toast.error(data.error ?? "Erro ao atualizar"); return; }
+      toast.success("Profissional atualizado!");
+      queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
+      setEditModal(null);
+    } finally {
+      setEditSubmitting(false);
     }
   }
 
@@ -240,12 +270,29 @@ export function EquipeView() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                  <span className="text-xs text-gray-500">
-                    Comissão:{" "}
-                    <strong>{(Number(c.comissao) * 100).toFixed(0)}%</strong>
+                <div className="flex items-center justify-between mt-3 pt-3 border-t gap-2">
+                  <span className="text-xs text-gray-500 min-w-0 truncate">
+                    Salão: <strong>{(Number(c.comissaoSalaoProduto) * 100).toFixed(0)}%</strong>
+                    {" · "}
+                    Próprio: <strong>{(Number(c.comissaoProprioProduto) * 100).toFixed(0)}%</strong>
                   </span>
-                  <div className="flex gap-1">
+                  <div className="flex gap-1 flex-shrink-0">
+                    <button
+                      type="button"
+                      title="Editar"
+                      onClick={() =>
+                        setEditModal({
+                          id: c.id,
+                          nome: c.user.name,
+                          comissaoSalaoProduto: (Number(c.comissaoSalaoProduto) * 100).toFixed(0),
+                          comissaoProprioProduto: (Number(c.comissaoProprioProduto) * 100).toFixed(0),
+                          bio: c.bio ?? "",
+                        })
+                      }
+                      className="w-7 h-7 flex items-center justify-center rounded hover:bg-violet-50 transition-colors"
+                    >
+                      <Pencil className="w-3.5 h-3.5 text-violet-500" />
+                    </button>
                     <button
                       type="button"
                       title="Horários"
@@ -481,6 +528,88 @@ export function EquipeView() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                 )}
                 Salvar horários
+              </button>
+            </div>
+          </div>
+        </ModalShell>
+      )}
+
+      {/* ── Modal: Editar Profissional ── */}
+      {editModal && (
+        <ModalShell
+          title={`Editar — ${editModal.nome}`}
+          onClose={() => setEditModal(null)}
+        >
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Comissão prod. salão (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={editModal.comissaoSalaoProduto}
+                  onChange={(e) =>
+                    setEditModal((prev) => prev && { ...prev, comissaoSalaoProduto: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Comissão prod. próprio (%)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={editModal.comissaoProprioProduto}
+                  onChange={(e) =>
+                    setEditModal((prev) => prev && { ...prev, comissaoProprioProduto: e.target.value })
+                  }
+                  className={inputCls}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400 -mt-2">
+              % aplicada sobre o valor do serviço ao concluir o atendimento
+            </p>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1">
+                Bio / Especialidade
+              </label>
+              <input
+                type="text"
+                placeholder="Ex: Especialista em colorimetria"
+                value={editModal.bio}
+                onChange={(e) =>
+                  setEditModal((prev) => prev && { ...prev, bio: e.target.value })
+                }
+                className={inputCls}
+              />
+            </div>
+
+            <div className="flex gap-3 pt-1">
+              <button
+                type="button"
+                className={btnOutline}
+                onClick={() => setEditModal(null)}
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                className={btnPrimary}
+                disabled={editSubmitting}
+                onClick={handleEdit}
+              >
+                {editSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                Salvar
               </button>
             </div>
           </div>

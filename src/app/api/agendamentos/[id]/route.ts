@@ -17,6 +17,7 @@ const updateSchema = z.object({
   pagamentoStatus: z.enum(["PENDENTE", "PAGO", "ESTORNADO"]).optional(),
   observacoes: z.string().optional(),
   canceladoMotivo: z.string().optional(),
+  usouProprioProduto: z.boolean().optional(),
 });
 
 export async function GET(
@@ -64,7 +65,16 @@ export async function PATCH(
 
   const existing = await prisma.agendamento.findFirst({
     where: { id, salonId: salonId! },
-    include: { servicos: true },
+    include: {
+      servicos: true,
+      colaborador: {
+        select: {
+          comissao: true,
+          comissaoSalaoProduto: true,
+          comissaoProprioProduto: true,
+        },
+      },
+    },
   });
 
   if (!existing) {
@@ -98,7 +108,37 @@ export async function PATCH(
     if (existing.clienteId) {
       await prisma.cliente.update({
         where: { id: existing.clienteId },
-        data: { totalGasto: { increment: Number(existing.totalPrice) } },
+        data: {
+          totalGasto: { increment: Number(existing.totalPrice) },
+          totalVisitas: { increment: 1 },
+          ultimaVisita: new Date(),
+        },
+      });
+    }
+
+    // Auto-create colaborador commission — use correct rate based on product type
+    const usouProprio = parsed.data.usouProprioProduto ?? existing.usouProprioProduto;
+    const tipoProduto = usouProprio ? "PROPRIO" : "SALAO";
+    const percentual = usouProprio
+      ? Number(existing.colaborador.comissaoProprioProduto)
+      : Number(existing.colaborador.comissaoSalaoProduto);
+    const valorComissao = Number(existing.totalPrice) * percentual;
+
+    if (valorComissao > 0) {
+      const now = new Date();
+      const referencia = `${now.toLocaleString("pt-BR", { month: "long" })}/${now.getFullYear()}`;
+      await prisma.comissaoColaborador.upsert({
+        where: { agendamentoId: id },
+        update: { valor: valorComissao, percentual, tipoProduto },
+        create: {
+          salonId: salonId!,
+          colaboradorId: existing.colaboradorId,
+          agendamentoId: id,
+          valor: valorComissao,
+          percentual,
+          tipoProduto,
+          referencia,
+        },
       });
     }
   }

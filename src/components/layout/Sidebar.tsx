@@ -21,6 +21,8 @@ import {
   Package,
   ChevronRight,
   Sparkles,
+  Star,
+  Building2,
 } from "lucide-react";
 import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
 import { ToqeIcon } from "@/components/brand/BrandLogo";
@@ -56,6 +58,8 @@ const navGroups: Array<{ label?: string; items: NavItem[] }> = [
       { href: "/financeiro",   label: "Financeiro",    icon: DollarSign,      roles: ["OWNER", "MASTER"] },
       { href: "/relatorios",   label: "Relatórios",    icon: BarChart3,       roles: ["OWNER", "MASTER"] },
       { href: "/marketing",    label: "Marketing",     icon: Megaphone,       roles: ["OWNER", "MASTER"] },
+      { href: "/planos",       label: "Planos Fidelidade", icon: Star,        roles: ["OWNER", "MASTER"] },
+      { href: "/rede",         label: "Multi-Unidades", icon: Building2,      roles: ["OWNER", "MASTER"] },
     ],
   },
   {

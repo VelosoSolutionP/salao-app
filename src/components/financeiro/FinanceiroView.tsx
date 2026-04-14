@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,8 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
+import { ComissoesView } from "./ComissoesView";
+import { FluxoCaixaView } from "./FluxoCaixaView";
 
 const PERIODO_OPTIONS = [
   { value: "hoje", label: "Hoje" },
@@ -129,6 +132,22 @@ export function FinanceiroView() {
 
   return (
     <>
+      <Tabs defaultValue="resumo">
+        <TabsList>
+          <TabsTrigger value="resumo">Resumo</TabsTrigger>
+          <TabsTrigger value="fluxo">Fluxo de Caixa</TabsTrigger>
+          <TabsTrigger value="comissoes">Comissões</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="fluxo" className="mt-4">
+          <FluxoCaixaView />
+        </TabsContent>
+
+        <TabsContent value="comissoes" className="mt-4">
+          <ComissoesView />
+        </TabsContent>
+
+        <TabsContent value="resumo" className="mt-4 space-y-4">
       <div className="flex items-center justify-between">
         <Select value={periodo} onValueChange={setPeriodo}>
           <SelectTrigger className="w-44">
@@ -366,6 +385,8 @@ export function FinanceiroView() {
           </div>
         </DialogContent>
       </Dialog>
+        </TabsContent>
+      </Tabs>
     </>
   );
 }

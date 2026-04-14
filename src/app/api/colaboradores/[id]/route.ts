@@ -9,6 +9,8 @@ const updateSchema = z.object({
   bio: z.string().optional(),
   specialties: z.array(z.string()).optional(),
   comissao: z.number().min(0).max(1).optional(),
+  comissaoSalaoProduto: z.number().min(0).max(1).optional(),
+  comissaoProprioProduto: z.number().min(0).max(1).optional(),
   active: z.boolean().optional(),
   servicoIds: z.array(z.string()).optional(),
 });

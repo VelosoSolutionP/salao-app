@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn, formatBRL, formatTime, getInitials } from "@/lib/utils";
 import {
   DollarSign, TrendingUp, TrendingDown, CalendarDays, Scissors,
-  Package, Clock, Gift, CheckCircle, ArrowRight, Plus, Zap,
+  Package, Clock, Gift, CheckCircle, ArrowRight, Plus, Zap, Users, Wallet,
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -41,6 +41,13 @@ export interface ReceitaDiariaItem {
   isToday?: boolean;
 }
 
+export interface TopServicoItem {
+  servicoId: string;
+  nome: string;
+  count: number;
+  total: number;
+}
+
 export interface DashboardProfissionalProps {
   greeting: string;
   receitaHoje: number;
@@ -58,6 +65,9 @@ export interface DashboardProfissionalProps {
   pendentesCount: number;
   aniversariantes: number;
   clientesTotal: number;
+  clientesNovosMes: number;
+  comissoesPendentes: number;
+  topServicos: TopServicoItem[];
 }
 
 // ─── Professional column colors ───────────────────────────────────────────────
@@ -268,6 +278,9 @@ export function DashboardProfissional({
   pendentesCount,
   aniversariantes,
   clientesTotal: _clientesTotal,
+  clientesNovosMes,
+  comissoesPendentes,
+  topServicos,
 }: DashboardProfissionalProps) {
   const hoje = format(new Date(), "EEEE, d 'de' MMMM", { locale: ptBR });
   const hojeStr = hoje.charAt(0).toUpperCase() + hoje.slice(1);
@@ -365,7 +378,7 @@ export function DashboardProfissional({
       {/* ═══════════════════════════════════════════════════════════ */}
       {/*  2 · QUICK METRICS ROW                                     */}
       {/* ═══════════════════════════════════════════════════════════ */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         <MetricCard
           icon={<DollarSign className="w-4 h-4 text-emerald-600"/>}
           iconBg="bg-emerald-50"
@@ -390,7 +403,7 @@ export function DashboardProfissional({
               <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1">
                 <div className="h-full bg-violet-500 rounded-full transition-all duration-700" style={{ width: `${progressoMes}%` }}/>
               </div>
-              <p className="text-[10px] text-gray-300 mt-0.5">{progressoMes.toFixed(0)}% da meta de {formatBRL(metaMensal)}</p>
+              <p className="text-[10px] text-gray-300 mt-0.5">{progressoMes.toFixed(0)}% da meta</p>
             </div>
           }
         />
@@ -418,6 +431,24 @@ export function DashboardProfissional({
           value={formatBRL(ticketMedio)}
           label="Ticket médio"
           sub={<span className="text-[11px] text-gray-300">Este mês · {agendamentosMes} atend.</span>}
+        />
+        <MetricCard
+          icon={<Users className="w-4 h-4 text-blue-500"/>}
+          iconBg="bg-blue-50"
+          value={String(clientesNovosMes)}
+          label="Clientes novos"
+          sub={<span className="text-[11px] text-gray-300">Este mês</span>}
+        />
+        <MetricCard
+          icon={<Wallet className="w-4 h-4 text-amber-600"/>}
+          iconBg="bg-amber-50"
+          value={formatBRL(comissoesPendentes)}
+          label="Comissões a pagar"
+          sub={
+            <Link href="/financeiro" className="text-[11px] text-amber-600 font-semibold hover:underline">
+              Ver comissões →
+            </Link>
+          }
         />
       </div>
 
@@ -547,8 +578,41 @@ export function DashboardProfissional({
           </div>
         </div>
 
+        {/* Top Services */}
+        {topServicos.length > 0 && (
+          <div className="xl:col-span-3 bg-white rounded-2xl ring-1 ring-black/5 shadow-sm p-5">
+            <h3 className="font-black text-gray-900 text-sm mb-3">Top Serviços do Mês</h3>
+            <div className="space-y-2">
+              {topServicos.map((s, i) => {
+                const max = topServicos[0]?.count ?? 1;
+                const pct = Math.round((s.count / max) * 100);
+                return (
+                  <div key={s.servicoId}>
+                    <div className="flex items-center justify-between mb-0.5">
+                      <span className="text-xs font-semibold text-gray-700 truncate flex-1">{s.nome}</span>
+                      <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                        <span className="text-xs text-gray-400">{s.count}×</span>
+                        <span className="text-xs font-bold text-violet-600">{formatBRL(s.total)}</span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full rounded-full transition-all duration-700"
+                        style={{
+                          width: `${pct}%`,
+                          background: `hsl(${265 - i * 15}, 80%, ${55 + i * 5}%)`,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         {/* Revenue chart */}
-        <div className="xl:col-span-3 bg-white rounded-2xl ring-1 ring-black/5 shadow-sm p-5 flex flex-col">
+        <div className={`${topServicos.length > 0 ? "xl:col-span-5" : "xl:col-span-3"} bg-white rounded-2xl ring-1 ring-black/5 shadow-sm p-5 flex flex-col`}>
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-black text-gray-900 text-sm">Receita — 30 dias</h3>

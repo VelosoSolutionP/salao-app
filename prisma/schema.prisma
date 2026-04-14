@@ -33,6 +33,7 @@ model User {
   notifConfig      NotifConfig?
   movimentosEstoque MovimentoEstoque[]
   pushSubscriptions PushSubscription[]
+  redes            Rede[]
 
   @@map("users")
 }
@@ -116,16 +117,21 @@ model Salon {
   indicacaoId  String?    @unique
   indicacao    Indicacao? @relation(fields: [indicacaoId], references: [id])
 
-  owner          User            @relation(fields: [ownerId], references: [id])
-  colaboradores  Colaborador[]
-  servicos       Servico[]
-  agendamentos   Agendamento[]
-  transacoes     Transacao[]
-  campanhas      Campanha[]
-  horarios       HorarioSalon[]
-  produtos       Produto[]
-  contratos      ContratoSalao[]
-  transformacoes Transformacao[]
+  owner                User                  @relation(fields: [ownerId], references: [id])
+  colaboradores        Colaborador[]
+  servicos             Servico[]
+  agendamentos         Agendamento[]
+  transacoes           Transacao[]
+  campanhas            Campanha[]
+  horarios             HorarioSalon[]
+  produtos             Produto[]
+  contratos            ContratoSalao[]
+  transformacoes       Transformacao[]
+  comissoesColaborador ComissaoColaborador[]
+  planosFidelidade     PlanoFidelidade[]
+  clientesPlano        ClientePlano[]
+  rede                 Rede?                 @relation(fields: [redeId], references: [id])
+  redeId               String?
 
   @@map("salons")
 }
@@ -278,24 +284,60 @@ model HorarioSalon {
 // ─────────────────────────────────────────
 
 model Colaborador {
-  id          String   @id @default(cuid())
-  userId      String   @unique
-  salonId     String
-  bio         String?
-  specialties String[]
-  comissao    Decimal  @default(0.40) @db.Decimal(5, 2)
-  active      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                     String   @id @default(cuid())
+  userId                 String   @unique
+  salonId                String
+  bio                    String?
+  specialties            String[]
+  comissao               Decimal  @default(0.40) @db.Decimal(5, 2)  // legado / fallback
+  comissaoSalaoProduto   Decimal  @default(0.40) @db.Decimal(5, 2)  // usa produto do salão
+  comissaoProprioProduto Decimal  @default(0.50) @db.Decimal(5, 2)  // usa produto próprio
+  active                 Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
-  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  salon         Salon                @relation(fields: [salonId], references: [id])
+  user          User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  salon         Salon                   @relation(fields: [salonId], references: [id])
   agendamentos  Agendamento[]
   horarios      HorarioColaborador[]
   bloqueios     BloqueioAgenda[]
   servicosOffer ColaboradorServico[]
+  comissoes     ComissaoColaborador[]
 
   @@map("colaboradores")
+}
+
+// ─────────────────────────────────────────
+// COMISSÕES DE COLABORADOR
+// ─────────────────────────────────────────
+
+enum TipoProduto {
+  PROPRIO  // profissional trouxe o produto
+  SALAO    // produto do salão
+}
+
+model ComissaoColaborador {
+  id            String      @id @default(cuid())
+  salonId       String
+  colaboradorId String
+  agendamentoId String      @unique
+  valor         Decimal     @db.Decimal(10, 2)
+  percentual    Decimal     @db.Decimal(5, 2)
+  tipoProduto   TipoProduto @default(SALAO)
+  pago          Boolean     @default(false)
+  pagoEm        DateTime?
+  despesaId     String?     @unique             // DESPESA gerada ao pagar
+  referencia    String                          // e.g. "Abril/2026"
+  createdAt     DateTime    @default(now())
+
+  salon       Salon        @relation(fields: [salonId], references: [id])
+  colaborador Colaborador  @relation(fields: [colaboradorId], references: [id])
+  agendamento Agendamento  @relation(fields: [agendamentoId], references: [id])
+  despesa     Transacao?   @relation("ComissaoDespesa", fields: [despesaId], references: [id])
+
+  @@index([salonId, pago])
+  @@index([colaboradorId])
+  @@map("comissoes_colaborador")
 }
 
 model HorarioColaborador {
@@ -379,6 +421,7 @@ model Cliente {
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   agendamentos   Agendamento[]
   transformacoes Transformacao[]
+  planosAtivos   ClientePlano[]
 
   @@map("clientes")
 }
@@ -400,6 +443,7 @@ model Agendamento {
   pagamento            MetodoPagamento?
   pagamentoStatus      PagamentoStatus   @default(PENDENTE)
   pixTxid              String?
+  usouProprioProduto   Boolean           @default(false)  // profissional usou produto próprio?
   canceladoMotivo      String?
   canceladoPorCliente  Boolean           @default(false)   // cliente cancelou (vs. salão)
   multaAplicada        Boolean           @default(false)   // este agendamento gerou multa (cancelamento tardio/não comparecimento)
@@ -415,6 +459,7 @@ model Agendamento {
   colaborador Colaborador          @relation(fields: [colaboradorId], references: [id])
   servicos    AgendamentoServico[]
   transacao   Transacao?
+  comissao    ComissaoColaborador?
 
   @@index([salonId, inicio])
   @@index([colaboradorId, inicio])
@@ -475,8 +520,9 @@ model Transacao {
   comprovante    String?
   createdAt      DateTime        @default(now())
 
-  salon       Salon        @relation(fields: [salonId], references: [id])
-  agendamento Agendamento? @relation(fields: [agendamentoId], references: [id])
+  salon       Salon                @relation(fields: [salonId], references: [id])
+  agendamento Agendamento?         @relation(fields: [agendamentoId], references: [id])
+  comissao    ComissaoColaborador? @relation("ComissaoDespesa")
 
   @@index([salonId, dataTransacao])
   @@map("transacoes")
@@ -626,4 +672,74 @@ enum TipoTransformacao {
   MAQUIAGEM
   UNHA
   COLORIMETRIA
+}
+
+// ─────────────────────────────────────────
+// PLANOS DE FIDELIDADE (MENSAIS)
+// ─────────────────────────────────────────
+
+model PlanoFidelidade {
+  id                  String              @id @default(cuid())
+  salonId             String
+  nome                String
+  descricao           String?
+  periodicidade       Periodicidade       @default(MENSAL)
+  qtdAtendimentos     Int                 @default(1)   // atendimentos por período
+  valor               Decimal             @db.Decimal(10, 2)
+  servicoIds          String[]                          // serviços incluídos
+  ativo               Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+
+  salon         Salon          @relation(fields: [salonId], references: [id])
+  clientesPlano ClientePlano[]
+
+  @@index([salonId])
+  @@map("planos_fidelidade")
+}
+
+model ClientePlano {
+  id              String          @id @default(cuid())
+  salonId         String
+  clienteId       String
+  planoId         String
+  dataInicio      DateTime
+  dataFim         DateTime
+  atendimentosUsados Int          @default(0)
+  ativo           Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  salon   Salon           @relation(fields: [salonId], references: [id])
+  cliente Cliente         @relation(fields: [clienteId], references: [id])
+  plano   PlanoFidelidade @relation(fields: [planoId], references: [id])
+
+  @@index([salonId])
+  @@index([clienteId])
+  @@map("clientes_plano")
+}
+
+enum Periodicidade {
+  SEMANAL
+  QUINZENAL
+  MENSAL
+}
+
+// ─────────────────────────────────────────
+// REDE DE SALÕES (MULTI-UNIDADES)
+// ─────────────────────────────────────────
+
+model Rede {
+  id        String   @id @default(cuid())
+  ownerId   String
+  nome      String
+  logoUrl   String?
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner  User    @relation(fields: [ownerId], references: [id])
+  salons Salon[]
+
+  @@map("redes")
 }

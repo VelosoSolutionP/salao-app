@@ -12,7 +12,7 @@ import { formatDateTime, formatBRL, minutesToHuman } from "@/lib/utils";
 import {
   Check, X, Play, MessageCircle, Loader2,
   Clock, CalendarDays, Scissors, Banknote, CreditCard,
-  Smartphone, ArrowLeftRight,
+  Smartphone, ArrowLeftRight, Store, Package,
 } from "lucide-react";
 
 /* ─────────────────────── constants ─────────────────────── */
@@ -78,6 +78,7 @@ export function AgendamentoDetailModal({
 }) {
   const queryClient = useQueryClient();
   const [pagamentoMethod, setPagamentoMethod] = useState("");
+  const [usouProprioProduto, setUsouProprioProduto] = useState(false);
 
   const { data: ag, isLoading } = useQuery({
     queryKey: ["agendamento", id],
@@ -85,7 +86,7 @@ export function AgendamentoDetailModal({
   });
 
   const mutation = useMutation({
-    mutationFn: (payload: Record<string, string>) =>
+    mutationFn: (payload: Record<string, unknown>) =>
       fetch(`/api/agendamentos/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -102,14 +103,14 @@ export function AgendamentoDetailModal({
 
   const busy = mutation.isPending;
 
-  function act(payload: Record<string, string>) { mutation.mutate(payload); }
+  function act(payload: Record<string, unknown>) { mutation.mutate(payload); }
   function confirmar()     { act({ status: "CONFIRMADO" }); }
   function iniciar()       { act({ status: "EM_ANDAMENTO" }); }
   function cancelar()      { act({ status: "CANCELADO" }); }
   function naoCompareceu() { act({ status: "NAO_COMPARECEU" }); }
   function concluir() {
     if (!pagamentoMethod) { toast.error("Selecione a forma de pagamento"); return; }
-    act({ status: "CONCLUIDO", pagamento: pagamentoMethod, pagamentoStatus: "PAGO" });
+    act({ status: "CONCLUIDO", pagamento: pagamentoMethod, pagamentoStatus: "PAGO", usouProprioProduto });
   }
 
   function openWhatsApp() {
@@ -256,9 +257,37 @@ export function AgendamentoDetailModal({
                 </div>
               )}
 
-              {/* Payment picker — only when EM_ANDAMENTO */}
+              {/* Product type toggle + payment picker — only when EM_ANDAMENTO */}
               {status === "EM_ANDAMENTO" && (
                 <div>
+                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                    Produto utilizado
+                  </p>
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    <button
+                      type="button"
+                      onClick={() => setUsouProprioProduto(false)}
+                      className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                        !usouProprioProduto
+                          ? "border-blue-500 bg-blue-50 text-blue-700"
+                          : "border-gray-100 bg-white text-gray-500 hover:border-blue-200"
+                      }`}
+                    >
+                      <Store className="w-4 h-4" /> Produto do salão
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUsouProprioProduto(true)}
+                      className={`flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 text-sm font-semibold transition-all ${
+                        usouProprioProduto
+                          ? "border-violet-500 bg-violet-50 text-violet-700"
+                          : "border-gray-100 bg-white text-gray-500 hover:border-violet-200"
+                      }`}
+                    >
+                      <Package className="w-4 h-4" /> Produto próprio
+                    </button>
+                  </div>
+
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                     Forma de pagamento
                   </p>

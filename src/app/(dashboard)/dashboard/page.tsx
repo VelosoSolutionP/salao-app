@@ -3,7 +3,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { DashboardProfissional } from "@/components/dashboard/DashboardProfissional";
-import type { ReceitaDiariaItem } from "@/components/dashboard/DashboardProfissional";
+import type { ReceitaDiariaItem, TopServicoItem } from "@/components/dashboard/DashboardProfissional";
 import { ArrowRight } from "lucide-react";
 import {
   startOfDay,
@@ -90,6 +90,9 @@ export default async function DashboardPage() {
     pendentesCount,
     clientesComAniversario,
     clientesTotal,
+    clientesNovosMes,
+    comissoesPendentesAgg,
+    topServicosRaw,
   ] = await Promise.all([
     // 1. Receita hoje
     prisma.transacao.aggregate({
@@ -212,6 +215,33 @@ export default async function DashboardPage() {
 
     // 11. Total de clientes
     prisma.cliente.count({ where: { salonId } }),
+
+    // 12. Clientes novos este mês
+    prisma.cliente.count({
+      where: { salonId, createdAt: { gte: monthStart, lte: monthEnd } },
+    }),
+
+    // 13. Comissões de colaboradores pendentes
+    prisma.comissaoColaborador.aggregate({
+      where: { salonId, pago: false },
+      _sum: { valor: true },
+    }),
+
+    // 14. Top 5 serviços do mês
+    prisma.agendamentoServico.groupBy({
+      by: ["servicoId"],
+      where: {
+        agendamento: {
+          salonId,
+          inicio: { gte: monthStart, lte: monthEnd },
+          status: "CONCLUIDO",
+        },
+      },
+      _count: true,
+      _sum: { preco: true },
+      orderBy: { _count: { servicoId: "desc" } },
+      take: 5,
+    }),
   ]);
 
   // ── Post-process receita diária ─────────────────────────────────────────
@@ -254,6 +284,22 @@ export default async function DashboardPage() {
   // Sort by revenue descending
   equipeHoje.sort((a, b) => b.receita - a.receita);
 
+  // ── Post-process top serviços ──────────────────────────────────────────────
+  const servicoIds = topServicosRaw.map((s) => s.servicoId);
+  const servicosDetalhes = servicoIds.length > 0
+    ? await prisma.servico.findMany({
+        where: { id: { in: servicoIds } },
+        select: { id: true, nome: true },
+      })
+    : [];
+
+  const topServicos = topServicosRaw.map((s) => ({
+    servicoId: s.servicoId,
+    nome: servicosDetalhes.find((sv) => sv.id === s.servicoId)?.nome ?? "—",
+    count: s._count,
+    total: Number(s._sum.preco ?? 0),
+  }));
+
   // ── Post-process agendamentos status breakdown ──────────────────────────
   const concluidos = agendamentosHoje.filter(
     (a) => a.status === "CONCLUIDO"
@@ -272,6 +318,7 @@ export default async function DashboardPage() {
   const receitaHoje = Number(receitaHojeAgg._sum.valor ?? 0);
   const receitaOntem = Number(receitaOntemAgg._sum.valor ?? 0);
   const receitaMes = Number(receitaMesAgg._sum.valor ?? 0);
+  const comissoesPendentes = Number(comissoesPendentesAgg._sum.valor ?? 0);
 
   // ── Render ───────────────────────────────────────────────────────────────
   return (
@@ -292,6 +339,9 @@ export default async function DashboardPage() {
       pendentesCount={pendentesCount}
       aniversariantes={aniversariantes}
       clientesTotal={clientesTotal}
+      clientesNovosMes={clientesNovosMes}
+      comissoesPendentes={comissoesPendentes}
+      topServicos={topServicos}
     />
   );
 }
