@@ -182,7 +182,8 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
       const json = await res.json();
       if (!res.ok) { toast.error(json.error ?? "Erro ao agendar"); return; }
       toast.success("Agendamento realizado!");
-      router.push("/historico");
+      router.push("/agendar");
+      router.refresh();
     } catch {
       toast.error("Erro de conexão. Tente novamente.");
     } finally {
