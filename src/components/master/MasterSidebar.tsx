@@ -10,15 +10,19 @@ import {
   Users,
   LogOut,
   UserCheck,
+  UserPlus,
+  MapPin,
 } from "lucide-react";
 import { ToqeIcon } from "@/components/brand/BrandLogo";
 
 const NAV = [
-  { href: "/master",              label: "Dashboard",    icon: LayoutDashboard, exact: true },
-  { href: "/master/saloes",       label: "Salões",       icon: Store },
-  { href: "/master/financeiro",   label: "Financeiro",   icon: DollarSign },
-  { href: "/master/revendedores", label: "Revendedores", icon: UserCheck },
-  { href: "/master/usuarios",     label: "Usuários",     icon: Users },
+  { href: "/master",                  label: "Dashboard",       icon: LayoutDashboard, exact: true },
+  { href: "/master/saloes",           label: "Salões",          icon: Store },
+  { href: "/master/financeiro",       label: "Financeiro",      icon: DollarSign },
+  { href: "/master/revendedores",     label: "Revendedores",    icon: UserCheck },
+  { href: "/master/indicadores",      label: "Indicadores",     icon: UserPlus },
+  { href: "/master/representantes",   label: "Representantes",  icon: MapPin },
+  { href: "/master/usuarios",         label: "Usuários",        icon: Users },
 ];
 
 export function MasterSidebar({ onClose }: { onClose?: () => void }) {

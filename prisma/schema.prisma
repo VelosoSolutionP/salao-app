@@ -132,6 +132,8 @@ model Salon {
   clientesPlano        ClientePlano[]
   rede                 Rede?                 @relation(fields: [redeId], references: [id])
   redeId               String?
+  representante        Representante?        @relation(fields: [representanteId], references: [id])
+  representanteId      String?
 
   @@map("salons")
 }
@@ -250,6 +252,76 @@ model Comissao {
   createdAt    DateTime  @default(now())
 
   @@map("comissoes")
+}
+
+// ─────────────────────────────────────────
+// INDICADORES — pessoas avulsas que indicam
+// ─────────────────────────────────────────
+
+model Indicador {
+  id                  String    @id @default(cuid())
+  nome                String
+  email               String?
+  telefone            String?
+  comissaoPorContrato Decimal   @db.Decimal(10, 2) @default(50) // R$ fixo por contrato
+  contratosBonus      Int       @default(2)   // quantos contratos iniciais pagam 100%
+  observacao          String?
+  ativo               Boolean   @default(true)
+  createdAt           DateTime  @default(now())
+
+  comissoes ComissaoIndicador[]
+
+  @@map("indicadores")
+}
+
+model ComissaoIndicador {
+  id          String    @id @default(cuid())
+  indicadorId String
+  indicador   Indicador @relation(fields: [indicadorId], references: [id])
+  descricao   String    // ex: "Contrato #1 — Salão Bela"
+  valor       Decimal   @db.Decimal(10, 2)
+  ehBonus     Boolean   @default(false)
+  referencia  String
+  pago        Boolean   @default(false)
+  pagoEm      DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@map("comissoes_indicador")
+}
+
+// ─────────────────────────────────────────
+// REPRESENTANTES — regiões exclusivas
+// ─────────────────────────────────────────
+
+model Representante {
+  id         String    @id @default(cuid())
+  nome       String
+  email      String?
+  telefone   String?
+  regiao     String    // ex: "SP Capital", "SP Interior", "RJ", "Sul"
+  percentual Decimal   @db.Decimal(5, 2) @default(10)
+  observacao String?
+  ativo      Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+
+  salons    Salon[]
+  comissoes ComissaoRepresentante[]
+
+  @@map("representantes")
+}
+
+model ComissaoRepresentante {
+  id              String        @id @default(cuid())
+  representanteId String
+  representante   Representante @relation(fields: [representanteId], references: [id])
+  descricao       String
+  valor           Decimal       @db.Decimal(10, 2)
+  referencia      String
+  pago            Boolean       @default(false)
+  pagoEm          DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@map("comissoes_representante")
 }
 
 enum PixKeyType {

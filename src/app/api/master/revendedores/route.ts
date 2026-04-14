@@ -59,10 +59,10 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const { id, ativo, percentual, comissaoId } = await request.json();
+  const body = await request.json();
+  const { id, ativo, percentual, comissaoId, nome, email, telefone, observacao } = body;
 
   if (comissaoId) {
-    // Marcar comissão como paga
     const c = await prisma.comissao.update({
       where: { id: comissaoId },
       data: { pago: true, pagoEm: new Date() },
@@ -75,6 +75,10 @@ export async function PATCH(request: Request) {
     data: {
       ...(ativo !== undefined && { ativo }),
       ...(percentual !== undefined && { percentual }),
+      ...(nome !== undefined && { nome }),
+      ...(email !== undefined && { email: email || null }),
+      ...(telefone !== undefined && { telefone: telefone || null }),
+      ...(observacao !== undefined && { observacao: observacao || null }),
     },
   });
   return NextResponse.json(rev);

@@ -3,8 +3,8 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
-  Plus, Copy, Check, X, Loader2, Link2, DollarSign,
-  Store, TrendingUp, UserCheck, Trash2, XCircle, CheckCircle,
+  Plus, Copy, Check, X, Loader2, Link2,
+  Store, TrendingUp, UserCheck, Trash2, XCircle, CheckCircle, Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,6 +45,9 @@ function CopyBtn({ text }: { text: string }) {
 export function MasterRevendedores() {
   const qc = useQueryClient();
   const [modal, setModal] = useState(false);
+  const [editModal, setEditModal] = useState(false);
+  const [editTarget, setEditTarget] = useState<Revendedor | null>(null);
+  const [editForm, setEditForm] = useState({ nome: "", email: "", telefone: "", percentual: "10", observacao: "" });
   const [form, setForm] = useState({ nome: "", email: "", telefone: "", percentual: "10", observacao: "" });
   const [saving, setSaving] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
@@ -56,6 +59,39 @@ export function MasterRevendedores() {
     queryFn: () => fetch("/api/master/revendedores").then((r) => r.json()),
     staleTime: 30_000,
   });
+
+  function openEdit(r: Revendedor) {
+    setEditTarget(r);
+    setEditForm({ nome: r.nome, email: r.email ?? "", telefone: r.telefone ?? "", percentual: String(r.percentual), observacao: r.observacao ?? "" });
+    setEditModal(true);
+  }
+
+  async function salvarEdicao() {
+    if (!editTarget) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/master/revendedores", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editTarget.id,
+          nome: editForm.nome,
+          email: editForm.email || undefined,
+          telefone: editForm.telefone || undefined,
+          percentual: parseFloat(editForm.percentual),
+          observacao: editForm.observacao || undefined,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Revendedor atualizado!");
+      setEditModal(false);
+      qc.invalidateQueries({ queryKey: ["master-revendedores"] });
+    } catch {
+      toast.error("Erro ao atualizar");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   async function criar() {
     if (!form.nome) return;
@@ -181,16 +217,17 @@ export function MasterRevendedores() {
                     </div>
                     <p className="text-zinc-600 text-xs mt-0.5">{r.email ?? r.telefone ?? "—"}</p>
                   </div>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
                     <span className="text-violet-400 text-sm font-black">{r.percentual}%</span>
+                    <button onClick={() => openEdit(r)} title="Editar"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-violet-500/20 hover:bg-violet-500/30 transition-colors">
+                      <Pencil className="w-3.5 h-3.5 text-violet-400" />
+                    </button>
                     {r.ativo && (
-                      <button
-                        onClick={() => desativar(r.id)}
-                        disabled={actionId === r.id}
-                        className="ml-2 text-zinc-700 hover:text-red-400 transition-colors"
-                        title="Desativar"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
+                      <button onClick={() => desativar(r.id)} disabled={actionId === r.id}
+                        className="w-7 h-7 flex items-center justify-center rounded-lg bg-red-500/10 hover:bg-red-500/20 transition-colors"
+                        title="Desativar">
+                        <Trash2 className="w-3.5 h-3.5 text-red-400" />
                       </button>
                     )}
                   </div>
@@ -263,6 +300,43 @@ export function MasterRevendedores() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Modal: Editar revendedor */}
+      {editModal && editTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "#1a1040", border: "1px solid rgba(124,58,237,0.3)" }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <p className="text-white font-black text-sm">Editar — {editTarget.nome}</p>
+              <button onClick={() => setEditModal(false)} className="text-zinc-500 hover:text-zinc-300"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="px-5 py-5 space-y-3">
+              {[
+                { label: "Nome *", key: "nome", type: "text", placeholder: "João Silva" },
+                { label: "E-mail", key: "email", type: "email", placeholder: "joao@email.com" },
+                { label: "WhatsApp", key: "telefone", type: "tel", placeholder: "11 99999-9999" },
+                { label: "Comissão (%)", key: "percentual", type: "number", placeholder: "10" },
+                { label: "Observação", key: "observacao", type: "text", placeholder: "Parceiro regional SP..." },
+              ].map(({ label, key, type, placeholder }) => (
+                <div key={key}>
+                  <label className="text-zinc-400 text-xs font-semibold block mb-1">{label}</label>
+                  <input type={type} value={(editForm as any)[key]}
+                    onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))}
+                    placeholder={placeholder}
+                    className="w-full px-3 py-2 rounded-lg text-sm text-white bg-white/5 border border-white/10 outline-none focus:border-violet-500/50" />
+                </div>
+              ))}
+            </div>
+            <div className="px-5 pb-5 flex gap-2">
+              <button onClick={salvarEdicao} disabled={!editForm.nome || saving}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}>
+                {saving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Salvar"}
+              </button>
+              <button onClick={() => setEditModal(false)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-zinc-500">Cancelar</button>
+            </div>
+          </div>
         </div>
       )}
 
