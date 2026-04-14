@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AgendarView } from "@/components/agendar/AgendarView";
+import { ClienteNav } from "@/components/agendar/ClienteNav";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 
 export const metadata: Metadata = { title: "Agendar" };
 
@@ -84,24 +84,18 @@ export default async function AgendarPage() {
         <div className="absolute top-1/3 -left-20 w-64 h-64 bg-purple-500/20 rounded-full blur-2xl" />
       </div>
 
-      <div className="relative max-w-md mx-auto px-4 pt-10 pb-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white/10 backdrop-blur-sm rounded-3xl mb-4 ring-1 ring-white/20 shadow-2xl">
-            <span className="text-3xl">✂️</span>
+      <div className="relative max-w-md mx-auto px-4 pt-10 pb-32">
+        <ClienteNav name={firstName} />
+
+        {/* Salon header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-white/10 backdrop-blur-sm rounded-3xl mb-3 ring-1 ring-white/20 shadow-xl">
+            <span className="text-2xl">✂️</span>
           </div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">
+          <h1 className="text-xl font-black text-white tracking-tight">
             {salon?.name ?? "Salão"}
           </h1>
-          <p className="text-violet-200 mt-1 text-sm">
-            Olá, <span className="font-semibold text-white">{firstName}</span>! Vamos agendar?
-          </p>
-          <Link
-            href="/historico"
-            className="inline-block mt-2 text-xs text-violet-200 hover:text-white underline underline-offset-2 transition-colors"
-          >
-            Ver meus agendamentos
-          </Link>
+          <p className="text-violet-200 mt-1 text-sm">Escolha um serviço para começar</p>
         </div>
 
         {/* Multa pendente */}

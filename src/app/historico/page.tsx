@@ -3,8 +3,7 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { HistoricoView, type AgendamentoItem } from "@/components/historico/HistoricoView";
-import { ChevronLeft } from "lucide-react";
-import Link from "next/link";
+import { ClienteNav } from "@/components/agendar/ClienteNav";
 
 export const metadata: Metadata = { title: "Meus Agendamentos" };
 
@@ -76,20 +75,14 @@ export default async function HistoricoPage() {
         <div className="absolute top-1/3 -left-20 w-64 h-64 bg-purple-500/20 rounded-full blur-2xl" />
       </div>
 
-      <div className="relative max-w-md mx-auto px-4 pt-10 pb-24">
-        {/* Header */}
+      <div className="relative max-w-md mx-auto px-4 pt-10 pb-32">
+        <ClienteNav name={firstName} />
+
         <div className="mb-6">
-          <Link
-            href="/agendar"
-            className="inline-flex items-center gap-1.5 text-white/70 hover:text-white text-xs font-semibold mb-4 transition-colors"
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-            Novo agendamento
-          </Link>
           <h1 className="text-2xl font-black text-white tracking-tight">
-            Olá, {firstName}!
+            Meus agendamentos
           </h1>
-          <p className="text-violet-200 text-sm mt-1">Seus agendamentos</p>
+          <p className="text-violet-200 text-sm mt-1">Histórico e próximos</p>
         </div>
 
         <HistoricoView agendamentos={serialized} />
