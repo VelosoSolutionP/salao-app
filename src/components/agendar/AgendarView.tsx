@@ -138,7 +138,7 @@ export function AgendarView({ salons }: { salons: Record<string, unknown>[] }) {
     setSelectedSlot(null);
     try {
       const res = await fetch(
-        `/api/agendamentos/disponibilidade?colaboradorId=${selectedColaborador}&date=${format(date, "yyyy-MM-dd")}&duracao=${duracaoTotal}`
+        `/api/agendamentos/disponibilidade?colaboradorId=${selectedColaborador}&salonId=${salon?.id as string}&date=${format(date, "yyyy-MM-dd")}&duracao=${duracaoTotal}`
       );
       const json = await res.json();
       setSlots(json.slots ?? []);
@@ -170,6 +170,7 @@ export function AgendarView({ salons }: { salons: Record<string, unknown>[] }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          salonId:       salon?.id as string,
           colaboradorId: selectedColaborador,
           servicoIds:    selectedServicos,
           data:          format(selectedDate, "yyyy-MM-dd"),

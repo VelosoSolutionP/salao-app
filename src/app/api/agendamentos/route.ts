@@ -16,6 +16,7 @@ const createSchema = z.object({
   observacoes: z.string().optional(),
   clienteId: z.string().optional(),
   clienteNome: z.string().optional(), // walk-in name when no registered client
+  salonId: z.string().optional(),     // sent by client-facing booking flow
 });
 
 const useRatelimit = !!process.env.UPSTASH_REDIS_REST_URL?.startsWith("https://");
@@ -73,8 +74,6 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const { session, error } = await requireAuth();
   if (error) return error;
-  const { salonId, error: salonError } = await requireSalon(session!);
-  if (salonError) return salonError;
 
   // Rate limit by user (only in production with Upstash)
   if (useRatelimit) {
@@ -93,8 +92,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { colaboradorId, servicoIds, data, hora, observacoes, clienteId } =
+  const { colaboradorId, servicoIds, data, hora, observacoes, clienteId, salonId: bodySalonId } =
     parsed.data;
+
+  // For CLIENT bookings, salonId comes from the request body.
+  // For staff bookings, use the session/cookie salonId.
+  let salonId: string | null = null;
+  if (session!.user.role === "CLIENT") {
+    if (!bodySalonId) {
+      return NextResponse.json({ error: "Salão não informado" }, { status: 400 });
+    }
+    salonId = bodySalonId;
+  } else {
+    const { salonId: sessionSalonId, error: salonError } = await requireSalon(session!);
+    if (salonError) return salonError;
+    salonId = sessionSalonId;
+  }
 
   // Determine clienteId
   let resolvedClienteId: string | null = clienteId ?? null;
