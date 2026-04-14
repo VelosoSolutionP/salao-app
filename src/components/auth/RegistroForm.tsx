@@ -31,14 +31,18 @@ const schema = z.object({
   phone: z.string().optional(),
   password: z.string().min(6, "Mínimo 6 caracteres"),
   confirmPassword: z.string(),
-  role: z.enum(["OWNER", "CLIENT"]),
+  role: z.enum(["OWNER", "CLIENT", "BARBER"]),
   salonName: z.string().optional(),
+  codigoConvite: z.string().optional(),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"],
 }).refine((d) => d.role !== "OWNER" || (d.salonName && d.salonName.length >= 2), {
   message: "Nome do salão é obrigatório",
   path: ["salonName"],
+}).refine((d) => d.role !== "BARBER" || (d.codigoConvite && d.codigoConvite.length >= 4), {
+  message: "Código do salão é obrigatório",
+  path: ["codigoConvite"],
 });
 
 type FormData = z.infer<typeof schema>;
@@ -61,7 +65,7 @@ export function RegistroForm() {
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", email: "", phone: "", password: "", confirmPassword: "", role: "CLIENT" },
+    defaultValues: { name: "", email: "", phone: "", password: "", confirmPassword: "", role: "CLIENT", codigoConvite: "" },
   });
 
   const role = form.watch("role");
@@ -121,6 +125,7 @@ export function RegistroForm() {
                 <SelectContent>
                   <SelectItem value="CLIENT">Cliente — Quero agendar serviços</SelectItem>
                   <SelectItem value="OWNER">Proprietário — Tenho um salão</SelectItem>
+                  <SelectItem value="BARBER">Funcionário — Trabalho em um salão</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -139,6 +144,30 @@ export function RegistroForm() {
                 <FormControl>
                   <Input className={inputClass} placeholder="Ex: Barbearia do João" {...field} />
                 </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
+        {/* Invite code (barber only) */}
+        {role === "BARBER" && (
+          <FormField
+            control={form.control}
+            name="codigoConvite"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-sm font-semibold text-gray-700">Código do salão</FormLabel>
+                <FormControl>
+                  <Input
+                    className={inputClass}
+                    placeholder="Ex: XK7P2Q"
+                    autoCapitalize="characters"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
+                  />
+                </FormControl>
+                <p className="text-[11px] text-gray-400 mt-1">Peça o código ao proprietário do salão.</p>
                 <FormMessage />
               </FormItem>
             )}

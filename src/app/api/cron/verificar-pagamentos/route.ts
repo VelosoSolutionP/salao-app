@@ -9,7 +9,8 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendWhatsApp, msgVencimentoProximo, msgVencido } from "@/lib/whatsapp";
-import { format, differenceInDays, addDays, setDate } from "date-fns";
+import { criarLinkPagamento } from "@/lib/mercadopago";
+import { format, differenceInDays, setDate } from "date-fns";
 
 const CRON_SECRET = process.env.CRON_SECRET ?? "veloso-cron-2025";
 
@@ -64,6 +65,26 @@ export async function GET(req: NextRequest) {
       log.push(`[CRIADO] Pagamento ${mesAtual} para ${salonName}`);
     }
 
+    // Gera link MP se ainda não tem
+    if (!pagamento.linkPagamento && process.env.MP_ACCESS_TOKEN) {
+      try {
+        const { preferenciaId, link } = await criarLinkPagamento({
+          pagamentoId: pagamento.id,
+          salonName,
+          valor: Number(contrato.valorMensal),
+          referencia: mesAtual,
+        });
+        await prisma.pagamentoContrato.update({
+          where: { id: pagamento.id },
+          data: { mpPreferenciaId: preferenciaId, linkPagamento: link },
+        });
+        pagamento = { ...pagamento, linkPagamento: link };
+        log.push(`[MP] Link gerado para ${salonName}`);
+      } catch (e) {
+        log.push(`[MP] Erro ao gerar link para ${salonName}: ${e}`);
+      }
+    }
+
     if (pagamento.pago) continue; // Já pago, skip
 
     const diasAtraso = differenceInDays(hoje, vencimento);
@@ -85,9 +106,11 @@ export async function GET(req: NextRequest) {
       continue;
     }
 
+    const linkMsg = pagamento.linkPagamento ? `\n\nPague agora: ${pagamento.linkPagamento}` : "";
+
     // ── Aviso de vencimento próximo (3 dias antes) ──────────────────────────
     if (diasParaVencer === 3 && owner.phone && !pagamento.notificado) {
-      await sendWhatsApp(owner.phone, msgVencimentoProximo(salonName, diasParaVencer, valor));
+      await sendWhatsApp(owner.phone, msgVencimentoProximo(salonName, diasParaVencer, valor) + linkMsg);
       await prisma.pagamentoContrato.update({ where: { id: pagamento.id }, data: { notificado: true } });
       log.push(`[WHATSAPP] Vencimento em 3 dias → ${owner.phone}`);
       continue;
@@ -95,7 +118,7 @@ export async function GET(req: NextRequest) {
 
     // ── Aviso de atraso (dias 1, 2, 3, 4 após vencimento) ──────────────────
     if (diasAtraso > 0 && diasAtraso < 5 && owner.phone && !pagamento.notificado) {
-      await sendWhatsApp(owner.phone, msgVencido(salonName, diasAtraso, valor));
+      await sendWhatsApp(owner.phone, msgVencido(salonName, diasAtraso, valor) + linkMsg);
       await prisma.pagamentoContrato.update({ where: { id: pagamento.id }, data: { notificado: true } });
       log.push(`[WHATSAPP] Atraso ${diasAtraso}d notificado → ${owner.phone}`);
     }

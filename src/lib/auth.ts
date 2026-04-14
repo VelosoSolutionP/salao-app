@@ -51,7 +51,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         const user = await prisma.user.findUnique({
           where: { email: email.toLowerCase() },
-          include: { salons: { select: { id: true }, orderBy: { createdAt: "asc" }, take: 1 } },
+          include: {
+            salons: { select: { id: true }, orderBy: { createdAt: "asc" }, take: 1 },
+            colaborador: { select: { salonId: true } },
+          },
         });
 
         if (!user?.passwordHash) return null;
@@ -60,13 +63,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
 
+        // OWNER → salonId from salons[]; BARBER → salonId from colaborador
+        const salonId = user.salons?.[0]?.id ?? user.colaborador?.salonId ?? null;
+
         return {
           id: user.id,
           name: user.name,
           email: user.email,
           image: user.image,
           role: user.role,
-          salonId: user.salons?.[0]?.id ?? null,
+          salonId,
           blocked: user.blocked,
           trialExpires: user.trialExpires?.toISOString() ?? null,
         };

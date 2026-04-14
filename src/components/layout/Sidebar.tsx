@@ -20,8 +20,10 @@ import {
   LogOut,
   Package,
   ChevronRight,
+  Sparkles,
 } from "lucide-react";
 import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
+import { ToqeIcon } from "@/components/brand/BrandLogo";
 
 type NavItem = {
   href: string;
@@ -44,7 +46,8 @@ const navGroups: Array<{ label?: string; items: NavItem[] }> = [
     items: [
       { href: "/servicos",     label: "Serviços",      icon: Scissors,        roles: ["OWNER", "MASTER"] },
       { href: "/equipe",       label: "Equipe",        icon: UserCheck,       roles: ["OWNER", "MASTER"] },
-      { href: "/estoque",      label: "Estoque",       icon: Package,         roles: ["OWNER", "MASTER"] },
+      { href: "/estoque",         label: "Estoque",         icon: Package,    roles: ["OWNER", "MASTER"] },
+      { href: "/transformacoes",  label: "Transformações",  icon: Sparkles,   roles: ["OWNER", "BARBER", "MASTER"] },
     ],
   },
   {
@@ -83,7 +86,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     staleTime: 60_000,
     enabled: role === "OWNER" || role === "BARBER",
   });
-  const salonName = configData?.name ?? "Veloso Solution";
+  const salonName = configData?.name ?? "TOQE";
 
   return (
     <div
@@ -100,7 +103,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
               boxShadow: "0 0 0 1px rgba(124,58,237,.3), 0 4px 20px rgba(124,58,237,.45)",
             }}
           >
-            <Scissors className="w-[18px] h-[18px] text-white" />
+            <ToqeIcon size={18} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">
             {/* MASTER: salon switcher dropdown; others: static name */}

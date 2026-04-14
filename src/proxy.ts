@@ -10,6 +10,7 @@ const PUBLIC_PATHS = [
   "/redefinir-senha",
   "/bloqueado",       // trial/blocked page — always accessible
   "/api/auth",
+  "/api/webhook",     // webhooks externos (Mercado Pago, etc.)
   "/_next",
   "/favicon.ico",
   "/icons",
@@ -83,6 +84,8 @@ export async function proxy(request: NextRequest) {
   ) {
     return NextResponse.redirect(new URL("/agenda", request.url));
   }
+
+  // /transformacoes is accessible to OWNER and BARBER (already passed role checks above)
 
   return NextResponse.next();
 }

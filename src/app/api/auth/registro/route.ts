@@ -13,9 +13,10 @@ const schema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
   phone: z.string().optional(),
-  role: z.enum(["OWNER", "CLIENT"]).default("CLIENT"),
+  role: z.enum(["OWNER", "CLIENT", "BARBER"]).default("CLIENT"),
   salonName: z.string().optional(),
-  refCode: z.string().optional(), // código de indicação do revendedor
+  codigoConvite: z.string().optional(), // código do salão para funcionários (BARBER)
+  refCode: z.string().optional(),       // código de indicação do revendedor
 });
 
 export async function POST(req: NextRequest) {
@@ -29,7 +30,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const { name, email, password, phone, role, salonName, refCode } = parsed.data;
+  const { name, email, password, phone, role, salonName, codigoConvite, refCode } = parsed.data;
 
   const existing = await prisma.user.findUnique({
     where: { email: email.toLowerCase() },
@@ -42,6 +43,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // BARBER: validate invite code before creating anything
+  let barberSalonId: string | null = null;
+  if (role === "BARBER") {
+    if (!codigoConvite) {
+      return NextResponse.json(
+        { error: "Código do salão é obrigatório para funcionários" },
+        { status: 400 }
+      );
+    }
+    const salonByCode = await prisma.salon.findUnique({
+      where: { codigoConvite: codigoConvite.toUpperCase() },
+    });
+    if (!salonByCode) {
+      return NextResponse.json(
+        { error: "Código do salão inválido ou inexistente" },
+        { status: 400 }
+      );
+    }
+    barberSalonId = salonByCode.id;
+  }
+
   const passwordHash = await bcrypt.hash(password, 12);
 
   const user = await prisma.$transaction(async (tx) => {
@@ -52,7 +74,7 @@ export async function POST(req: NextRequest) {
         passwordHash,
         phone,
         role,
-        // OWNER starts a 30-day free trial; CLIENT has no restriction
+        // OWNER starts a 30-day free trial; others have no restriction
         trialExpires: role === "OWNER" ? addDays(new Date(), TRIAL_DAYS) : null,
       },
     });
@@ -60,6 +82,12 @@ export async function POST(req: NextRequest) {
     if (role === "CLIENT") {
       await tx.cliente.create({
         data: { userId: newUser.id },
+      });
+    }
+
+    if (role === "BARBER" && barberSalonId) {
+      await tx.colaborador.create({
+        data: { userId: newUser.id, salonId: barberSalonId },
       });
     }
 
@@ -80,11 +108,15 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Generate a unique 6-char invite code for the salon
+      const inviteCode = Math.random().toString(36).slice(2, 8).toUpperCase();
+
       const salon = await tx.salon.create({
         data: {
           ownerId: newUser.id,
           name: salonName,
           slug: `${slug}-${Date.now()}`,
+          codigoConvite: inviteCode,
           ...(indicacaoId && { indicacaoId }),
         },
       });

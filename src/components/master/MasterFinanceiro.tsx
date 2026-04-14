@@ -2,7 +2,7 @@
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Plus, Trash2, Loader2, X, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { Plus, Trash2, Loader2, X, TrendingUp, TrendingDown, DollarSign, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 
 interface FinData {
@@ -240,6 +240,56 @@ export function MasterFinanceiro() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Botão de teste Mercado Pago */}
+      <TesteMP />
+    </div>
+  );
+}
+
+function TesteMP() {
+  const [loading, setLoading] = useState(false);
+  const [link, setLink] = useState<string | null>(null);
+
+  async function gerar() {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/master/teste-mp");
+      const json = await res.json();
+      setLink(json.link);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="rounded-2xl p-4 mt-2" style={{ background: "rgba(16,185,129,0.06)", border: "1px solid rgba(16,185,129,0.15)" }}>
+      <p className="text-emerald-400 text-xs font-black mb-1">Teste de integração — Mercado Pago</p>
+      <p className="text-zinc-500 text-xs mb-3">Gera um pagamento de R$1,00 para verificar se o dinheiro cai na sua conta.</p>
+      {link ? (
+        <a
+          href={link}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white w-fit"
+          style={{ background: "linear-gradient(135deg,#059669,#047857)" }}
+        >
+          <ExternalLink className="w-4 h-4" />
+          Abrir link de pagamento R$1
+        </a>
+      ) : (
+        <button
+          onClick={gerar}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white disabled:opacity-50"
+          style={{ background: "linear-gradient(135deg,#059669,#047857)" }}
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <DollarSign className="w-4 h-4" />}
+          Gerar link de teste R$1
+        </button>
       )}
     </div>
   );

@@ -6,10 +6,10 @@ import { requireRole } from "@/lib/auth-guard";
 import { addDays } from "date-fns";
 
 const updateSchema = z.object({
-  userId: z.string(),
+  id: z.string(),
   blocked: z.boolean().optional(),
-  trialDays: z.number().int().min(1).max(3650).optional(), // extend trial by N days from today
-  trialExpires: z.string().nullable().optional(), // set exact date
+  trialDays: z.number().int().min(1).max(3650).optional(),
+  trialExpires: z.string().nullable().optional(),
 });
 
 /** List all OWNER/BARBER users with trial/block status */
@@ -47,7 +47,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { userId, blocked, trialDays, trialExpires } = parsed.data;
+  const { id, blocked, trialDays, trialExpires } = parsed.data;
 
   const data: Record<string, unknown> = {};
   if (blocked !== undefined) data.blocked = blocked;
@@ -55,7 +55,7 @@ export async function PATCH(req: NextRequest) {
   if (trialExpires !== undefined) data.trialExpires = trialExpires ? new Date(trialExpires) : null;
 
   const user = await prisma.user.update({
-    where: { id: userId },
+    where: { id },
     data,
     select: { id: true, name: true, email: true, blocked: true, trialExpires: true },
   });

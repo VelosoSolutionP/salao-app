@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
       await resend.emails.send({
         from: process.env.RESEND_FROM ?? "noreply@velosolution.com.br",
         to: email,
-        subject: "Redefinição de senha — Veloso Solution",
+        subject: "Redefinição de senha — TOQE",
         html: buildEmailHtml(user.name, resetUrl),
       });
     } catch (err) {
@@ -95,7 +95,7 @@ function buildEmailHtml(name: string, resetUrl: string): string {
           <span style="color:white;font-size:18px">✂</span>
         </div>
         <div>
-          <p style="margin:0;color:white;font-weight:900;font-size:15px">Veloso Solution</p>
+          <p style="margin:0;color:white;font-weight:900;font-size:15px">TOQE</p>
           <p style="margin:0;color:#7c3aed;font-size:10px;letter-spacing:.1em;text-transform:uppercase">Controle Total de Salões</p>
         </div>
       </div>
@@ -121,7 +121,7 @@ function buildEmailHtml(name: string, resetUrl: string): string {
     <!-- Footer -->
     <div style="padding:20px 40px;border-top:1px solid #f3f4f6">
       <p style="margin:0;color:#d1d5db;font-size:11px;text-align:center">
-        © ${new Date().getFullYear()} Veloso Solution · Todos os direitos reservados
+        © ${new Date().getFullYear()} TOQE · Todos os direitos reservados
       </p>
     </div>
   </div>

@@ -11,6 +11,10 @@ const schema = z.object({
   city: z.string().optional(),
   pixKey: z.string().optional(),
   pixKeyType: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "RANDOM"]).optional(),
+  // Política de cancelamento
+  cancelamentoHorasMinimo: z.number().int().min(0).max(168).optional(),
+  multaValor: z.number().min(0).optional(),
+  multaTipo: z.enum(["PERCENTUAL", "FIXO"]).optional().nullable(),
   horarios: z
     .array(
       z.object({
@@ -32,7 +36,12 @@ export async function GET() {
     include: { horarios: { orderBy: { diaSemana: "asc" } } },
   });
 
-  return NextResponse.json(salon);
+  if (!salon) return NextResponse.json(null);
+
+  return NextResponse.json({
+    ...salon,
+    multaValor: salon.multaValor ? Number(salon.multaValor) : null,
+  });
 }
 
 export async function PUT(req: NextRequest) {
@@ -47,7 +56,11 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
   }
 
-  const { horarios, ...salonData } = parsed.data;
+  const { horarios, multaValor, ...rest } = parsed.data;
+  const salonData = {
+    ...rest,
+    ...(multaValor !== undefined && { multaValor }),
+  };
 
   await prisma.$transaction(async (tx) => {
     await tx.salon.update({

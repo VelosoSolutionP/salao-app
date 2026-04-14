@@ -3,12 +3,13 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { AgendarView } from "@/components/agendar/AgendarView";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Agendar" };
 
 export default async function AgendarPage() {
   const session = await auth();
-  if (!session?.user) redirect("/login");
+  if (!session?.user) redirect("/agendar/entrar");
 
   const salons = await prisma.salon.findMany({
     where: { active: true },
@@ -52,6 +53,29 @@ export default async function AgendarPage() {
   const salon = serialized[0];
   const firstName = session.user.name?.split(" ")[0] ?? "você";
 
+  // Check for pending fines on this client
+  let totalMultaPendente = 0;
+  if (session.user.role === "CLIENT") {
+    const cliente = await prisma.cliente.findUnique({
+      where: { userId: session.user.id },
+    });
+    if (cliente) {
+      const multas = await prisma.agendamento.findMany({
+        where: {
+          clienteId: cliente.id,
+          multaAplicada: true,
+          multaPaga: false,
+          status: "NAO_COMPARECEU",
+        },
+        select: { multaValor: true },
+      });
+      totalMultaPendente = multas.reduce(
+        (acc, m) => acc + (m.multaValor ? Number(m.multaValor) : 0),
+        0
+      );
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-700 via-violet-600 to-purple-700">
       {/* Decorative background */}
@@ -72,7 +96,27 @@ export default async function AgendarPage() {
           <p className="text-violet-200 mt-1 text-sm">
             Olá, <span className="font-semibold text-white">{firstName}</span>! Vamos agendar?
           </p>
+          <Link
+            href="/historico"
+            className="inline-block mt-2 text-xs text-violet-200 hover:text-white underline underline-offset-2 transition-colors"
+          >
+            Ver meus agendamentos
+          </Link>
         </div>
+
+        {/* Multa pendente */}
+        {totalMultaPendente > 0 && (
+          <div className="mb-4 flex items-start gap-3 px-4 py-3 bg-red-500/20 border border-red-400/30 rounded-2xl backdrop-blur-sm">
+            <span className="text-red-200 text-lg flex-shrink-0">⚠️</span>
+            <div>
+              <p className="text-white font-bold text-sm">Taxa de não comparecimento pendente</p>
+              <p className="text-red-200 text-xs mt-0.5">
+                R$ {totalMultaPendente.toFixed(2)} serão adicionados ao seu próximo agendamento,
+                conforme a política do salão.
+              </p>
+            </div>
+          </div>
+        )}
 
         <AgendarView salons={serialized} />
       </div>

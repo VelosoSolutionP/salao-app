@@ -118,7 +118,27 @@ export async function POST(req: NextRequest) {
   }
 
   const duracaoTotal = servicos.reduce((acc, s) => acc + s.duracao, 0);
-  const totalPrice = servicos.reduce((acc, s) => acc + Number(s.preco), 0);
+  let totalPrice = servicos.reduce((acc, s) => acc + Number(s.preco), 0);
+
+  // Check for pending fines (CLIENT only) — collect multa from previous no-shows/late cancellations
+  let multasPendentes: { id: string; multaValor: number }[] = [];
+  if (session!.user.role === "CLIENT" && resolvedClienteId) {
+    const agendamentosComMulta = await prisma.agendamento.findMany({
+      where: {
+        salonId: salonId!,
+        clienteId: resolvedClienteId,
+        multaAplicada: true,
+        multaPaga: false,
+        status: "NAO_COMPARECEU",
+      },
+      select: { id: true, multaValor: true },
+    });
+    multasPendentes = agendamentosComMulta
+      .filter((a) => a.multaValor !== null)
+      .map((a) => ({ id: a.id, multaValor: Number(a.multaValor) }));
+    const totalMultas = multasPendentes.reduce((acc, a) => acc + a.multaValor, 0);
+    totalPrice += totalMultas;
+  }
 
   const inicio = new Date(`${data}T${hora}:00`);
   const fim = addMinutes(inicio, duracaoTotal);
@@ -177,6 +197,14 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    // Mark pending fines as collected
+    if (multasPendentes.length > 0) {
+      await prisma.agendamento.updateMany({
+        where: { id: { in: multasPendentes.map((m) => m.id) } },
+        data: { multaPaga: true },
+      });
+    }
+
     // Update client stats (only if a client was linked)
     if (resolvedClienteId) {
       await prisma.cliente.update({
@@ -200,7 +228,10 @@ export async function POST(req: NextRequest) {
       data: { id: agendamento.id, inicio: inicio.toISOString() },
     });
 
-    return NextResponse.json(agendamento, { status: 201 });
+    return NextResponse.json({
+      ...agendamento,
+      _multasColetadas: multasPendentes.length,
+    }, { status: 201 });
   } finally {
     await redis.del(lockKey);
   }

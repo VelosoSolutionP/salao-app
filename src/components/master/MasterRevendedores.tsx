@@ -4,7 +4,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import {
   Plus, Copy, Check, X, Loader2, Link2, DollarSign,
-  Store, TrendingUp, UserCheck, Trash2,
+  Store, TrendingUp, UserCheck, Trash2, XCircle, CheckCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -83,6 +83,23 @@ export function MasterRevendedores() {
     try {
       await fetch(`/api/master/revendedores?id=${id}`, { method: "DELETE" });
       toast.success("Revendedor desativado");
+      qc.invalidateQueries({ queryKey: ["master-revendedores"] });
+    } catch {
+      toast.error("Erro");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function reativar(id: string) {
+    setActionId(id);
+    try {
+      await fetch("/api/master/revendedores", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ativo: true }),
+      });
+      toast.success("Revendedor reativado");
       qc.invalidateQueries({ queryKey: ["master-revendedores"] });
     } catch {
       toast.error("Erro");
@@ -215,6 +232,33 @@ export function MasterRevendedores() {
                     Código: <span className="text-zinc-500 font-mono font-bold">{r.codigo}</span>
                     {r.observacao && ` — ${r.observacao}`}
                   </p>
+                </div>
+
+                {/* Action button */}
+                <div className="px-5 pb-4">
+                  {r.ativo ? (
+                    <button
+                      onClick={() => desativar(r.id)}
+                      disabled={actionId === r.id}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                      style={{ background: "rgba(239,68,68,0.12)", color: "#ef4444" }}
+                    >
+                      {actionId === r.id
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : <><XCircle className="w-3 h-3" /> Desativar revendedor</>}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => reativar(r.id)}
+                      disabled={actionId === r.id}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                      style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}
+                    >
+                      {actionId === r.id
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : <><CheckCircle className="w-3 h-3" /> Reativar revendedor</>}
+                    </button>
+                  )}
                 </div>
               </div>
             );

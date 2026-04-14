@@ -105,18 +105,27 @@ model Salon {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
+  // Acesso de funcionários
+  codigoConvite        String?   @unique  // código para funcionários se cadastrarem
+
+  // Política de cancelamento
+  cancelamentoHorasMinimo Int     @default(24)   // horas de antecedência mínima para cancelar
+  multaValor           Decimal?  @db.Decimal(10,2) // valor da multa por cancelamento tardio/não comparecimento
+  multaTipo            MultaTipo?                  // PERCENTUAL ou FIXO
+
   indicacaoId  String?    @unique
   indicacao    Indicacao? @relation(fields: [indicacaoId], references: [id])
 
-  owner         User           @relation(fields: [ownerId], references: [id])
-  colaboradores Colaborador[]
-  servicos      Servico[]
-  agendamentos  Agendamento[]
-  transacoes    Transacao[]
-  campanhas     Campanha[]
-  horarios      HorarioSalon[]
-  produtos      Produto[]
-  contratos     ContratoSalao[]
+  owner          User            @relation(fields: [ownerId], references: [id])
+  colaboradores  Colaborador[]
+  servicos       Servico[]
+  agendamentos   Agendamento[]
+  transacoes     Transacao[]
+  campanhas      Campanha[]
+  horarios       HorarioSalon[]
+  produtos       Produto[]
+  contratos      ContratoSalao[]
+  transformacoes Transformacao[]
 
   @@map("salons")
 }
@@ -147,11 +156,14 @@ model PagamentoContrato {
   contrato   ContratoSalao @relation(fields: [contratoId], references: [id])
   valor      Decimal  @db.Decimal(10, 2)
   referencia String   // "2025-04" = mês/ano
-  vencimento DateTime?
-  pago       Boolean  @default(false)
-  pagoEm     DateTime?
-  notificado Boolean  @default(false)  // WhatsApp sent
-  createdAt  DateTime @default(now())
+  vencimento      DateTime?
+  pago            Boolean  @default(false)
+  pagoEm          DateTime?
+  notificado      Boolean  @default(false)
+  mpPreferenciaId String?  // Mercado Pago preference ID
+  linkPagamento   String?  // Checkout Pro URL
+  mpPagamentoId   String?  // MP payment ID (from webhook)
+  createdAt       DateTime @default(now())
 
   comissoes  Comissao[]
 
@@ -240,6 +252,11 @@ enum PixKeyType {
   EMAIL
   PHONE
   RANDOM
+}
+
+enum MultaTipo {
+  PERCENTUAL
+  FIXO
 }
 
 model HorarioSalon {
@@ -359,8 +376,9 @@ model Cliente {
   ultimaVisita DateTime?
   createdAt    DateTime  @default(now())
 
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  agendamentos Agendamento[]
+  user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agendamentos   Agendamento[]
+  transformacoes Transformacao[]
 
   @@map("clientes")
 }
@@ -383,6 +401,10 @@ model Agendamento {
   pagamentoStatus      PagamentoStatus   @default(PENDENTE)
   pixTxid              String?
   canceladoMotivo      String?
+  canceladoPorCliente  Boolean           @default(false)   // cliente cancelou (vs. salão)
+  multaAplicada        Boolean           @default(false)   // este agendamento gerou multa (cancelamento tardio/não comparecimento)
+  multaValor           Decimal?          @db.Decimal(10,2) // valor da multa gerada
+  multaPaga            Boolean           @default(false)   // multa foi cobrada no próximo agendamento
   lembrete1hEnviado    Boolean           @default(false)
   lembrete24hEnviado   Boolean           @default(false)
   createdAt            DateTime          @default(now())
@@ -571,4 +593,37 @@ enum TipoMovimento {
   ENTRADA
   SAIDA
   AJUSTE
+}
+
+// ─────────────────────────────────────────
+// TRANSFORMAÇÕES (ANTES & DEPOIS)
+// ─────────────────────────────────────────
+
+model Transformacao {
+  id            String            @id @default(cuid())
+  salonId       String
+  clienteNome   String
+  clienteId     String?
+  tipo          TipoTransformacao
+  fotoAntes     String?           // Vercel Blob URL
+  fotoDepois    String?           // Vercel Blob URL
+  colorimetria  Json?             // { marca, cor, oxidante, proporcao, notas }
+  consentimento Boolean           @default(false)
+  compartilhado Boolean           @default(false)
+  observacao    String?           @db.Text
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  salon   Salon    @relation(fields: [salonId], references: [id])
+  cliente Cliente? @relation(fields: [clienteId], references: [id])
+
+  @@index([salonId])
+  @@map("transformacoes")
+}
+
+enum TipoTransformacao {
+  CABELO
+  MAQUIAGEM
+  UNHA
+  COLORIMETRIA
 }

@@ -113,56 +113,54 @@ export function MasterUsuarios() {
             {filtered.map((user) => {
               const status = trialStatus(user);
               return (
-                <div key={user.id} className="flex items-center gap-3 px-5 py-3.5">
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-black flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
-                  >
-                    {user.name.charAt(0).toUpperCase()}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-white text-sm font-semibold">{user.name}</span>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${status.bg} ${status.color}`}>
-                        {status.label}
-                      </span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400">
-                        {user.role}
-                      </span>
+                <div key={user.id} className="px-4 py-4 space-y-3">
+                  {/* Row 1: avatar + info */}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-black flex-shrink-0"
+                      style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
+                    >
+                      {user.name.charAt(0).toUpperCase()}
                     </div>
-                    <p className="text-zinc-600 text-xs mt-0.5 truncate">
-                      {user.email} · cadastrado {formatDistanceToNow(new Date(user.createdAt), { addSuffix: true, locale: ptBR })}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-white text-sm font-semibold">{user.name}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${status.bg} ${status.color}`}>
+                          {status.label}
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-500/10 text-violet-400">
+                          {user.role}
+                        </span>
+                      </div>
+                      <p className="text-zinc-600 text-xs mt-0.5 truncate">{user.email}</p>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1.5 flex-shrink-0">
-                    {/* +30 dias trial */}
+                  {/* Row 2: action buttons */}
+                  <div className="flex gap-2">
                     <button
-                      title="+30 dias de trial"
                       disabled={actionId === user.id + "-trial"}
                       onClick={() => extendTrial(user, 30)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10"
-                      style={{ background: "rgba(245,158,11,0.1)" }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                      style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}
                     >
                       {actionId === user.id + "-trial"
-                        ? <Loader2 className="w-3 h-3 text-amber-400 animate-spin" />
-                        : <Clock className="w-3.5 h-3.5 text-amber-400" />}
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
+                        : <><Clock className="w-3 h-3" /> +30 dias</>}
                     </button>
-
-                    {/* Block/Unblock */}
                     <button
-                      title={user.blocked ? "Desbloquear" : "Bloquear"}
                       disabled={actionId === user.id}
                       onClick={() => toggleBlock(user)}
-                      className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
-                      style={{ background: user.blocked ? "rgba(16,185,129,0.1)" : "rgba(239,68,68,0.1)" }}
+                      className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                      style={user.blocked
+                        ? { background: "rgba(16,185,129,0.12)", color: "#10b981" }
+                        : { background: "rgba(239,68,68,0.12)", color: "#ef4444" }}
                     >
                       {actionId === user.id
-                        ? <Loader2 className="w-3 h-3 text-zinc-400 animate-spin" />
+                        ? <Loader2 className="w-3 h-3 animate-spin" />
                         : user.blocked
-                          ? <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
-                          : <XCircle className="w-3.5 h-3.5 text-red-400" />}
+                          ? <><CheckCircle className="w-3 h-3" /> Liberar</>
+                          : <><XCircle className="w-3 h-3" /> Bloquear</>}
                     </button>
                   </div>
                 </div>

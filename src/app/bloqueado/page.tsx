@@ -2,8 +2,9 @@
 
 import { useSearchParams } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Scissors, Lock, Clock, LogOut } from "lucide-react";
+import { Lock, Clock, LogOut } from "lucide-react";
 import { Suspense } from "react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 
 function BloqueadoContent() {
   const params = useSearchParams();
@@ -36,14 +37,8 @@ function BloqueadoContent() {
         </div>
 
         {/* Logo */}
-        <div className="flex items-center justify-center gap-2.5 mb-8">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
-          >
-            <Scissors className="w-4 h-4 text-white" />
-          </div>
-          <span className="font-black text-white text-sm tracking-tight">Veloso Solution</span>
+        <div className="flex justify-center mb-8">
+          <BrandLogo size="sm" theme="dark" />
         </div>
 
         {/* Message */}
@@ -62,7 +57,7 @@ function BloqueadoContent() {
             >
               <p className="text-amber-400 text-xs font-black uppercase tracking-wide mb-2">Como renovar</p>
               <p className="text-zinc-400 text-xs leading-relaxed">
-                Entre em contato com a equipe Veloso Solution para ativar seu plano e ter acesso ilimitado ao sistema.
+                Entre em contato com a equipe TOQE para ativar seu plano e ter acesso ilimitado ao sistema.
               </p>
             </div>
           </>
@@ -83,7 +78,7 @@ function BloqueadoContent() {
           className="rounded-2xl p-4 mb-8"
           style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
         >
-          <p className="text-zinc-500 text-xs mb-1">Suporte Veloso Solution</p>
+          <p className="text-zinc-500 text-xs mb-1">Suporte TOQE</p>
           <p className="text-violet-400 text-sm font-bold">contato@velosolution.com.br</p>
         </div>
 

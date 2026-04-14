@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Save } from "lucide-react";
+import { Loader2, Save, Copy, Check, Users, ShieldAlert } from "lucide-react";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const PIX_TYPES = [
@@ -23,6 +23,10 @@ interface SalonData {
   city: string | null;
   pixKey: string | null;
   pixKeyType: string | null;
+  codigoConvite: string | null;
+  cancelamentoHorasMinimo: number;
+  multaValor: number | null;
+  multaTipo: string | null;
   horarios: Array<{
     diaSemana: number;
     abre: string;
@@ -37,6 +41,7 @@ const inputCls =
 export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   const [name, setName]         = useState(salon?.name ?? "");
   const [phone, setPhone]       = useState(salon?.phone ?? "");
@@ -48,6 +53,22 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
       ? (salon!.pixKeyType as string)
       : "CPF"
   );
+  const [cancelamentoHoras, setCancelamentoHoras] = useState(
+    salon?.cancelamentoHorasMinimo ?? 24
+  );
+  const [multaValor, setMultaValor] = useState(
+    salon?.multaValor != null ? String(salon.multaValor) : ""
+  );
+  const [multaTipo, setMultaTipo] = useState<"PERCENTUAL" | "FIXO">(
+    (salon?.multaTipo as "PERCENTUAL" | "FIXO") ?? "FIXO"
+  );
+
+  function copyCode() {
+    if (!salon?.codigoConvite) return;
+    navigator.clipboard.writeText(salon.codigoConvite);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
 
   const [horarios, setHorarios] = useState<
     Record<number, { abre: string; fecha: string; fechado: boolean }>
@@ -82,6 +103,16 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
       if (pixKey.trim()) {
         body.pixKey    = pixKey.trim();
         body.pixKeyType = pixKeyType;
+      }
+
+      // Cancellation policy
+      body.cancelamentoHorasMinimo = cancelamentoHoras;
+      if (multaValor.trim()) {
+        body.multaValor = parseFloat(multaValor);
+        body.multaTipo  = multaTipo;
+      } else {
+        body.multaValor = null;
+        body.multaTipo  = null;
       }
 
       const res = await fetch("/api/configuracoes", {
@@ -186,6 +217,107 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
               />
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Código de Convite para Funcionários */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Users className="w-4 h-4 text-violet-500" />
+            Código de acesso para funcionários
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-gray-500">
+            Compartilhe este código com seus funcionários ao cadastrá-los. Somente quem tiver
+            este código poderá se registrar como funcionário do seu salão.
+          </p>
+          <div className="flex items-center gap-2">
+            <div className={`${inputCls} flex-1 font-mono font-black text-lg tracking-widest text-violet-700 bg-violet-50 border-violet-200`}>
+              {salon?.codigoConvite ?? "—"}
+            </div>
+            <button
+              type="button"
+              onClick={copyCode}
+              disabled={!salon?.codigoConvite}
+              className="flex items-center gap-1.5 px-3 py-2 bg-violet-100 hover:bg-violet-200 text-violet-700 rounded-lg text-sm font-semibold transition-colors disabled:opacity-40"
+            >
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied ? "Copiado!" : "Copiar"}
+            </button>
+          </div>
+          <p className="text-xs text-gray-400">
+            Na tela de cadastro, o funcionário escolhe "Funcionário" e informa este código.
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* Política de Cancelamento */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-violet-500" />
+            Política de cancelamento
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Define o prazo mínimo de antecedência para cancelamento sem penalidade. Cancelamentos
+            fora deste prazo são registrados como não comparecimento, e a multa (se configurada)
+            é cobrada no próximo agendamento do cliente.
+          </p>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Prazo mínimo para cancelamento (horas)
+            </label>
+            <input
+              type="number"
+              min={0}
+              max={168}
+              value={cancelamentoHoras}
+              onChange={(e) => setCancelamentoHoras(parseInt(e.target.value) || 0)}
+              className={inputCls}
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Ex: 24 = cliente deve cancelar com pelo menos 24h de antecedência.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1">
+                Tipo de multa
+              </label>
+              <select
+                value={multaTipo}
+                onChange={(e) => setMultaTipo(e.target.value as "PERCENTUAL" | "FIXO")}
+                className={inputCls}
+              >
+                <option value="FIXO">Valor fixo (R$)</option>
+                <option value="PERCENTUAL">Percentual do serviço (%)</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1">
+                Valor da multa {multaTipo === "PERCENTUAL" ? "(%)" : "(R$)"}
+              </label>
+              <input
+                type="number"
+                min={0}
+                step={multaTipo === "PERCENTUAL" ? 1 : 0.01}
+                placeholder={multaTipo === "PERCENTUAL" ? "Ex: 50" : "Ex: 30.00"}
+                value={multaValor}
+                onChange={(e) => setMultaValor(e.target.value)}
+                className={inputCls}
+              />
+            </div>
+          </div>
+          {!multaValor && (
+            <p className="text-xs text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+              Sem multa configurada. Cancelamentos fora do prazo serão registrados como não
+              comparecimento, mas nenhuma taxa será cobrada.
+            </p>
+          )}
         </CardContent>
       </Card>
 

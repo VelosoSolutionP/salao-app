@@ -9,13 +9,13 @@ import { NotificationInit } from "@/components/shared/NotificationInit";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "Veloso Solution", template: "%s | Veloso Solution" },
-  description: "Sistema completo de gestão para salão e barbearia — agenda, equipe, financeiro.",
+  title: { default: "TOQE", template: "%s | TOQE" },
+  description: "TOQE — gestão precisa para salões e barbearias. Agenda, equipe, estoque e financeiro num só lugar.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Veloso Solution",
+    title: "TOQE",
     startupImage: "/icon-512.png",
   },
   icons: {

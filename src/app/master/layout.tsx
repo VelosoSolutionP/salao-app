@@ -3,7 +3,8 @@
 import { useState } from "react";
 import { MasterSidebar } from "@/components/master/MasterSidebar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
-import { Menu, Scissors } from "lucide-react";
+import { Menu } from "lucide-react";
+import { ToqeIcon } from "@/components/brand/BrandLogo";
 
 export default function MasterLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -40,10 +41,10 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
               className="w-7 h-7 rounded-lg flex items-center justify-center"
               style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
             >
-              <Scissors className="w-3.5 h-3.5 text-white" />
+              <ToqeIcon size={14} className="text-white" />
             </div>
             <div>
-              <span className="font-black text-white text-sm tracking-tight">Veloso Solution</span>
+              <span className="font-black text-white text-sm tracking-tight">TOQE</span>
               <span className="text-[10px] text-violet-400 font-semibold ml-2">Master</span>
             </div>
           </div>

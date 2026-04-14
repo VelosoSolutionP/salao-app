@@ -9,9 +9,9 @@ import {
   DollarSign,
   Users,
   LogOut,
-  Scissors,
   UserCheck,
 } from "lucide-react";
+import { ToqeIcon } from "@/components/brand/BrandLogo";
 
 const NAV = [
   { href: "/master",              label: "Dashboard",    icon: LayoutDashboard, exact: true },
@@ -36,10 +36,10 @@ export function MasterSidebar({ onClose }: { onClose?: () => void }) {
             className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
           >
-            <Scissors className="w-4 h-4 text-white" />
+            <ToqeIcon size={16} className="text-white" />
           </div>
           <div>
-            <p className="text-white font-black text-sm leading-tight">Veloso Solution</p>
+            <p className="text-white font-black text-sm leading-tight">TOQE</p>
             <p className="text-[10px] text-violet-400 font-semibold uppercase tracking-wider">Painel Master</p>
           </div>
         </div>
