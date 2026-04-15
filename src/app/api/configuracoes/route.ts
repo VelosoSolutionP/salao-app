@@ -11,6 +11,8 @@ const schema = z.object({
   city: z.string().optional(),
   pixKey: z.string().optional(),
   pixKeyType: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "RANDOM"]).optional(),
+  logoUrl: z.string().url().optional().nullable(),
+  coverUrl: z.string().url().optional().nullable(),
   // Política de cancelamento
   cancelamentoHorasMinimo: z.number().int().min(0).max(168).optional(),
   multaValor: z.number().min(0).optional(),

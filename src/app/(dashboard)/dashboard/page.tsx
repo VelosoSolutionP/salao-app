@@ -58,13 +58,14 @@ export default async function DashboardPage() {
 
     prisma.agendamento.count({ where: { salonId, status: "PENDENTE" } }),
 
-    prisma.salon.findUnique({ where: { id: salonId }, select: { name: true } }),
+    prisma.salon.findUnique({ where: { id: salonId }, select: { name: true, logoUrl: true } }),
   ]);
 
   return (
     <HomeView
       greeting={buildGreeting(firstName)}
       salonName={configData?.name ?? "Hera"}
+      salonLogo={configData?.logoUrl ?? null}
       agendamentosHoje={agendamentosHoje}
       pendentesCount={pendentesCount}
     />

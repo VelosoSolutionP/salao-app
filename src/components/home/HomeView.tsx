@@ -28,6 +28,7 @@ export interface ApptItem {
 export interface HomeViewProps {
   greeting: string;
   salonName: string;
+  salonLogo?: string | null;
   agendamentosHoje: ApptItem[];
   pendentesCount: number;
 }
@@ -65,6 +66,7 @@ function getStatus(s: string) {
 export function HomeView({
   greeting,
   salonName,
+  salonLogo,
   agendamentosHoje,
   pendentesCount,
 }: HomeViewProps) {
@@ -152,13 +154,22 @@ export function HomeView({
           {/* Salon identity */}
           <div className="flex items-center gap-3 mb-4">
             <div
-              className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0"
-              style={{
-                background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
-                boxShadow: "0 0 0 1px rgba(124,58,237,.35), 0 4px 20px rgba(124,58,237,.5)",
-              }}
+              className="w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+              style={
+                salonLogo
+                  ? { border: "1.5px solid rgba(255,255,255,0.15)" }
+                  : {
+                      background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
+                      boxShadow: "0 0 0 1px rgba(124,58,237,.35), 0 4px 20px rgba(124,58,237,.5)",
+                    }
+              }
             >
-              <HeraIcon size={16} className="text-white" />
+              {salonLogo ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={salonLogo} alt={salonName} className="w-full h-full object-cover" />
+              ) : (
+                <HeraIcon size={16} className="text-white" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-white font-black text-sm truncate leading-tight">{salonName}</p>

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { upload } from "@vercel/blob/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Save, Copy, Check, Users, ShieldAlert } from "lucide-react";
+import { Loader2, Save, Copy, Check, Users, ShieldAlert, ImagePlus, Trash2, Palette } from "lucide-react";
+import { HeraIcon } from "@/components/brand/BrandLogo";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const PIX_TYPES = [
@@ -23,6 +25,8 @@ interface SalonData {
   city: string | null;
   pixKey: string | null;
   pixKeyType: string | null;
+  logoUrl?: string | null;
+  coverUrl?: string | null;
   codigoConvite: string | null;
   cancelamentoHorasMinimo: number;
   multaValor: number | null;
@@ -42,6 +46,9 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [logoUrl, setLogoUrl]   = useState(salon?.logoUrl ?? "");
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
 
   const [name, setName]         = useState(salon?.name ?? "");
   const [phone, setPhone]       = useState(salon?.phone ?? "");
@@ -62,6 +69,47 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
   const [multaTipo, setMultaTipo] = useState<"PERCENTUAL" | "FIXO">(
     (salon?.multaTipo as "PERCENTUAL" | "FIXO") ?? "FIXO"
   );
+
+  async function handleLogoUpload(file: File) {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Logo deve ter no máximo 2 MB");
+      return;
+    }
+    setLogoUploading(true);
+    try {
+      const blob = await upload(`logos/${Date.now()}-${file.name}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
+      setLogoUrl(blob.url);
+      // Save immediately so it persists even if user doesn't click "Salvar"
+      await fetch("/api/configuracoes", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim() || salon?.name, logoUrl: blob.url }),
+      });
+      qc.invalidateQueries({ queryKey: ["salon-name"] });
+      qc.invalidateQueries({ queryKey: ["salon-logo"] });
+      toast.success("Logo atualizada!");
+    } catch {
+      toast.error("Erro ao enviar logo");
+    } finally {
+      setLogoUploading(false);
+    }
+  }
+
+  async function handleLogoRemove() {
+    setLogoUrl("");
+    await fetch("/api/configuracoes", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim() || salon?.name, logoUrl: null }),
+    });
+    qc.invalidateQueries({ queryKey: ["salon-name"] });
+    qc.invalidateQueries({ queryKey: ["salon-logo"] });
+    toast.success("Logo removida");
+  }
 
   function copyCode() {
     if (!salon?.codigoConvite) return;
@@ -92,6 +140,7 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
     try {
       const body: Record<string, unknown> = {
         name: name.trim(),
+        logoUrl: logoUrl || null,
         horarios: Object.entries(horarios).map(([dia, h]) => ({
           diaSemana: parseInt(dia),
           ...h,
@@ -137,6 +186,88 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
 
   return (
     <div className="space-y-6 max-w-2xl">
+
+      {/* ── Identidade Visual ───────────────────────────────────────────────── */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Palette className="w-4 h-4 text-violet-500" />
+            Identidade Visual
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-gray-500 mb-4">
+            Adicione a logo do seu salão. Ela aparece na barra lateral, na tela inicial e no
+            perfil público do salão.
+          </p>
+
+          <div className="flex items-center gap-5">
+            {/* Preview */}
+            <div
+              className="w-20 h-20 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+              style={
+                logoUrl
+                  ? { border: "2px solid #e5e7eb" }
+                  : {
+                      background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
+                      boxShadow: "0 0 0 1px rgba(124,58,237,.3), 0 4px 20px rgba(124,58,237,.35)",
+                    }
+              }
+            >
+              {logoUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                <HeraIcon size={28} className="text-white" />
+              )}
+            </div>
+
+            {/* Actions */}
+            <div className="flex-1 space-y-2">
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleLogoUpload(f);
+                  e.target.value = "";
+                }}
+              />
+              <button
+                type="button"
+                disabled={logoUploading}
+                onClick={() => logoInputRef.current?.click()}
+                className="flex items-center gap-2 px-4 py-2 bg-violet-50 hover:bg-violet-100 text-violet-700 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60 w-full justify-center"
+              >
+                {logoUploading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="w-4 h-4" />
+                )}
+                {logoUploading ? "Enviando…" : logoUrl ? "Trocar logo" : "Enviar logo"}
+              </button>
+
+              {logoUrl && (
+                <button
+                  type="button"
+                  onClick={handleLogoRemove}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-50 hover:bg-red-100 text-red-600 rounded-xl text-sm font-semibold transition-colors w-full justify-center"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Remover logo
+                </button>
+              )}
+
+              <p className="text-[11px] text-gray-400 text-center">
+                PNG, JPG ou WebP · Máx. 2 MB · Recomendado: 200×200 px
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Informações do Salão */}
       <Card>
         <CardHeader className="pb-2">

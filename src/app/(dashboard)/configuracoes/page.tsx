@@ -19,6 +19,8 @@ export default async function ConfiguracoesPage() {
         multaTipo: salon.multaTipo ?? null,
         codigoConvite: salon.codigoConvite ?? null,
         cancelamentoHorasMinimo: salon.cancelamentoHorasMinimo,
+        logoUrl: salon.logoUrl ?? null,
+        coverUrl: salon.coverUrl ?? null,
       }
     : null;
 

@@ -83,7 +83,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const { data: session } = useSession();
   const role = session?.user?.role ?? "CLIENT";
 
-  // Salon name for OWNER/BARBER (MASTER uses SalonSwitcher which fetches its own data)
+  // Salon name + logo for OWNER/BARBER (MASTER uses SalonSwitcher which fetches its own data)
   const { data: configData } = useQuery({
     queryKey: ["salon-name"],
     queryFn: () => fetch("/api/configuracoes").then((r) => r.json()),
@@ -91,6 +91,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     enabled: role === "OWNER" || role === "BARBER",
   });
   const salonName = configData?.name ?? "Hera";
+  const salonLogo = configData?.logoUrl as string | undefined;
 
   return (
     <div
@@ -101,13 +102,22 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
       <div className="px-5 pt-6 pb-5">
         <div className="flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0"
-            style={{
-              background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
-              boxShadow: "0 0 0 1px rgba(124,58,237,.3), 0 4px 20px rgba(124,58,237,.45)",
-            }}
+            className="w-10 h-10 rounded-2xl flex items-center justify-center flex-shrink-0 overflow-hidden"
+            style={
+              salonLogo
+                ? { border: "1.5px solid rgba(255,255,255,0.12)" }
+                : {
+                    background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
+                    boxShadow: "0 0 0 1px rgba(124,58,237,.3), 0 4px 20px rgba(124,58,237,.45)",
+                  }
+            }
           >
-            <HeraIcon size={18} className="text-white" />
+            {salonLogo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={salonLogo} alt={salonName} className="w-full h-full object-cover" />
+            ) : (
+              <HeraIcon size={18} className="text-white" />
+            )}
           </div>
           <div className="min-w-0 flex-1">
             {/* MASTER: salon switcher dropdown; others: static name */}
