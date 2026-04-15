@@ -1,16 +1,12 @@
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAuth } from "@/lib/auth-guard";
 import { redis, CK, TTL } from "@/lib/redis";
 
 const useCache = !!process.env.UPSTASH_REDIS_REST_URL?.startsWith("https://");
 import { addMinutes, parseISO, format, isWithinInterval } from "date-fns";
 
 export async function GET(req: NextRequest) {
-  const { session, error } = await requireAuth();
-  if (error) return error;
-
   const { searchParams } = req.nextUrl;
   const colaboradorId = searchParams.get("colaboradorId");
   const date = searchParams.get("date"); // YYYY-MM-DD
