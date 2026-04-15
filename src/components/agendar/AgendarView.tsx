@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatBRL, minutesToHuman, getInitials } from "@/lib/utils";
-import Link from "next/link";
 import {
   Check, Clock, Loader2, ChevronLeft, ChevronRight,
   Scissors, Sparkles, Calendar, User, Star, LogIn,
@@ -91,6 +90,8 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
   const salon = salons[0] as Record<string, unknown>;
   const salonId = salonIdProp ?? (salon?.id as string | undefined);
 
+  const STORAGE_KEY = salonIdProp ? `guest-booking-${salonIdProp}` : "guest-booking";
+
   const [step,               setStep]               = useState<Step>("servicos");
   const [selectedServicos,   setSelectedServicos]   = useState<string[]>([]);
   const [selectedColaborador,setSelectedColaborador]= useState<string | null>(null);
@@ -100,6 +101,25 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
   const [loadingSlots,       setLoadingSlots]       = useState(false);
   const [submitting,         setSubmitting]         = useState(false);
   const [calendarMonth,      setCalendarMonth]      = useState(new Date());
+
+  // Restaura estado salvo (retorno após login de visitante)
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+      const state = JSON.parse(saved) as {
+        step: Step; servicos: string[]; colaborador: string | null;
+        date: string | null; slot: string | null;
+      };
+      sessionStorage.removeItem(STORAGE_KEY);
+      setSelectedServicos(state.servicos ?? []);
+      setSelectedColaborador(state.colaborador ?? null);
+      if (state.date) setSelectedDate(new Date(state.date));
+      setSelectedSlot(state.slot ?? null);
+      setStep(state.step ?? "confirmacao");
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const servicos     = (salon?.servicos ?? []) as Record<string, unknown>[];
   const todosColabs  = (salon?.colaboradores ?? []) as Record<string, unknown>[];
@@ -591,18 +611,30 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
                 </div>
               )}
 
-              {/* Visitante: pede login antes de confirmar */}
+              {/* Visitante: salva estado e pede login */}
               {!session?.user ? (
                 <div className="space-y-2.5">
                   <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
                     <LogIn className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm font-black text-amber-800">Faça login para confirmar</p>
-                      <p className="text-xs text-amber-600 mt-0.5">Crie uma conta gratuita ou entre para finalizar o agendamento.</p>
+                      <p className="text-xs text-amber-600 mt-0.5">Crie uma conta gratuita ou entre — seu agendamento será mantido.</p>
                     </div>
                   </div>
-                  <Link
-                    href="/agendar/entrar"
+                  <button
+                    onClick={() => {
+                      // Persiste o estado atual para restaurar após o login
+                      try {
+                        sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                          step: "confirmacao",
+                          servicos: selectedServicos,
+                          colaborador: selectedColaborador,
+                          date: selectedDate?.toISOString() ?? null,
+                          slot: selectedSlot,
+                        }));
+                      } catch { /* ignore */ }
+                      router.push("/agendar/entrar");
+                    }}
                     className="w-full h-[52px] rounded-2xl text-sm font-black text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                     style={{
                       background: "linear-gradient(135deg,#7c3aed,#6d28d9)",
@@ -610,7 +642,7 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
                     }}
                   >
                     <LogIn className="w-4 h-4" /> Entrar para confirmar
-                  </Link>
+                  </button>
                 </div>
               ) : (
                 /* Botão confirmar (usuário autenticado) */

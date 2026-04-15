@@ -244,8 +244,8 @@ export function ClienteAuthForm() {
   const [tab, setTab] = useState<"cadastro" | "login">("cadastro");
 
   function onSuccess() {
-    // Root page redirects based on role: CLIENT → /agendar, others → /dashboard
-    window.location.href = "/";
+    // Vai direto para /agendar para restaurar estado salvo (guest booking)
+    window.location.href = "/agendar";
   }
 
   return (
