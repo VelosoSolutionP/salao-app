@@ -9,6 +9,7 @@ const PUBLIC_PATHS = [
   "/esqueci-senha",
   "/redefinir-senha",
   "/bloqueado",       // trial/blocked page — always accessible
+  "/agendar",         // público — visitantes podem ver e iniciar agendamento
   "/api/auth",
   "/api/webhook",     // webhooks externos (Mercado Pago, etc.)
   "/_next",
