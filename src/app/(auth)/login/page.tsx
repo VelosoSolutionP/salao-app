@@ -161,8 +161,8 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-zinc-700 text-[11px] text-center leading-relaxed">
-          Sistema criado por{" "}
-          <span className="text-zinc-500 font-semibold">Veloso Solution</span>
+          <span className="text-zinc-500 font-semibold">Hera</span>
+          {" · "}Gestão de Salões
         </p>
       </div>
     </div>

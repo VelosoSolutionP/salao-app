@@ -9,7 +9,8 @@ export const metadata: Metadata = { title: "Agendar" };
 
 export default async function AgendarPage() {
   const session = await auth();
-  if (!session?.user) redirect("/agendar/entrar");
+  // Não bloqueia visitantes — eles podem ver os salões e agendar
+  // (o fluxo de auth acontece dentro do AgendarView ao confirmar)
 
   const salons = await prisma.salon.findMany({
     where: { active: true },
@@ -50,11 +51,11 @@ export default async function AgendarPage() {
     updatedAt: s.updatedAt.toISOString(),
   }));
 
-  const firstName = session.user.name?.split(" ")[0] ?? "você";
+  const firstName = session?.user?.name?.split(" ")[0] ?? null;
 
-  // Check for pending fines on this client
+  // Check for pending fines on this client (only if logged in)
   let totalMultaPendente = 0;
-  if (session.user.role === "CLIENT") {
+  if (session?.user?.role === "CLIENT") {
     const cliente = await prisma.cliente.findUnique({
       where: { userId: session.user.id },
     });
@@ -84,7 +85,7 @@ export default async function AgendarPage() {
       </div>
 
       <div className="relative max-w-md mx-auto px-4 pt-10 pb-32">
-        <ClienteNav name={firstName} />
+        <ClienteNav name={firstName} isGuest={!session?.user} />
 
         <SalonPicker salons={serialized} totalMultaPendente={totalMultaPendente} />
       </div>
