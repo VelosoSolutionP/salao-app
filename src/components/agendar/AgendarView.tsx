@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { formatBRL, minutesToHuman, getInitials } from "@/lib/utils";
+import Link from "next/link";
 import {
   Check, Clock, Loader2, ChevronLeft, ChevronRight,
-  Scissors, Sparkles, Calendar, User, Star,
+  Scissors, Sparkles, Calendar, User, Star, LogIn,
 } from "lucide-react";
 import {
   addMonths, subMonths, startOfMonth, endOfMonth,
@@ -83,6 +85,7 @@ function ContinueButton({
 
 export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<string, unknown>[]; salonId?: string }) {
   const router = useRouter();
+  const { data: session } = useSession();
 
   // Usa o primeiro salão ativo
   const salon = salons[0] as Record<string, unknown>;
@@ -588,24 +591,47 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
                 </div>
               )}
 
-              {/* Botão confirmar */}
-              <button
-                onClick={confirmar}
-                disabled={submitting}
-                className="w-full h-13 rounded-2xl text-sm font-black text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-                style={{
-                  height: 52,
-                  background: "linear-gradient(135deg,#7c3aed,#6d28d9)",
-                  boxShadow: "0 4px 20px rgba(109,40,217,.35)",
-                  opacity: submitting ? 0.7 : 1,
-                }}
-              >
-                {submitting ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <><Check className="w-4 h-4" /> Confirmar agendamento</>
-                )}
-              </button>
+              {/* Visitante: pede login antes de confirmar */}
+              {!session?.user ? (
+                <div className="space-y-2.5">
+                  <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
+                    <LogIn className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-sm font-black text-amber-800">Faça login para confirmar</p>
+                      <p className="text-xs text-amber-600 mt-0.5">Crie uma conta gratuita ou entre para finalizar o agendamento.</p>
+                    </div>
+                  </div>
+                  <Link
+                    href="/agendar/entrar"
+                    className="w-full h-[52px] rounded-2xl text-sm font-black text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                    style={{
+                      background: "linear-gradient(135deg,#7c3aed,#6d28d9)",
+                      boxShadow: "0 4px 20px rgba(109,40,217,.35)",
+                    }}
+                  >
+                    <LogIn className="w-4 h-4" /> Entrar para confirmar
+                  </Link>
+                </div>
+              ) : (
+                /* Botão confirmar (usuário autenticado) */
+                <button
+                  onClick={confirmar}
+                  disabled={submitting}
+                  className="w-full h-13 rounded-2xl text-sm font-black text-white flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                  style={{
+                    height: 52,
+                    background: "linear-gradient(135deg,#7c3aed,#6d28d9)",
+                    boxShadow: "0 4px 20px rgba(109,40,217,.35)",
+                    opacity: submitting ? 0.7 : 1,
+                  }}
+                >
+                  {submitting ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                  ) : (
+                    <><Check className="w-4 h-4" /> Confirmar agendamento</>
+                  )}
+                </button>
+              )}
             </div>
           </>
         )}

@@ -7,7 +7,7 @@ import { HeraIcon } from "@/components/brand/BrandLogo";
 import { CalendarDays, Scissors, ChevronRight } from "lucide-react";
 
 export default function LoginPage() {
-  const [tab, setTab] = useState<"salao" | "cliente">("salao");
+  const [tab, setTab] = useState<"salao" | "cliente">("cliente");
 
   return (
     <div
@@ -91,13 +91,13 @@ export default function LoginPage() {
             className="flex p-1.5 gap-1.5"
             style={{ background: "rgba(0,0,0,.3)", borderBottom: "1px solid rgba(255,255,255,.06)" }}
           >
-            <TabBtn active={tab === "salao"} onClick={() => setTab("salao")}>
-              <Scissors className="w-3.5 h-3.5" />
-              Salão / Equipe
-            </TabBtn>
             <TabBtn active={tab === "cliente"} onClick={() => setTab("cliente")} amber>
               <CalendarDays className="w-3.5 h-3.5" />
               Sou cliente
+            </TabBtn>
+            <TabBtn active={tab === "salao"} onClick={() => setTab("salao")}>
+              <Scissors className="w-3.5 h-3.5" />
+              Salão / Equipe
             </TabBtn>
           </div>
 
