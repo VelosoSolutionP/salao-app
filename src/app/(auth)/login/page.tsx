@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { BellefyIcon } from "@/components/brand/BrandLogo";
-import { CalendarDays, Scissors, ChevronRight } from "lucide-react";
+import {
+  CalendarDays, Scissors, ChevronRight,
+  Users, BarChart3, Package, Sparkles,
+} from "lucide-react";
 
 /* ─── Keyframes & font injected once ───────────────────────────────────────── */
 const STYLES = `
@@ -18,10 +21,6 @@ const STYLES = `
   @keyframes bf-float2 {
     0%,100% { transform: translateY(0)    rotate(45deg)  scale(1); }
     50%      { transform: translateY(-22px) rotate(53deg) scale(1.05); }
-  }
-  @keyframes bf-pulse {
-    0%,100% { opacity:.15; transform:scale(1); }
-    50%     { opacity:.28; transform:scale(1.07); }
   }
   @keyframes bf-in {
     from { opacity:0; transform:translateY(24px); }
@@ -54,12 +53,50 @@ const STYLES = `
       0 6px 12px rgba(79,46,120,.55),
       0 12px 28px rgba(0,0,0,.35);
   }
+
+  /* ── Splash keyframes ───────────────────────────────────────────────────── */
+  @keyframes sp-icon {
+    from { opacity:0; transform:translateY(28px) scale(.88); }
+    to   { opacity:1; transform:translateY(0)    scale(1); }
+  }
+  @keyframes sp-word {
+    from { opacity:0; transform:translateY(20px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+  @keyframes sp-chip {
+    from { opacity:0; transform:translateY(18px) scale(.94); }
+    to   { opacity:1; transform:translateY(0)    scale(1); }
+  }
+  @keyframes sp-glow-pulse {
+    0%,100% { opacity:.5; transform:scale(1); }
+    50%      { opacity:1;  transform:scale(1.12); }
+  }
 `;
 
+/* ─── Modules shown in splash ───────────────────────────────────────────────── */
+const MODULES = [
+  { Icon: CalendarDays, label: "Agenda",     color: "#a78bfa", glow: "rgba(139,92,246,.35)"  },
+  { Icon: Users,        label: "Equipe",     color: "#60a5fa", glow: "rgba(96,165,250,.35)"  },
+  { Icon: BarChart3,    label: "Financeiro", color: "#34d399", glow: "rgba(52,211,153,.35)"  },
+  { Icon: Package,      label: "Estoque",    color: "#fb923c", glow: "rgba(251,146,60,.35)"  },
+  { Icon: Sparkles,     label: "Marketing",  color: "#f472b6", glow: "rgba(244,114,182,.35)" },
+];
+
+/* ─── Page ───────────────────────────────────────────────────────────────────── */
 export default function LoginPage() {
   const [tab, setTab] = useState<"salao" | "cliente">("cliente");
   const [ready, setReady] = useState(false);
-  useEffect(() => { setReady(true); }, []);
+
+  // Splash phases: "in" → "float" → "out" → "done"
+  const [splashPhase, setSplashPhase] = useState<"in" | "float" | "out" | "done">("in");
+
+  useEffect(() => {
+    setReady(true);
+    const t1 = setTimeout(() => setSplashPhase("float"), 2200);
+    const t2 = setTimeout(() => setSplashPhase("out"),   2800);
+    const t3 = setTimeout(() => setSplashPhase("done"),  3500);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []);
 
   return (
     <>
@@ -71,28 +108,24 @@ export default function LoginPage() {
       >
         {/* ── Ambient depth ─────────────────────────────────────────────────── */}
         <div className="pointer-events-none absolute inset-0 overflow-hidden">
-          {/* primary glow */}
           <div style={{
             position:"absolute", top:"-28%", left:"-18%",
             width:"72vw", height:"72vw", borderRadius:"50%",
             background:"radial-gradient(circle,rgba(109,40,217,.28) 0%,transparent 60%)",
             filter:"blur(1px)",
           }}/>
-          {/* secondary glow */}
           <div style={{
             position:"absolute", bottom:"-22%", right:"-12%",
             width:"60vw", height:"60vw", borderRadius:"50%",
             background:"radial-gradient(circle,rgba(79,70,229,.2) 0%,transparent 60%)",
             filter:"blur(1px)",
           }}/>
-          {/* accent glow right */}
           <div style={{
             position:"absolute", top:"30%", right:"-5%",
             width:"30vw", height:"30vw", borderRadius:"50%",
             background:"radial-gradient(circle,rgba(167,139,250,.1) 0%,transparent 65%)",
           }}/>
 
-          {/* ── Floating 3-D diamonds ───────────────────────── */}
           {[
             { top:"12%", right:"9%",  size:56, delay:"0s",   duration:"9s",  anim:"bf-float",  opacity:.22 },
             { top:"68%", left:"6%",   size:36, delay:"1.5s", duration:"11s", anim:"bf-float2", opacity:.18 },
@@ -113,7 +146,6 @@ export default function LoginPage() {
             }}/>
           ))}
 
-          {/* ── Thin ring ────────────────────────────────────── */}
           <div style={{
             position:"absolute", bottom:"18%", right:"6%",
             width:120, height:120, borderRadius:"50%",
@@ -129,12 +161,15 @@ export default function LoginPage() {
           }}/>
         </div>
 
-        {/* ── Main content ──────────────────────────────────────────────────── */}
-        <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-8">
-
-          {/* Brand — icon + nome compacto */}
+        {/* ── Login content (always rendered, revealed after splash) ─────── */}
+        <div
+          className="relative z-10 w-full max-w-sm flex flex-col items-center gap-8"
+          style={{
+            opacity: splashPhase === "done" ? 1 : 0,
+            transition: "opacity .55s ease .1s",
+          }}
+        >
           <div className="bf-brand flex items-center gap-4">
-            {/* Icon box 3D */}
             <div style={{
               position:"relative",
               width:60, height:60, borderRadius:18, flexShrink:0,
@@ -147,7 +182,6 @@ export default function LoginPage() {
               display:"flex", alignItems:"center", justifyContent:"center",
               transform:"perspective(200px) rotateX(5deg) rotateY(-3deg)",
             }}>
-              {/* Glass highlight */}
               <div style={{
                 position:"absolute", top:0, left:0, right:0, height:"44%",
                 borderRadius:"18px 18px 60% 60%",
@@ -156,7 +190,6 @@ export default function LoginPage() {
               <BellefyIcon size={26} className="text-white" />
             </div>
 
-            {/* Name + subtitle */}
             <div className="flex flex-col gap-1">
               <span className="bf-wordmark">Bellefy</span>
               <span style={{
@@ -170,7 +203,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Card */}
           <div
             className="bf-card w-full rounded-3xl overflow-hidden"
             style={{
@@ -182,7 +214,6 @@ export default function LoginPage() {
               transition:"transform .9s cubic-bezier(.22,1,.36,1)",
             }}
           >
-            {/* Tabs */}
             <div className="flex p-1.5 gap-1.5" style={{
               background:"rgba(0,0,0,.38)",
               borderBottom:"1px solid rgba(255,255,255,.05)",
@@ -197,7 +228,6 @@ export default function LoginPage() {
               </TabBtn>
             </div>
 
-            {/* Body */}
             <div className="p-6">
               {tab==="salao" ? (
                 <>
@@ -248,14 +278,153 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Footer */}
           <p className="bf-footer" style={{color:"rgba(113,113,122,.5)", fontSize:11, textAlign:"center"}}>
-            <span style={{color:"rgba(167,139,250,.45)", fontFamily:"'Syne',sans-serif", fontWeight:700}}>Bellefy</span>
+            <span style={{color:"rgba(167,139,250,.45)", fontFamily:"'Outfit',sans-serif", fontWeight:700}}>Bellefy</span>
             {" · "}Gestão de Salões
           </p>
         </div>
+
+        {/* ── Splash overlay ─────────────────────────────────────────────────── */}
+        {splashPhase !== "done" && (
+          <SplashOverlay phase={splashPhase} />
+        )}
       </div>
     </>
+  );
+}
+
+/* ─── Splash overlay ────────────────────────────────────────────────────────── */
+function SplashOverlay({ phase }: { phase: "in" | "float" | "out" }) {
+  return (
+    <div
+      style={{
+        position:"fixed", inset:0, zIndex:30,
+        display:"flex", flexDirection:"column",
+        alignItems:"center", justifyContent:"center",
+        background:"linear-gradient(150deg,#07051c 0%,#100a2a 55%,#07051a 100%)",
+        opacity: phase === "out" ? 0 : 1,
+        transition: phase === "out" ? "opacity .65s cubic-bezier(.4,0,1,1)" : "none",
+        pointerEvents: phase === "out" ? "none" : "all",
+      }}
+    >
+      {/* Ambient glows (same as login bg) */}
+      <div style={{
+        position:"absolute", top:"-28%", left:"-18%",
+        width:"72vw", height:"72vw", borderRadius:"50%",
+        background:"radial-gradient(circle,rgba(109,40,217,.28) 0%,transparent 60%)",
+        filter:"blur(1px)", pointerEvents:"none",
+      }}/>
+      <div style={{
+        position:"absolute", bottom:"-22%", right:"-12%",
+        width:"60vw", height:"60vw", borderRadius:"50%",
+        background:"radial-gradient(circle,rgba(79,70,229,.2) 0%,transparent 60%)",
+        filter:"blur(1px)", pointerEvents:"none",
+      }}/>
+
+      {/* Content block — floats upward in "float" phase */}
+      <div style={{
+        display:"flex", flexDirection:"column", alignItems:"center", gap:0,
+        transform: phase === "float" ? "translateY(-36px)" : "translateY(0)",
+        transition: phase === "float" ? "transform .9s cubic-bezier(.22,1,.36,1)" : "none",
+      }}>
+
+        {/* Icon 3D */}
+        <div style={{
+          position:"relative",
+          width:72, height:72, borderRadius:22, flexShrink:0,
+          background:"linear-gradient(145deg,#8b5cf6 0%,#6d28d9 55%,#4338ca 100%)",
+          boxShadow:
+            "0 2px 0 rgba(255,255,255,.15) inset," +
+            "0 -1px 0 rgba(0,0,0,.28) inset," +
+            "0 20px 60px rgba(109,40,217,.75)," +
+            "0 8px 20px rgba(0,0,0,.5)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          transform:"perspective(240px) rotateX(6deg) rotateY(-4deg)",
+          animation:"sp-icon .7s cubic-bezier(.22,1,.36,1) both",
+          marginBottom:20,
+        }}>
+          {/* Glass highlight */}
+          <div style={{
+            position:"absolute", top:0, left:0, right:0, height:"44%",
+            borderRadius:"22px 22px 60% 60%",
+            background:"linear-gradient(180deg,rgba(255,255,255,.2) 0%,transparent 100%)",
+          }}/>
+          {/* Glow ring */}
+          <div style={{
+            position:"absolute", inset:-8, borderRadius:30,
+            background:"radial-gradient(circle,rgba(124,58,237,.35) 0%,transparent 70%)",
+            animation:"sp-glow-pulse 2s ease-in-out .5s infinite",
+          }}/>
+          <BellefyIcon size={32} className="text-white" />
+        </div>
+
+        {/* Wordmark */}
+        <div style={{
+          fontFamily:"'Outfit',sans-serif",
+          fontWeight:800,
+          fontSize:"2.6rem",
+          lineHeight:1,
+          letterSpacing:"-.025em",
+          color:"#fff",
+          textShadow:
+            "0 1px 0 rgba(167,139,250,.9)," +
+            "0 2px 0 rgba(124,58,237,.75)," +
+            "0 4px 0 rgba(109,40,217,.55)," +
+            "0 7px 14px rgba(79,46,120,.6)," +
+            "0 14px 32px rgba(0,0,0,.4)",
+          animation:"sp-word .65s cubic-bezier(.22,1,.36,1) .18s both",
+          marginBottom:8,
+        }}>
+          Bellefy
+        </div>
+
+        {/* Tagline */}
+        <div style={{
+          fontFamily:"'Outfit',sans-serif",
+          fontSize:11, fontWeight:600,
+          letterSpacing:"0.24em", textTransform:"uppercase",
+          color:"rgba(167,139,250,.45)",
+          animation:"sp-word .55s cubic-bezier(.22,1,.36,1) .42s both",
+          marginBottom:40,
+        }}>
+          Gestão de Salões
+        </div>
+
+        {/* Module chips */}
+        <div style={{
+          display:"flex", flexWrap:"wrap", justifyContent:"center",
+          gap:10, maxWidth:300,
+          opacity: phase === "float" ? 0.4 : 1,
+          transition: phase === "float" ? "opacity .7s ease" : "none",
+        }}>
+          {MODULES.map(({ Icon, label, color, glow }, i) => (
+            <div
+              key={label}
+              style={{
+                display:"flex", alignItems:"center", gap:7,
+                padding:"7px 14px",
+                borderRadius:100,
+                background:`linear-gradient(135deg,rgba(255,255,255,.05),rgba(255,255,255,.02))`,
+                border:`1px solid ${glow.replace(".35","0.22")}`,
+                backdropFilter:"blur(12px)",
+                boxShadow:`0 2px 16px ${glow}, 0 1px 0 rgba(255,255,255,.05) inset`,
+                animation:`sp-chip .5s cubic-bezier(.22,1,.36,1) ${0.65 + i * 0.12}s both`,
+              }}
+            >
+              <Icon size={13} style={{ color, flexShrink:0 }} />
+              <span style={{
+                fontFamily:"'Outfit',sans-serif",
+                fontSize:12, fontWeight:700,
+                color:"rgba(255,255,255,.75)",
+                letterSpacing:".01em",
+              }}>
+                {label}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
