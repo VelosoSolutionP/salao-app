@@ -1,149 +1,75 @@
-/**
- * Gera os ícones PWA da Hera: 192, 512 e maskable.
- * Coroa de três pontas, gems nas pontas, fundo gradiente violeta.
- * Uso: node scripts/gen-icons.mjs
- */
-import { createRequire } from "module";
-import { fileURLToPath } from "url";
+import sharp from "sharp";
+import { writeFileSync } from "fs";
 import path from "path";
 
-const require = createRequire(import.meta.url);
-const sharp = require("sharp");
+const PUBLIC = path.join(process.cwd(), "public");
 
-/** SVG da coroa em escala para um canvas size×size */
-function crownSvg(size) {
-  // Proporções baseadas num grid 24×24 — escalamos para size×size
-  // mas adicionamos padding para a coroa não encostar nas bordas.
-  const pad   = size * 0.15;        // 15% de margem em cada lado
-  const inner = size - pad * 2;    // área útil
-  const s     = inner / 24;        // escala do grid
+// SVG for the Bellefy icon — "B" letterform + sparkle on gradient background
+function makeSvg(size) {
+  const s = size;
+  const pad = s * 0.14;
+  const w = s - pad * 2;     // drawable width
+  const h = s - pad * 2;     // drawable height
+  const ox = pad;            // origin x
+  const oy = pad;            // origin y
 
-  // Converte coordenadas do grid 24×24 para o canvas final
-  const x = (v) => (pad + v * s).toFixed(2);
-  const y = (v) => (pad + v * s).toFixed(2);
+  // Scale factor from 24-unit viewbox
+  const sc = w / 24;
+  const tx = ox;
+  const ty = oy;
 
-  // Para o maskable usamos um safe-zone maior (só 10% de padding extra)
-  const crownPath = [
-    `M${x(2)},${y(23)}`,
-    `H${x(22)}`,
-    `V${y(17)}`,
-    `L${x(18)},${y(9)}`,
-    `L${x(14)},${y(15)}`,
-    `L${x(12)},${y(4)}`,
-    `L${x(10)},${y(15)}`,
-    `L${x(6)},${y(9)}`,
-    `L${x(2)},${y(17)}`,
-    "Z",
-  ].join(" ");
-
-  const r1 = (1.5 * s).toFixed(2);
-  const r2 = (1.2 * s).toFixed(2);
-
-  // Gradiente de fundo: violeta → índigo (igual ao app)
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%"   stop-color="#7c3aed"/>
-      <stop offset="100%" stop-color="#4f46e5"/>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6d28d9"/>
+      <stop offset="100%" stop-color="#4338ca"/>
     </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="${(size * 0.02).toFixed(1)}" result="blur"/>
-      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
-    </filter>
   </defs>
-
-  <!-- Fundo redondo -->
-  <rect width="${size}" height="${size}" rx="${(size * 0.22).toFixed(0)}" fill="url(#bg)"/>
-
-  <!-- Brilho interno suave -->
-  <ellipse cx="${size / 2}" cy="${size * 0.35}" rx="${size * 0.38}" ry="${size * 0.28}"
-           fill="rgba(255,255,255,0.10)"/>
-
-  <!-- Sombra da coroa -->
-  <path d="${crownPath}" fill="rgba(0,0,0,0.25)" transform="translate(${(size*0.012).toFixed(1)},${(size*0.012).toFixed(1)})"/>
-
-  <!-- Coroa branca -->
-  <path d="${crownPath}" fill="white"/>
-
-  <!-- Gemas nas pontas -->
-  <circle cx="${x(12)}" cy="${y(4)}"  r="${r1}" fill="#e9d5ff"/>
-  <circle cx="${x(6)}"  cy="${y(9)}"  r="${r2}" fill="#e9d5ff"/>
-  <circle cx="${x(18)}" cy="${y(9)}"  r="${r2}" fill="#e9d5ff"/>
+  <!-- Background -->
+  <rect width="${s}" height="${s}" fill="url(#bg)" rx="${s * 0.22}"/>
+  <!-- Bellefy B + sparkle, white, centered -->
+  <g transform="translate(${tx}, ${ty}) scale(${sc})">
+    <!-- Bold B -->
+    <path fill="white" d="M3 2v20h9c2.8 0 5-2.2 5-5 0-1.6-.8-3.1-2-4 1-.9 1.7-2.2 1.7-3.6C16.7 6.5 14.8 5 12.5 5H3zm3 2.8 5.8.2c1.1 0 1.9.8 1.9 1.9s-.8 1.9-1.9 1.9H6V4.8zm0 6.2h6.2c1.3 0 2.3 1 2.3 2.3 0 1.2-1 2.2-2.3 2.2H6v-4.5z"/>
+    <!-- Sparkle star -->
+    <path fill="white" d="M20.5 1.5 21.3 3.7 23.5 4.5 21.3 5.3 20.5 7.5 19.7 5.3 17.5 4.5 19.7 3.7z"/>
+  </g>
 </svg>`;
 }
 
-/** SVG maskable: coroa centralizada, fundo cobre tudo (sem rx) */
-function maskableSvg(size) {
-  const pad   = size * 0.20;
-  const inner = size - pad * 2;
-  const s     = inner / 24;
+async function generate(name, size, maskable = false) {
+  const padding = maskable ? size * 0.14 : 0;
+  const innerSize = size - padding * 2;
 
-  const x = (v) => (pad + v * s).toFixed(2);
-  const y = (v) => (pad + v * s).toFixed(2);
-
-  const crownPath = [
-    `M${x(2)},${y(23)}`,
-    `H${x(22)}`,
-    `V${y(17)}`,
-    `L${x(18)},${y(9)}`,
-    `L${x(14)},${y(15)}`,
-    `L${x(12)},${y(4)}`,
-    `L${x(10)},${y(15)}`,
-    `L${x(6)},${y(9)}`,
-    `L${x(2)},${y(17)}`,
-    "Z",
-  ].join(" ");
-
-  const r1 = (1.5 * s).toFixed(2);
-  const r2 = (1.2 * s).toFixed(2);
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}">
+  let svg;
+  if (maskable) {
+    // Maskable: full bleed background, icon smaller
+    svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%"   stop-color="#7c3aed"/>
-      <stop offset="100%" stop-color="#4f46e5"/>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6d28d9"/>
+      <stop offset="100%" stop-color="#4338ca"/>
     </linearGradient>
   </defs>
-
-  <!-- Fundo sólido (maskable precisa cobrir 100%) -->
   <rect width="${size}" height="${size}" fill="url(#bg)"/>
-
-  <!-- Brilho -->
-  <ellipse cx="${size / 2}" cy="${size * 0.38}" rx="${size * 0.42}" ry="${size * 0.30}"
-           fill="rgba(255,255,255,0.08)"/>
-
-  <!-- Sombra -->
-  <path d="${crownPath}" fill="rgba(0,0,0,0.20)" transform="translate(${(size*0.01).toFixed(1)},${(size*0.01).toFixed(1)})"/>
-
-  <!-- Coroa -->
-  <path d="${crownPath}" fill="white"/>
-
-  <!-- Gemas -->
-  <circle cx="${x(12)}" cy="${y(4)}"  r="${r1}" fill="#e9d5ff"/>
-  <circle cx="${x(6)}"  cy="${y(9)}"  r="${r2}" fill="#e9d5ff"/>
-  <circle cx="${x(18)}" cy="${y(9)}"  r="${r2}" fill="#e9d5ff"/>
+  <g transform="translate(${padding}, ${padding})">
+    <svg width="${innerSize}" height="${innerSize}" viewBox="0 0 24 24">
+      <path fill="white" d="M3 2v20h9c2.8 0 5-2.2 5-5 0-1.6-.8-3.1-2-4 1-.9 1.7-2.2 1.7-3.6C16.7 6.5 14.8 5 12.5 5H3zm3 2.8 5.8.2c1.1 0 1.9.8 1.9 1.9s-.8 1.9-1.9 1.9H6V4.8zm0 6.2h6.2c1.3 0 2.3 1 2.3 2.3 0 1.2-1 2.2-2.3 2.2H6v-4.5z"/>
+      <path fill="white" d="M20.5 1.5 21.3 3.7 23.5 4.5 21.3 5.3 20.5 7.5 19.7 5.3 17.5 4.5 19.7 3.7z"/>
+    </svg>
+  </g>
 </svg>`;
+  } else {
+    svg = makeSvg(size);
+  }
+
+  const buf = await sharp(Buffer.from(svg)).png().toBuffer();
+  const outPath = path.join(PUBLIC, name);
+  writeFileSync(outPath, buf);
+  console.log(`✓ ${name} (${size}x${size})`);
 }
 
-async function generate() {
-  const out = path.join(process.cwd(), "public");
-
-  await sharp(Buffer.from(crownSvg(192)))
-    .png()
-    .toFile(path.join(out, "icon-192.png"));
-  console.log("✓ icon-192.png");
-
-  await sharp(Buffer.from(crownSvg(512)))
-    .png()
-    .toFile(path.join(out, "icon-512.png"));
-  console.log("✓ icon-512.png");
-
-  await sharp(Buffer.from(maskableSvg(512)))
-    .png()
-    .toFile(path.join(out, "icon-maskable.png"));
-  console.log("✓ icon-maskable.png");
-
-  console.log("\nÍcones gerados com sucesso!");
-}
-
-generate().catch((e) => { console.error(e); process.exit(1); });
+await generate("icon-192.png", 192);
+await generate("icon-512.png", 512);
+await generate("icon-maskable.png", 512, true);
+console.log("Bellefy icons generated.");

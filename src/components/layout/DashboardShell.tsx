@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSession } from "next-auth/react";
 import { Sidebar } from "./Sidebar";
 import { Menu } from "lucide-react";
-import { HeraIcon } from "@/components/brand/BrandLogo";
+import { BellefyIcon } from "@/components/brand/BrandLogo";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -61,13 +61,13 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
             >
               {salonLogo ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={salonLogo} alt={salonName ?? "Hera"} className="w-full h-full object-cover" />
+                <img src={salonLogo} alt={salonName ?? "Bellefy"} className="w-full h-full object-cover" />
               ) : (
-                <HeraIcon size={14} className="text-white" />
+                <BellefyIcon size={14} className="text-white" />
               )}
             </div>
             <span className="font-black text-white text-sm tracking-tight">
-              {salonName ?? "Hera"}
+              {salonName ?? "Bellefy"}
             </span>
           </div>
         </header>

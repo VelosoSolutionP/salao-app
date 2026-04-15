@@ -1,8 +1,8 @@
 import { cn } from "@/lib/utils";
 
-// ─── Hera Icon ────────────────────────────────────────────────────────────────
-// Coroa de três pontas — lê como poder (Hera, rainha do Olimpo) e
-// como beleza (salão de luxo). Legível de 14 px até 512 px.
+// ─── Bellefy Icon ─────────────────────────────────────────────────────────────
+// Letra "B" estilizada com acento de estrela — moderna, elegante, funciona
+// de 12 px até 512 px. Export mantido como HeraIcon para compatibilidade.
 
 export function HeraIcon({
   className,
@@ -20,15 +20,16 @@ export function HeraIcon({
       className={className}
       aria-hidden
     >
-      {/* Corpo da coroa */}
-      <path d="M2,23 H22 V17 L18,9 L14,15 L12,4 L10,15 L6,9 L2,17 Z" />
-      {/* Gemas nas pontas */}
-      <circle cx="12" cy="4"  r="1.5" />
-      <circle cx="6"  cy="9"  r="1.2" />
-      <circle cx="18" cy="9"  r="1.2" />
+      {/* Letter B — bold geometric */}
+      <path d="M4 3v18h9.5c2.5 0 4.5-2 4.5-4.5 0-1.5-.7-2.8-1.9-3.6 1-.8 1.6-2 1.6-3.2C17.2 7.4 15.4 5.8 13.2 5.8L4 3zm3 2.5 5.5.3c1 0 1.7.8 1.7 1.7 0 1-.8 1.7-1.7 1.7H7V5.5zm0 5.5h6c1.2 0 2.1.9 2.1 2.1 0 1.1-.9 2-2.1 2H7V11z" />
+      {/* Sparkle accent top-right */}
+      <path d="M21 2l.65 1.6L23.3 4.25l-1.65.65L21 6.5l-.65-1.6L18.7 4.25l1.65-.65Z" />
     </svg>
   );
 }
+
+// Alias for files that import BellefyIcon directly
+export { HeraIcon as BellefyIcon };
 
 // ─── Logo container (icon + wordmark) ────────────────────────────────────────
 
@@ -71,7 +72,7 @@ export function BrandLogo({
             theme === "dark" ? "text-white" : "text-gray-900",
           )}
         >
-          Hera
+          Bellefy
         </p>
         <p
           className={cn(

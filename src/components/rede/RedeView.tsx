@@ -260,7 +260,7 @@ export function RedeView() {
           <div className="space-y-4 mt-2">
             <div>
               <label className="text-sm font-medium text-gray-700 block mb-1">Nome da rede *</label>
-              <input type="text" placeholder="Rede Hera" value={nome}
+              <input type="text" placeholder="Rede Bellefy" value={nome}
                 onChange={(e) => setNome(e.target.value)} className={inputCls} />
             </div>
             <div className="flex gap-3 pt-1">

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { upload } from "@vercel/blob/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Save, Copy, Check, Users, ShieldAlert, ImagePlus, Trash2, Palette } from "lucide-react";
-import { HeraIcon } from "@/components/brand/BrandLogo";
+import { BellefyIcon } from "@/components/brand/BrandLogo";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const PIX_TYPES = [
@@ -218,7 +218,7 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
               ) : (
-                <HeraIcon size={28} className="text-white" />
+                <BellefyIcon size={28} className="text-white" />
               )}
             </div>
 

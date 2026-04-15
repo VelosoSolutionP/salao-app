@@ -6,7 +6,7 @@ import { HomeView } from "@/components/home/HomeView";
 import { ArrowRight } from "lucide-react";
 import { startOfDay, endOfDay } from "date-fns";
 
-export const metadata: Metadata = { title: "Início — Hera" };
+export const metadata: Metadata = { title: "Início — Bellefy" };
 
 function buildGreeting(name: string): string {
   const h = new Date().getHours();
@@ -64,7 +64,7 @@ export default async function DashboardPage() {
   return (
     <HomeView
       greeting={buildGreeting(firstName)}
-      salonName={configData?.name ?? "Hera"}
+      salonName={configData?.name ?? "Bellefy"}
       salonLogo={configData?.logoUrl ?? null}
       agendamentosHoje={agendamentosHoje}
       pendentesCount={pendentesCount}

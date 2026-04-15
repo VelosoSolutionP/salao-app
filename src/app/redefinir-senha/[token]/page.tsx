@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { RedefinirSenhaForm } from "@/components/auth/RedefinirSenhaForm";
 
-export const metadata: Metadata = { title: "Redefinir senha — Hera" };
+export const metadata: Metadata = { title: "Redefinir senha — Bellefy" };
 
 interface Props {
   params: Promise<{ token: string }>;
@@ -58,7 +58,7 @@ export default async function RedefinirSenhaPage({ params }: Props) {
               </div>
               <Link href="/login">
                 <span className="font-black text-gray-900 text-sm tracking-tight hover:text-violet-700 transition-colors">
-                  Hera
+                  Bellefy
                 </span>
               </Link>
             </div>
@@ -78,7 +78,7 @@ export default async function RedefinirSenhaPage({ params }: Props) {
         </div>
 
         <p className="text-center text-[11px] text-zinc-600 mt-6">
-          © {new Date().getFullYear()} Hera · Todos os direitos reservados
+          © {new Date().getFullYear()} Bellefy · Todos os direitos reservados
         </p>
       </div>
     </div>

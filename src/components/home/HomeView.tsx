@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { cn, formatTime, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { HeraIcon } from "@/components/brand/BrandLogo";
+import { BellefyIcon } from "@/components/brand/BrandLogo";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -155,7 +155,7 @@ export function HomeView({
               // eslint-disable-next-line @next/next/no-img-element
               <img src={salonLogo} alt={salonName} className="w-full h-full object-cover" />
             ) : (
-              <HeraIcon size={16} className="text-white" />
+              <BellefyIcon size={16} className="text-white" />
             )}
           </div>
           <div>

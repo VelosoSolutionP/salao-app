@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { HeraIcon } from "@/components/brand/BrandLogo";
+import { BellefyIcon } from "@/components/brand/BrandLogo";
 import { CalendarDays, Scissors, ChevronRight } from "lucide-react";
 
 export default function LoginPage() {
@@ -34,7 +34,7 @@ export default function LoginPage() {
 
       {/* Watermark */}
       <div className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 opacity-[0.025] select-none">
-        <HeraIcon size={480} className="text-violet-300" />
+        <BellefyIcon size={480} className="text-violet-300" />
       </div>
 
       {/* ── Content ── */}
@@ -54,7 +54,7 @@ export default function LoginPage() {
                 boxShadow: "0 0 0 1px rgba(124,58,237,.4), 0 0 0 5px rgba(124,58,237,.1), 0 16px 48px rgba(124,58,237,.55)",
               }}
             >
-              <HeraIcon size={30} className="text-white" />
+              <BellefyIcon size={30} className="text-white" />
             </div>
           </div>
 
@@ -68,7 +68,7 @@ export default function LoginPage() {
                 WebkitTextFillColor: "transparent",
               }}
             >
-              Hera
+              Bellefy
             </p>
             <p className="text-zinc-500 text-[11px] font-black uppercase tracking-[.22em] mt-1.5">
               Gestão de Salões
@@ -161,7 +161,7 @@ export default function LoginPage() {
 
         {/* Footer */}
         <p className="text-zinc-700 text-[11px] text-center leading-relaxed">
-          <span className="text-zinc-500 font-semibold">Hera</span>
+          <span className="text-zinc-500 font-semibold">Bellefy</span>
           {" · "}Gestão de Salões
         </p>
       </div>

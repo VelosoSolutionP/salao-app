@@ -9,13 +9,13 @@ import { NotificationInit } from "@/components/shared/NotificationInit";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: { default: "Hera", template: "%s | Hera" },
-  description: "Hera — gestão precisa para salões e barbearias. Agenda, equipe, estoque e financeiro num só lugar.",
+  title: { default: "Bellefy", template: "%s | Bellefy" },
+  description: "Bellefy — gestão precisa para salões e barbearias. Agenda, equipe, estoque e financeiro num só lugar.",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Hera",
+    title: "Bellefy",
     startupImage: "/icon-512.png",
   },
   icons: {

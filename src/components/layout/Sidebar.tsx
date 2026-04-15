@@ -27,7 +27,7 @@ import {
   Download,
 } from "lucide-react";
 import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
-import { HeraIcon } from "@/components/brand/BrandLogo";
+import { BellefyIcon } from "@/components/brand/BrandLogo";
 
 type NavItem = {
   href: string;
@@ -92,7 +92,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     staleTime: 60_000,
     enabled: role === "OWNER" || role === "BARBER",
   });
-  const salonName = configData?.name ?? "Hera";
+  const salonName = configData?.name ?? "Bellefy";
   const salonLogo = configData?.logoUrl as string | undefined;
 
   // PWA install
@@ -131,7 +131,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={salonLogo} alt={salonName} className="w-full h-full object-cover" />
             ) : (
-              <HeraIcon size={18} className="text-white" />
+              <BellefyIcon size={18} className="text-white" />
             )}
           </div>
           <div className="min-w-0 flex-1">

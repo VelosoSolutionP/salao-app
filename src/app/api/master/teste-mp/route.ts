@@ -18,7 +18,7 @@ export async function GET() {
 
     const result = await preference.create({
       body: {
-        items: [{ id: "teste-1", title: "Teste Hera — R$1", quantity: 1, unit_price: 1, currency_id: "BRL" }],
+        items: [{ id: "teste-1", title: "Teste Bellefy — R$1", quantity: 1, unit_price: 1, currency_id: "BRL" }],
         external_reference: "teste-manual",
       },
     });

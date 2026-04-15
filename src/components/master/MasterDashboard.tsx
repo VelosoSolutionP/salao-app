@@ -101,7 +101,7 @@ export function MasterDashboard() {
       {/* Header */}
       <div>
         <h1 className="text-2xl font-black text-white">Dashboard Master</h1>
-        <p className="text-zinc-500 text-sm mt-0.5">Visão geral da plataforma Hera</p>
+        <p className="text-zinc-500 text-sm mt-0.5">Visão geral da plataforma Bellefy</p>
       </div>
 
       {/* KPI Grid */}

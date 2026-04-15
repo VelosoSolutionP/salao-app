@@ -1,7 +1,7 @@
 {
-  "name": "Hera",
-  "short_name": "Hera",
-  "description": "Hera — gestão precisa para salões e barbearias. Agenda, equipe, estoque e financeiro num só lugar.",
+  "name": "Bellefy",
+  "short_name": "Bellefy",
+  "description": "Bellefy — gestão precisa para salões e barbearias. Agenda, equipe, estoque e financeiro num só lugar.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
