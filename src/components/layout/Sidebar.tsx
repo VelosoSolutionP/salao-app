@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
@@ -23,6 +24,7 @@ import {
   Sparkles,
   Star,
   Building2,
+  Download,
 } from "lucide-react";
 import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
 import { HeraIcon } from "@/components/brand/BrandLogo";
@@ -92,6 +94,19 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   });
   const salonName = configData?.name ?? "Hera";
   const salonLogo = configData?.logoUrl as string | undefined;
+
+  // PWA install
+  const [installPrompt, setInstallPrompt] = useState<{ prompt: () => Promise<void> } | null>(null);
+  const [pwaInstalled, setPwaInstalled] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia("(display-mode: standalone)").matches) { setPwaInstalled(true); return; }
+    const handler = (e: Event) => { e.preventDefault(); setInstallPrompt(e as any); };
+    window.addEventListener("beforeinstallprompt", handler);
+    window.addEventListener("appinstalled", () => { setPwaInstalled(true); setInstallPrompt(null); });
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
 
   return (
     <div
@@ -204,6 +219,27 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           );
         })}
       </nav>
+
+      {/* ── Install PWA ───────────────────────────────── */}
+      {!pwaInstalled && installPrompt && (
+        <div className="px-3 pb-2">
+          <button
+            onClick={async () => {
+              await installPrompt.prompt();
+              setInstallPrompt(null);
+            }}
+            className="flex items-center gap-2.5 w-full px-3 py-2.5 rounded-xl text-xs font-bold transition-all"
+            style={{
+              background: "linear-gradient(135deg,rgba(124,58,237,.2),rgba(79,70,229,.15))",
+              color: "#c4b5fd",
+              border: "1px solid rgba(124,58,237,.25)",
+            }}
+          >
+            <Download className="w-3.5 h-3.5 flex-shrink-0" />
+            Instalar app no celular
+          </button>
+        </div>
+      )}
 
       {/* ── User ──────────────────────────────────────── */}
       <div className="px-3 pb-4 pt-2">

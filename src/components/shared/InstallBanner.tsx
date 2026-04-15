@@ -23,8 +23,8 @@ export function InstallBanner() {
       return;
     }
 
-    // Dismissed by user before
-    if (localStorage.getItem("pwa-dismissed")) {
+    // Dismissed by user before (v2 key resets old dismissals)
+    if (localStorage.getItem("pwa-dismissed-v2")) {
       setDismissed(true);
       return;
     }
@@ -50,7 +50,7 @@ export function InstallBanner() {
   }, []);
 
   function dismiss() {
-    localStorage.setItem("pwa-dismissed", "1");
+    localStorage.setItem("pwa-dismissed-v2", "1");
     setDismissed(true);
   }
 
