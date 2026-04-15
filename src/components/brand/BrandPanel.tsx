@@ -1,4 +1,4 @@
-import { BrandLogo, ToqeIcon } from "./BrandLogo";
+import { BrandLogo, HeraIcon } from "./BrandLogo";
 
 // ─── BrandPanel ───────────────────────────────────────────────────────────────
 // Painel esquerdo de splash para as páginas de autenticação.
@@ -21,7 +21,7 @@ export function BrandPanel({ mode }: { mode: "login" | "registro" }) {
 
       {/* ── Decorative giant icon (watermark) ───────────── */}
       <div className="absolute -right-16 top-1/2 -translate-y-1/2 pointer-events-none select-none opacity-[0.04]">
-        <ToqeIcon size={480} className="text-violet-300" />
+        <HeraIcon size={480} className="text-violet-300" />
       </div>
 
       {/* ── Precision grid lines ─────────────────────────── */}

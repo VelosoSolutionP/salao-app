@@ -38,9 +38,9 @@ export async function sendWhatsApp(phone: string, message: string): Promise<bool
 }
 
 export function msgVencimentoProximo(salonName: string, dias: number, valor: string) {
-  return `Olá! 👋\n\nSeu plano *TOQE* para o salão *${salonName}* vence em *${dias} dia${dias > 1 ? "s" : ""}*.\n\n💰 Valor: *R$ ${valor}*\n\nEvite o bloqueio automático realizando o pagamento. Em caso de dúvidas, entre em contato.\n\n_TOQE — Controle Total de Salões_`;
+  return `Olá! 👋\n\nSeu plano *Hera* para o salão *${salonName}* vence em *${dias} dia${dias > 1 ? "s" : ""}*.\n\n💰 Valor: *R$ ${valor}*\n\nEvite o bloqueio automático realizando o pagamento. Em caso de dúvidas, entre em contato.\n\n_Hera — Controle Total de Salões_`;
 }
 
 export function msgVencido(salonName: string, diasAtraso: number, valor: string) {
-  return `⚠️ Pagamento em atraso!\n\nSeu plano *TOQE* para *${salonName}* está vencido há *${diasAtraso} dia${diasAtraso > 1 ? "s" : ""}*.\n\n💰 Valor: *R$ ${valor}*\n\n${diasAtraso >= 5 ? "🔒 Seu acesso foi *bloqueado automaticamente*." : `⏳ O acesso será bloqueado em *${5 - diasAtraso} dia${5 - diasAtraso > 1 ? "s" : ""}* se não houver pagamento.`}\n\nRegularize agora para não perder o acesso.\n\n_TOQE_`;
+  return `⚠️ Pagamento em atraso!\n\nSeu plano *Hera* para *${salonName}* está vencido há *${diasAtraso} dia${diasAtraso > 1 ? "s" : ""}*.\n\n💰 Valor: *R$ ${valor}*\n\n${diasAtraso >= 5 ? "🔒 Seu acesso foi *bloqueado automaticamente*." : `⏳ O acesso será bloqueado em *${5 - diasAtraso} dia${5 - diasAtraso > 1 ? "s" : ""}* se não houver pagamento.`}\n\nRegularize agora para não perder o acesso.\n\n_Hera_`;
 }

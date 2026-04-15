@@ -5,7 +5,7 @@ import { BrandPanel } from "@/components/brand/BrandPanel";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 import { CalendarDays, ChevronRight } from "lucide-react";
 
-export const metadata: Metadata = { title: "Entrar — TOQE" };
+export const metadata: Metadata = { title: "Entrar — Hera" };
 
 export default function LoginPage() {
   return (
@@ -27,7 +27,7 @@ export default function LoginPage() {
           {/* ── Login (staff/owner) ── */}
           <div className="mb-8">
             <p className="text-xs font-black uppercase tracking-widest text-violet-500 mb-2">
-              TOQE
+              Hera
             </p>
             <h2 className="text-[2rem] font-black text-gray-900 tracking-tight leading-tight">
               Bem-vindo de volta!
@@ -69,7 +69,7 @@ export default function LoginPage() {
           </Link>
 
           <p className="text-center text-[11px] text-gray-300 mt-8">
-            © {new Date().getFullYear()} TOQE · Todos os direitos reservados
+            © {new Date().getFullYear()} Hera · Todos os direitos reservados
           </p>
         </div>
       </div>

@@ -1,10 +1,10 @@
 import { cn } from "@/lib/utils";
 
-// ─── TOQE Icon ────────────────────────────────────────────────────────────────
-// Cinco barras arredondadas em perfil de arco — lê como pente (beleza) e
-// como gráfico (gestão). A forma central mais alta forma um "T" implícito.
+// ─── Hera Icon ────────────────────────────────────────────────────────────────
+// Coroa de três pontas — lê como poder (Hera, rainha do Olimpo) e
+// como beleza (salão de luxo). Legível de 14 px até 512 px.
 
-export function ToqeIcon({
+export function HeraIcon({
   className,
   size = 20,
 }: {
@@ -13,19 +13,19 @@ export function ToqeIcon({
 }) {
   return (
     <svg
-      viewBox="0 0 22 20"
+      viewBox="0 0 24 24"
       fill="currentColor"
       width={size}
       height={size}
       className={className}
       aria-hidden
     >
-      {/* 5 barras com perfil em arco — externas curtas, central mais alta */}
-      <rect x="0"    y="12" width="3" height="8"  rx="1.5" />
-      <rect x="4.75" y="7"  width="3" height="13" rx="1.5" />
-      <rect x="9.5"  y="2"  width="3" height="18" rx="1.5" />
-      <rect x="14.25" y="7"  width="3" height="13" rx="1.5" />
-      <rect x="19"   y="12" width="3" height="8"  rx="1.5" />
+      {/* Corpo da coroa */}
+      <path d="M2,23 H22 V17 L18,9 L14,15 L12,4 L10,15 L6,9 L2,17 Z" />
+      {/* Gemas nas pontas */}
+      <circle cx="12" cy="4"  r="1.5" />
+      <circle cx="6"  cy="9"  r="1.2" />
+      <circle cx="18" cy="9"  r="1.2" />
     </svg>
   );
 }
@@ -59,7 +59,7 @@ export function BrandLogo({
           boxShadow: "0 0 0 1px rgba(124,58,237,.3), 0 4px 24px rgba(124,58,237,.5)",
         }}
       >
-        <ToqeIcon size={iconSizes[size]} className="text-white" />
+        <HeraIcon size={iconSizes[size]} className="text-white" />
       </div>
 
       {/* Wordmark */}
@@ -71,7 +71,7 @@ export function BrandLogo({
             theme === "dark" ? "text-white" : "text-gray-900",
           )}
         >
-          TOQE
+          Hera
         </p>
         <p
           className={cn(

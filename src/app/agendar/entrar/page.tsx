@@ -3,9 +3,9 @@ import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ClienteAuthForm } from "@/components/agendar/ClienteAuthForm";
-import { ToqeIcon } from "@/components/brand/BrandLogo";
+import { HeraIcon } from "@/components/brand/BrandLogo";
 
-export const metadata: Metadata = { title: "Entrar para Agendar — TOQE" };
+export const metadata: Metadata = { title: "Entrar para Agendar — Hera" };
 
 export default async function AgendarEntrarPage() {
   const session = await auth();
@@ -61,10 +61,10 @@ export default async function AgendarEntrarPage() {
             className="w-6 h-6 rounded-lg flex items-center justify-center"
             style={{ background: "rgba(255,255,255,0.15)" }}
           >
-            <ToqeIcon size={12} className="text-white" />
+            <HeraIcon size={12} className="text-white" />
           </div>
           <p className="text-white/30 text-xs font-semibold tracking-wide">
-            TOQE · Gestão de Salões
+            Hera · Gestão de Salões
           </p>
         </div>
 

@@ -62,9 +62,9 @@ export async function POST(req: NextRequest) {
       const { Resend } = await import("resend");
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
-        from: process.env.RESEND_FROM ?? "noreply@toqe.com.br",
+        from: process.env.RESEND_FROM ?? "noreply@hera.com.br",
         to: email,
-        subject: "Redefinição de senha — TOQE",
+        subject: "Redefinição de senha — Hera",
         html: buildEmailHtml(user.name, resetUrl),
       });
     } catch (err) {
@@ -95,7 +95,7 @@ function buildEmailHtml(name: string, resetUrl: string): string {
           <span style="color:white;font-size:18px">✂</span>
         </div>
         <div>
-          <p style="margin:0;color:white;font-weight:900;font-size:15px">TOQE</p>
+          <p style="margin:0;color:white;font-weight:900;font-size:15px">Hera</p>
           <p style="margin:0;color:#7c3aed;font-size:10px;letter-spacing:.1em;text-transform:uppercase">Controle Total de Salões</p>
         </div>
       </div>
@@ -121,7 +121,7 @@ function buildEmailHtml(name: string, resetUrl: string): string {
     <!-- Footer -->
     <div style="padding:20px 40px;border-top:1px solid #f3f4f6">
       <p style="margin:0;color:#d1d5db;font-size:11px;text-align:center">
-        © ${new Date().getFullYear()} TOQE · Todos os direitos reservados
+        © ${new Date().getFullYear()} Hera · Todos os direitos reservados
       </p>
     </div>
   </div>

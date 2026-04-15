@@ -1,7 +1,7 @@
 {
-  "name": "TOQE",
-  "short_name": "TOQE",
-  "description": "TOQE — gestão precisa para salões e barbearias. Agenda, equipe, estoque e financeiro num só lugar.",
+  "name": "Hera",
+  "short_name": "Hera",
+  "description": "Hera — gestão precisa para salões e barbearias. Agenda, equipe, estoque e financeiro num só lugar.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

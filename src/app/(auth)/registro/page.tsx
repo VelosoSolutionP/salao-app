@@ -4,7 +4,7 @@ import { RegistroForm } from "@/components/auth/RegistroForm";
 import { BrandPanel } from "@/components/brand/BrandPanel";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 
-export const metadata: Metadata = { title: "Criar Conta — TOQE" };
+export const metadata: Metadata = { title: "Criar Conta — Hera" };
 
 export default function RegistroPage() {
   return (
@@ -24,7 +24,7 @@ export default function RegistroPage() {
         <div className="w-full max-w-sm mx-auto">
           <div className="mb-8">
             <p className="text-xs font-black uppercase tracking-widest text-violet-500 mb-2">
-              TOQE
+              Hera
             </p>
             <h2 className="text-[2rem] font-black text-gray-900 tracking-tight leading-tight">
               Crie sua conta
@@ -44,7 +44,7 @@ export default function RegistroPage() {
           </p>
 
           <p className="text-center text-[11px] text-gray-300 mt-8">
-            © {new Date().getFullYear()} TOQE · Todos os direitos reservados
+            © {new Date().getFullYear()} Hera · Todos os direitos reservados
           </p>
         </div>
       </div>

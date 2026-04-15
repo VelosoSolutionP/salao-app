@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Download, X, Smartphone } from "lucide-react";
-import { ToqeIcon } from "@/components/brand/BrandLogo";
+import { HeraIcon } from "@/components/brand/BrandLogo";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -82,7 +82,7 @@ export function InstallBanner() {
             className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
             style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
           >
-            <ToqeIcon size={20} className="text-white" />
+            <HeraIcon size={20} className="text-white" />
           </div>
 
           {/* Text */}

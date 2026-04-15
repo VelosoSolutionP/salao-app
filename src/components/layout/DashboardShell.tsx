@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Sidebar } from "./Sidebar";
 import { Menu } from "lucide-react";
-import { ToqeIcon } from "@/components/brand/BrandLogo";
+import { HeraIcon } from "@/components/brand/BrandLogo";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
@@ -43,10 +43,10 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
                 boxShadow: "0 2px 12px rgba(124,58,237,0.45)",
               }}
             >
-              <ToqeIcon size={14} className="text-white" />
+              <HeraIcon size={14} className="text-white" />
             </div>
             <span className="font-black text-white text-sm tracking-tight">
-              TOQE
+              Hera
             </span>
           </div>
         </header>

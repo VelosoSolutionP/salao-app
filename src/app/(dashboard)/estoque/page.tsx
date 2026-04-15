@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { EstoqueView } from "@/components/estoque/EstoqueView";
 
-export const metadata: Metadata = { title: "Estoque — TOQE" };
+export const metadata: Metadata = { title: "Estoque — Hera" };
 
 export default function EstoquePage() {
   return (

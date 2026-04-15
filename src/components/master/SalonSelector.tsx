@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Plus, ArrowRight, Loader2, Building2, Check } from "lucide-react";
-import { ToqeIcon } from "@/components/brand/BrandLogo";
+import { HeraIcon } from "@/components/brand/BrandLogo";
 
 interface SalonItem {
   id: string;
@@ -85,11 +85,11 @@ export function SalonSelector() {
             boxShadow: "0 0 0 1px rgba(124,58,237,.3),0 4px 20px rgba(124,58,237,.45)",
           }}
         >
-          <ToqeIcon size={20} className="text-white" />
+          <HeraIcon size={20} className="text-white" />
         </div>
         <div>
-          <p className="text-white font-black text-sm leading-tight">TOQE</p>
-          <p className="text-violet-400/60 text-[10px] font-semibold tracking-widest uppercase">TOQE · Painel Master</p>
+          <p className="text-white font-black text-sm leading-tight">Hera</p>
+          <p className="text-violet-400/60 text-[10px] font-semibold tracking-widest uppercase">Hera · Painel Master</p>
         </div>
       </div>
 

@@ -25,7 +25,7 @@ import {
   Building2,
 } from "lucide-react";
 import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
-import { ToqeIcon } from "@/components/brand/BrandLogo";
+import { HeraIcon } from "@/components/brand/BrandLogo";
 
 type NavItem = {
   href: string;
@@ -90,7 +90,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
     staleTime: 60_000,
     enabled: role === "OWNER" || role === "BARBER",
   });
-  const salonName = configData?.name ?? "TOQE";
+  const salonName = configData?.name ?? "Hera";
 
   return (
     <div
@@ -107,7 +107,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
               boxShadow: "0 0 0 1px rgba(124,58,237,.3), 0 4px 20px rgba(124,58,237,.45)",
             }}
           >
-            <ToqeIcon size={18} className="text-white" />
+            <HeraIcon size={18} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">
             {/* MASTER: salon switcher dropdown; others: static name */}
