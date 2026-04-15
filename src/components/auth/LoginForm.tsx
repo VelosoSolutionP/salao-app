@@ -21,7 +21,13 @@ const schema = z.object({
 });
 type FormData = z.infer<typeof schema>;
 
-export function LoginForm() {
+export function LoginForm({
+  dark = false,
+  callbackUrl = "/dashboard",
+}: {
+  dark?: boolean;
+  callbackUrl?: string;
+}) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
@@ -41,7 +47,7 @@ export function LoginForm() {
         });
         return;
       }
-      router.push("/dashboard");
+      router.push(callbackUrl);
       router.refresh();
     } catch {
       toast.error("Erro ao fazer login", {
@@ -52,6 +58,13 @@ export function LoginForm() {
     }
   }
 
+  const labelCls = dark
+    ? "text-sm font-semibold text-zinc-400"
+    : "text-sm font-semibold text-gray-700";
+  const inputCls = dark
+    ? "h-12 rounded-xl border-white/10 bg-white/5 text-white placeholder:text-zinc-600 text-sm focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:border-transparent"
+    : "h-12 rounded-xl border-gray-200 bg-gray-50/50 text-sm focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:border-transparent";
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -61,14 +74,13 @@ export function LoginForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-sm font-semibold text-gray-700">Email</FormLabel>
+              <FormLabel className={labelCls}>Email</FormLabel>
               <FormControl>
                 <Input
                   type="email"
                   placeholder="seu@email.com"
                   autoComplete="email"
-                  className="h-12 rounded-xl border-gray-200 bg-gray-50/50 text-sm
-                             focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:border-transparent"
+                  className={inputCls}
                   {...field}
                 />
               </FormControl>
@@ -83,10 +95,12 @@ export function LoginForm() {
           render={({ field }) => (
             <FormItem>
               <div className="flex items-center justify-between">
-                <FormLabel className="text-sm font-semibold text-gray-700">Senha</FormLabel>
+                <FormLabel className={labelCls}>Senha</FormLabel>
                 <Link
                   href="/esqueci-senha"
-                  className="text-xs text-violet-600 hover:text-violet-700 font-semibold transition-colors"
+                  className={dark
+                    ? "text-xs text-violet-400 hover:text-violet-300 font-semibold transition-colors"
+                    : "text-xs text-violet-600 hover:text-violet-700 font-semibold transition-colors"}
                   tabIndex={-1}
                 >
                   Esqueci minha senha
@@ -98,8 +112,7 @@ export function LoginForm() {
                     type={showPw ? "text" : "password"}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    className="h-12 rounded-xl border-gray-200 bg-gray-50/50 text-sm pr-11
-                               focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:border-transparent"
+                    className={`${inputCls} pr-11`}
                     {...field}
                   />
                   <button
