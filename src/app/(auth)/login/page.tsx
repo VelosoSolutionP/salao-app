@@ -8,39 +8,27 @@ import { CalendarDays, Scissors, ChevronRight } from "lucide-react";
 
 /* ─── Keyframes & font injected once ───────────────────────────────────────── */
 const STYLES = `
-  @import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&display=swap');
 
   @keyframes bf-float {
-    0%,100% { transform: translateY(0)   rotate(0deg)   scale(1); }
-    33%      { transform: translateY(-18px) rotate(8deg)  scale(1.04); }
-    66%      { transform: translateY(10px)  rotate(-5deg) scale(.97); }
+    0%,100% { transform: translateY(0)    rotate(0deg)   scale(1); }
+    33%      { transform: translateY(-16px) rotate(7deg)  scale(1.03); }
+    66%      { transform: translateY(9px)   rotate(-4deg) scale(.98); }
   }
   @keyframes bf-float2 {
-    0%,100% { transform: translateY(0)   rotate(45deg)  scale(1); }
-    50%      { transform: translateY(-26px) rotate(55deg) scale(1.06); }
-  }
-  @keyframes bf-orbit {
-    from { transform: rotate(0deg)   translateX(52px) rotate(0deg); }
-    to   { transform: rotate(360deg) translateX(52px) rotate(-360deg); }
-  }
-  @keyframes bf-orbit2 {
-    from { transform: rotate(180deg) translateX(70px) rotate(-180deg); }
-    to   { transform: rotate(540deg) translateX(70px) rotate(-540deg); }
+    0%,100% { transform: translateY(0)    rotate(45deg)  scale(1); }
+    50%      { transform: translateY(-22px) rotate(53deg) scale(1.05); }
   }
   @keyframes bf-pulse {
-    0%,100% { opacity:.18; transform:scale(1); }
-    50%     { opacity:.32; transform:scale(1.08); }
-  }
-  @keyframes bf-shimmer {
-    0%   { background-position: -300% center; }
-    100% { background-position:  300% center; }
+    0%,100% { opacity:.15; transform:scale(1); }
+    50%     { opacity:.28; transform:scale(1.07); }
   }
   @keyframes bf-in {
-    from { opacity:0; transform:translateY(28px); }
+    from { opacity:0; transform:translateY(24px); }
     to   { opacity:1; transform:translateY(0); }
   }
   @keyframes bf-in2 {
-    from { opacity:0; transform:translateY(20px) scale(.97); }
+    from { opacity:0; transform:translateY(18px) scale(.98); }
     to   { opacity:1; transform:translateY(0)    scale(1); }
   }
   @keyframes bf-spin-slow {
@@ -48,22 +36,23 @@ const STYLES = `
     to   { transform: rotate(360deg); }
   }
 
-  .bf-brand  { animation: bf-in  .7s cubic-bezier(.22,1,.36,1) both; }
-  .bf-card   { animation: bf-in2 .7s cubic-bezier(.22,1,.36,1) .18s both; }
-  .bf-footer { animation: bf-in  .5s ease .4s both; }
+  .bf-brand  { animation: bf-in  .65s cubic-bezier(.22,1,.36,1) both; }
+  .bf-card   { animation: bf-in2 .65s cubic-bezier(.22,1,.36,1) .14s both; }
+  .bf-footer { animation: bf-in  .5s  ease               .32s  both; }
 
   .bf-wordmark {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Outfit', sans-serif;
     font-weight: 800;
-    font-size: 3.4rem;
+    font-size: 1.9rem;
     line-height: 1;
-    letter-spacing: -.04em;
-    background: linear-gradient(105deg,#fff 0%,#ddd6fe 40%,#a78bfa 65%,#fff 100%);
-    background-size: 300% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: bf-shimmer 6s linear infinite;
+    letter-spacing: -.02em;
+    color: #fff;
+    text-shadow:
+      0 1px 0 rgba(167,139,250,.9),
+      0 2px 0 rgba(124,58,237,.7),
+      0 4px 0 rgba(109,40,217,.5),
+      0 6px 12px rgba(79,46,120,.55),
+      0 12px 28px rgba(0,0,0,.35);
   }
 `;
 
@@ -143,77 +132,38 @@ export default function LoginPage() {
         {/* ── Main content ──────────────────────────────────────────────────── */}
         <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-8">
 
-          {/* Brand */}
-          <div className="bf-brand flex flex-col items-center gap-5 text-center">
-
-            {/* Icon with orbital rings */}
-            <div className="relative" style={{ width:96, height:96 }}>
-              {/* slow-pulse ring 1 */}
+          {/* Brand — icon + nome compacto */}
+          <div className="bf-brand flex items-center gap-4">
+            {/* Icon box 3D */}
+            <div style={{
+              position:"relative",
+              width:60, height:60, borderRadius:18, flexShrink:0,
+              background:"linear-gradient(145deg,#8b5cf6 0%,#6d28d9 55%,#4338ca 100%)",
+              boxShadow:
+                "0 2px 0 rgba(255,255,255,.14) inset," +
+                "0 -1px 0 rgba(0,0,0,.25) inset," +
+                "0 16px 40px rgba(109,40,217,.7)," +
+                "0 6px 16px rgba(0,0,0,.45)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              transform:"perspective(200px) rotateX(5deg) rotateY(-3deg)",
+            }}>
+              {/* Glass highlight */}
               <div style={{
-                position:"absolute", inset:-16, borderRadius:"50%",
-                border:"1px solid rgba(124,58,237,.18)",
-                animation:"bf-pulse 4s ease-in-out infinite",
+                position:"absolute", top:0, left:0, right:0, height:"44%",
+                borderRadius:"18px 18px 60% 60%",
+                background:"linear-gradient(180deg,rgba(255,255,255,.18) 0%,transparent 100%)",
               }}/>
-              {/* slow-pulse ring 2 */}
-              <div style={{
-                position:"absolute", inset:-8, borderRadius:"50%",
-                border:"1px solid rgba(124,58,237,.25)",
-                animation:"bf-pulse 4s ease-in-out .6s infinite",
-              }}/>
-
-              {/* Orbiting dot 1 */}
-              <div style={{
-                position:"absolute", top:"50%", left:"50%",
-                marginTop:-4, marginLeft:-4,
-                width:8, height:8,
-              }}>
-                <div style={{
-                  width:8, height:8, borderRadius:"50%",
-                  background:"linear-gradient(135deg,#a78bfa,#818cf8)",
-                  boxShadow:"0 0 8px rgba(167,139,250,.7)",
-                  animation:"bf-orbit 5s linear infinite",
-                }}/>
-              </div>
-              {/* Orbiting dot 2 */}
-              <div style={{
-                position:"absolute", top:"50%", left:"50%",
-                marginTop:-3, marginLeft:-3,
-                width:6, height:6,
-              }}>
-                <div style={{
-                  width:6, height:6, borderRadius:"50%",
-                  background:"rgba(196,181,253,.5)",
-                  animation:"bf-orbit2 8s linear infinite",
-                }}/>
-              </div>
-
-              {/* Icon box */}
-              <div style={{
-                position:"relative", width:96, height:96,
-                borderRadius:28,
-                background:"linear-gradient(140deg,#7c3aed 0%,#5b21b6 60%,#4338ca 100%)",
-                boxShadow:"0 2px 0 rgba(255,255,255,.12) inset, 0 -2px 0 rgba(0,0,0,.3) inset, 0 24px 64px rgba(109,40,217,.75), 0 8px 24px rgba(0,0,0,.5)",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                transform:"perspective(300px) rotateX(6deg) rotateY(-2deg)",
-              }}>
-                {/* Inner highlight */}
-                <div style={{
-                  position:"absolute", top:0, left:0, right:0, height:"45%",
-                  borderRadius:"28px 28px 50% 50%",
-                  background:"linear-gradient(180deg,rgba(255,255,255,.15) 0%,transparent 100%)",
-                }}/>
-                <BellefyIcon size={40} className="text-white" />
-              </div>
+              <BellefyIcon size={26} className="text-white" />
             </div>
 
-            {/* Wordmark */}
-            <div className="flex flex-col items-center gap-1.5">
+            {/* Name + subtitle */}
+            <div className="flex flex-col gap-1">
               <span className="bf-wordmark">Bellefy</span>
               <span style={{
-                fontFamily:"'Syne',sans-serif",
-                fontSize:10, fontWeight:700,
-                letterSpacing:"0.28em", textTransform:"uppercase",
-                color:"rgba(167,139,250,.5)",
+                fontFamily:"'Outfit',sans-serif",
+                fontSize:10, fontWeight:600,
+                letterSpacing:"0.22em", textTransform:"uppercase",
+                color:"rgba(167,139,250,.45)",
               }}>
                 Gestão de Salões
               </span>
