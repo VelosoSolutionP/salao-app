@@ -11,13 +11,6 @@ import {
 
 // ─── Static data ──────────────────────────────────────────────────────────────
 
-const STATS = [
-  { value: "2.4k+", label: "Agendamentos\npor mês" },
-  { value: "98%",   label: "Satisfação\ndos usuários" },
-  { value: "3×",    label: "Mais\nprodutividade" },
-  { value: "< 5min",label: "Para\nconfigurar" },
-];
-
 const FEATURES = [
   { icon: CalendarDays, label: "Agenda Online"     },
   { icon: Users,        label: "Gestão de Equipe"  },
@@ -69,71 +62,44 @@ export default function LoginPage() {
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* CONTENT                                                             */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <div className="relative z-10 w-full max-w-5xl mx-auto px-5 py-10 lg:py-14 flex flex-col items-center gap-10 lg:gap-12">
+      <div className="relative z-10 w-full max-w-md mx-auto px-5 py-12 lg:py-16 flex flex-col items-center gap-8">
 
         {/* ── Brand ─────────────────────────────────────────────────────── */}
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div
-            className="w-14 h-14 rounded-3xl flex items-center justify-center"
-            style={{
-              background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
-              boxShadow: "0 0 0 1px rgba(124,58,237,.35), 0 8px 40px rgba(124,58,237,.55)",
-            }}
-          >
-            <HeraIcon size={26} className="text-white" />
-          </div>
-          <div>
-            <p className="text-white font-black text-3xl lg:text-4xl tracking-tight leading-none">Hera</p>
-            <p className="text-violet-400 text-xs font-black uppercase tracking-[.2em] mt-1.5">
-              Gestão de Salões
-            </p>
-          </div>
-        </div>
-
-        {/* ── Headline ──────────────────────────────────────────────────── */}
-        <div className="text-center max-w-2xl">
-          <h1 className="font-black tracking-tight leading-none mb-4">
-            <span className="block text-white" style={{ fontSize: "clamp(2rem, 6vw, 3.5rem)" }}>
-              Gerencie.
-            </span>
-            <span
-              className="block"
+        <div className="flex flex-col items-center gap-5 text-center">
+          {/* Icon with multi-layer glow */}
+          <div className="relative">
+            <div
+              className="absolute inset-0 rounded-3xl blur-xl opacity-70"
+              style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)", transform: "scale(1.4)" }}
+            />
+            <div
+              className="relative w-16 h-16 rounded-3xl flex items-center justify-center"
               style={{
-                fontSize: "clamp(2rem, 6vw, 3.5rem)",
-                background: "linear-gradient(90deg,#a78bfa 0%,#818cf8 40%,#c4b5fd 100%)",
+                background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
+                boxShadow: "0 0 0 1px rgba(124,58,237,.4), 0 0 0 4px rgba(124,58,237,.12), 0 12px 48px rgba(124,58,237,.6)",
+              }}
+            >
+              <HeraIcon size={30} className="text-white" />
+            </div>
+          </div>
+
+          {/* Name with gradient */}
+          <div>
+            <p
+              className="font-black tracking-tight leading-none"
+              style={{
+                fontSize: "clamp(2.2rem, 8vw, 3rem)",
+                background: "linear-gradient(135deg, #ffffff 0%, #e9d5ff 40%, #a78bfa 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
             >
-              Cresça.
-            </span>
-            <span className="block text-white" style={{ fontSize: "clamp(2rem, 6vw, 3.5rem)" }}>
-              Domine.
-            </span>
-          </h1>
-          <p className="text-zinc-400 text-sm lg:text-base leading-relaxed max-w-md mx-auto">
-            Agenda, equipe, estoque e finanças num painel preciso.
-            Para barbearias e salões que levam o negócio a sério.
-          </p>
-        </div>
-
-        {/* ── Stats ─────────────────────────────────────────────────────── */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 w-full max-w-xl lg:max-w-3xl">
-          {STATS.map((s) => (
-            <div
-              key={s.value}
-              className="flex flex-col items-center py-4 px-3 rounded-2xl text-center"
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.07)",
-              }}
-            >
-              <p className="text-2xl lg:text-3xl font-black text-white leading-none">{s.value}</p>
-              <p className="text-[11px] text-zinc-500 mt-1.5 whitespace-pre-line leading-tight font-medium">
-                {s.label}
-              </p>
-            </div>
-          ))}
+              Hera
+            </p>
+            <p className="text-zinc-500 text-xs font-black uppercase tracking-[.22em] mt-2">
+              Gestão de Salões
+            </p>
+          </div>
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════ */}
