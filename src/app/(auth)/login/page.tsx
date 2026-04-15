@@ -4,47 +4,25 @@ import { useState } from "react";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { HeraIcon } from "@/components/brand/BrandLogo";
-import {
-  CalendarDays, Scissors, Users, Package, DollarSign,
-  Sparkles, Star, ChevronRight, BarChart3, Bell,
-} from "lucide-react";
-
-// ─── Static data ──────────────────────────────────────────────────────────────
-
-const FEATURES = [
-  { icon: CalendarDays, label: "Agenda Online"     },
-  { icon: Users,        label: "Gestão de Equipe"  },
-  { icon: Package,      label: "Estoque"           },
-  { icon: DollarSign,   label: "Financeiro"        },
-  { icon: Scissors,     label: "Serviços"          },
-  { icon: Sparkles,     label: "Transformações"    },
-  { icon: BarChart3,    label: "Relatórios"        },
-  { icon: Bell,         label: "Notificações"      },
-  { icon: Star,         label: "Fidelidade"        },
-];
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
+import { CalendarDays, Scissors, ChevronRight } from "lucide-react";
 
 export default function LoginPage() {
   const [tab, setTab] = useState<"salao" | "cliente">("salao");
 
   return (
     <div
-      className="min-h-screen flex flex-col items-center justify-start relative overflow-hidden"
+      className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden px-5 py-12"
       style={{ background: "linear-gradient(155deg,#08061a 0%,#130e30 45%,#0a0818 100%)" }}
     >
-
-      {/* ── Ambient glows ─────────────────────────────────────────────────── */}
+      {/* Glows */}
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute -top-40 -left-32 w-[600px] h-[600px] rounded-full"
-          style={{ background: "radial-gradient(circle,rgba(124,58,237,.20) 0%,transparent 65%)", filter: "blur(4px)" }} />
+          style={{ background: "radial-gradient(circle,rgba(124,58,237,.22) 0%,transparent 65%)", filter: "blur(4px)" }} />
         <div className="absolute -bottom-48 -right-32 w-[500px] h-[500px] rounded-full"
-          style={{ background: "radial-gradient(circle,rgba(79,70,229,.16) 0%,transparent 65%)", filter: "blur(4px)" }} />
-        <div className="absolute top-1/3 right-1/4 w-[300px] h-[300px] rounded-full"
-          style={{ background: "radial-gradient(circle,rgba(109,40,217,.07) 0%,transparent 70%)" }} />
+          style={{ background: "radial-gradient(circle,rgba(79,70,229,.18) 0%,transparent 65%)", filter: "blur(4px)" }} />
       </div>
 
-      {/* ── Grid pattern ─────────────────────────────────────────────────── */}
+      {/* Grid */}
       <svg className="pointer-events-none absolute inset-0 w-full h-full opacity-[0.025]" aria-hidden>
         <defs>
           <pattern id="g" width="48" height="48" patternUnits="userSpaceOnUse">
@@ -54,59 +32,53 @@ export default function LoginPage() {
         <rect width="100%" height="100%" fill="url(#g)" />
       </svg>
 
-      {/* ── Watermark crown ──────────────────────────────────────────────── */}
-      <div className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 -translate-x-8 opacity-[0.03] select-none">
-        <HeraIcon size={520} className="text-violet-300" />
+      {/* Watermark */}
+      <div className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 opacity-[0.025] select-none">
+        <HeraIcon size={480} className="text-violet-300" />
       </div>
 
-      {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* CONTENT                                                             */}
-      {/* ═══════════════════════════════════════════════════════════════════ */}
-      <div className="relative z-10 w-full max-w-md mx-auto px-5 py-12 lg:py-16 flex flex-col items-center gap-8">
+      {/* ── Content ── */}
+      <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-8">
 
-        {/* ── Brand ─────────────────────────────────────────────────────── */}
-        <div className="flex flex-col items-center gap-5 text-center">
-          {/* Icon with multi-layer glow */}
+        {/* Brand */}
+        <div className="flex flex-col items-center gap-4 text-center">
           <div className="relative">
             <div
-              className="absolute inset-0 rounded-3xl blur-xl opacity-70"
-              style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)", transform: "scale(1.4)" }}
+              className="absolute inset-0 rounded-3xl blur-xl opacity-60"
+              style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)", transform: "scale(1.5)" }}
             />
             <div
               className="relative w-16 h-16 rounded-3xl flex items-center justify-center"
               style={{
                 background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
-                boxShadow: "0 0 0 1px rgba(124,58,237,.4), 0 0 0 4px rgba(124,58,237,.12), 0 12px 48px rgba(124,58,237,.6)",
+                boxShadow: "0 0 0 1px rgba(124,58,237,.4), 0 0 0 5px rgba(124,58,237,.1), 0 16px 48px rgba(124,58,237,.55)",
               }}
             >
               <HeraIcon size={30} className="text-white" />
             </div>
           </div>
 
-          {/* Name with gradient */}
           <div>
             <p
               className="font-black tracking-tight leading-none"
               style={{
-                fontSize: "clamp(2.2rem, 8vw, 3rem)",
-                background: "linear-gradient(135deg, #ffffff 0%, #e9d5ff 40%, #a78bfa 100%)",
+                fontSize: "2.8rem",
+                background: "linear-gradient(135deg,#ffffff 0%,#e9d5ff 45%,#a78bfa 100%)",
                 WebkitBackgroundClip: "text",
                 WebkitTextFillColor: "transparent",
               }}
             >
               Hera
             </p>
-            <p className="text-zinc-500 text-xs font-black uppercase tracking-[.22em] mt-2">
+            <p className="text-zinc-500 text-[11px] font-black uppercase tracking-[.22em] mt-1.5">
               Gestão de Salões
             </p>
           </div>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════ */}
-        {/* ACCESS CARD                                                     */}
-        {/* ═══════════════════════════════════════════════════════════════ */}
+        {/* Card */}
         <div
-          className="w-full max-w-md rounded-3xl overflow-hidden"
+          className="w-full rounded-3xl overflow-hidden"
           style={{
             background: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.09)",
@@ -114,10 +86,10 @@ export default function LoginPage() {
             boxShadow: "0 8px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07)",
           }}
         >
-          {/* ── Tab switcher ────────────────────────────────── */}
+          {/* Tabs */}
           <div
             className="flex p-1.5 gap-1.5"
-            style={{ background: "rgba(0,0,0,.25)", borderBottom: "1px solid rgba(255,255,255,.06)" }}
+            style={{ background: "rgba(0,0,0,.3)", borderBottom: "1px solid rgba(255,255,255,.06)" }}
           >
             <TabBtn active={tab === "salao"} onClick={() => setTab("salao")}>
               <Scissors className="w-3.5 h-3.5" />
@@ -129,21 +101,19 @@ export default function LoginPage() {
             </TabBtn>
           </div>
 
-          {/* ── Tab body ────────────────────────────────────── */}
-          <div className="p-6 lg:p-7">
+          {/* Body */}
+          <div className="p-6">
             {tab === "salao" ? (
               <>
-                <div className="mb-6">
-                  <h2 className="text-white font-black text-xl leading-tight">Bem-vindo de volta!</h2>
-                  <p className="text-zinc-500 text-sm mt-1">
-                    Acesse o painel de gestão do seu salão.
-                  </p>
+                <div className="mb-5">
+                  <h2 className="text-white font-black text-lg leading-tight">Bem-vindo de volta!</h2>
+                  <p className="text-zinc-500 text-sm mt-0.5">Acesse o painel do seu salão.</p>
                 </div>
 
                 <LoginForm dark />
 
                 <p className="text-center text-xs text-zinc-600 mt-5">
-                  Proprietário sem conta?{" "}
+                  Sem conta?{" "}
                   <Link href="/registro" className="text-violet-400 hover:text-violet-300 font-bold transition-colors">
                     Cadastrar salão grátis
                   </Link>
@@ -151,28 +121,25 @@ export default function LoginPage() {
               </>
             ) : (
               <>
-                <div className="mb-6">
-                  <h2 className="text-white font-black text-xl leading-tight">Área do cliente</h2>
-                  <p className="text-zinc-500 text-sm mt-1">
-                    Acesse seus agendamentos e histórico.
-                  </p>
+                <div className="mb-5">
+                  <h2 className="text-white font-black text-lg leading-tight">Área do cliente</h2>
+                  <p className="text-zinc-500 text-sm mt-0.5">Acesse seus agendamentos.</p>
                 </div>
 
                 <LoginForm dark callbackUrl="/agendar" />
 
-                {/* OR: book without account */}
                 <div className="flex items-center gap-3 my-5">
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,.07)" }} />
-                  <span className="text-xs text-zinc-600 font-semibold">ou</span>
-                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,.07)" }} />
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,.06)" }} />
+                  <span className="text-[11px] text-zinc-600 font-semibold">ou</span>
+                  <div className="flex-1 h-px" style={{ background: "rgba(255,255,255,.06)" }} />
                 </div>
 
                 <Link
                   href="/agendar"
                   className="group flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl transition-all hover:opacity-90"
                   style={{
-                    background: "linear-gradient(135deg,rgba(217,119,6,.2),rgba(180,83,9,.2))",
-                    border: "1px solid rgba(217,119,6,.3)",
+                    background: "linear-gradient(135deg,rgba(217,119,6,.18),rgba(180,83,9,.18))",
+                    border: "1px solid rgba(217,119,6,.28)",
                   }}
                 >
                   <div
@@ -183,67 +150,24 @@ export default function LoginPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-black text-amber-300">Agendar sem conta</p>
-                    <p className="text-xs text-amber-700 mt-0.5">Escolha um salão e reserve agora</p>
+                    <p className="text-xs text-amber-700/80 mt-0.5">Escolha um salão e reserve agora</p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-amber-600 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
+                  <ChevronRight className="w-4 h-4 text-amber-700 group-hover:translate-x-0.5 transition-transform flex-shrink-0" />
                 </Link>
               </>
             )}
           </div>
         </div>
 
-        {/* ── Feature pills ─────────────────────────────────────────────── */}
-        <div className="flex flex-wrap justify-center gap-2 max-w-lg">
-          {FEATURES.map(({ icon: Icon, label }) => (
-            <div
-              key={label}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold text-zinc-400"
-              style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}
-            >
-              <Icon className="w-3 h-3 text-violet-500" />
-              {label}
-            </div>
-          ))}
-        </div>
-
-        {/* ── Testimonial ───────────────────────────────────────────────── */}
-        <div
-          className="w-full max-w-md rounded-2xl p-5"
-          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
-        >
-          <div className="flex gap-0.5 mb-3">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <svg key={i} className="w-3.5 h-3.5 text-amber-400 fill-current" viewBox="0 0 20 20">
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-            ))}
-          </div>
-          <p className="text-zinc-300 text-sm italic leading-relaxed">
-            "Reduzi o no-show em 70% com os lembretes automáticos. Tenho controle total do estoque e da equipe em tempo real."
-          </p>
-          <div className="flex items-center gap-3 mt-4">
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-sm flex-shrink-0"
-              style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
-            >
-              J
-            </div>
-            <div>
-              <p className="text-white text-sm font-semibold leading-tight">João Carvalho</p>
-              <p className="text-zinc-500 text-xs mt-0.5">Barbearia Premium · São Paulo</p>
-            </div>
-          </div>
-        </div>
-
-        <p className="text-zinc-700 text-[11px] pb-4">
-          © {new Date().getFullYear()} Hera · Todos os direitos reservados
+        {/* Footer */}
+        <p className="text-zinc-700 text-[11px] text-center leading-relaxed">
+          Sistema criado por{" "}
+          <span className="text-zinc-500 font-semibold">Veloso Solution</span>
         </p>
       </div>
     </div>
   );
 }
-
-// ─── TabBtn ───────────────────────────────────────────────────────────────────
 
 function TabBtn({
   children, active, onClick, amber,
@@ -262,16 +186,16 @@ function TabBtn({
         active
           ? amber
             ? {
-                background: "linear-gradient(135deg,rgba(217,119,6,.35),rgba(180,83,9,.3))",
+                background: "linear-gradient(135deg,rgba(217,119,6,.3),rgba(180,83,9,.25))",
                 color: "#fcd34d",
-                boxShadow: "0 2px 12px rgba(217,119,6,.2)",
-                border: "1px solid rgba(217,119,6,.35)",
+                boxShadow: "0 2px 12px rgba(217,119,6,.18)",
+                border: "1px solid rgba(217,119,6,.32)",
               }
             : {
-                background: "linear-gradient(135deg,rgba(124,58,237,.35),rgba(79,70,229,.3))",
+                background: "linear-gradient(135deg,rgba(124,58,237,.32),rgba(79,70,229,.28))",
                 color: "#c4b5fd",
-                boxShadow: "0 2px 12px rgba(124,58,237,.25)",
-                border: "1px solid rgba(124,58,237,.4)",
+                boxShadow: "0 2px 12px rgba(124,58,237,.22)",
+                border: "1px solid rgba(124,58,237,.38)",
               }
           : { color: "#52525b", border: "1px solid transparent" }
       }
