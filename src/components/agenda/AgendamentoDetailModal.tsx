@@ -11,9 +11,10 @@ import {
 import { formatDateTime, formatBRL, minutesToHuman } from "@/lib/utils";
 import {
   Check, X, Play, MessageCircle, Loader2,
-  Clock, CalendarDays, Scissors, Banknote, CreditCard,
-  Smartphone, ArrowLeftRight, Store, Package,
+  Clock, CalendarDays, Scissors,
+  Store, Package,
 } from "lucide-react";
+import { PagamentoModal } from "@/components/agenda/PagamentoModal";
 
 /* ─────────────────────── constants ─────────────────────── */
 
@@ -30,13 +31,6 @@ const STATUS_CFG: Record<string, {
   NAO_COMPARECEU: { label: "Não compareceu", dot: "bg-gray-300",    gradient: "linear-gradient(135deg,#6b7280,#4b5563)" },
 };
 
-const PAYMENT_OPTIONS = [
-  { key: "DINHEIRO",       label: "Dinheiro",   Icon: Banknote       },
-  { key: "CARTAO_CREDITO", label: "Crédito",    Icon: CreditCard      },
-  { key: "CARTAO_DEBITO",  label: "Débito",     Icon: CreditCard      },
-  { key: "PIX",            label: "PIX",        Icon: Smartphone      },
-  { key: "TRANSFERENCIA",  label: "Transfer.",  Icon: ArrowLeftRight  },
-];
 
 const PAGAMENTO_LABELS: Record<string, string> = {
   DINHEIRO:       "Dinheiro",
@@ -77,8 +71,8 @@ export function AgendamentoDetailModal({
   onUpdate: () => void;
 }) {
   const queryClient = useQueryClient();
-  const [pagamentoMethod, setPagamentoMethod] = useState("");
   const [usouProprioProduto, setUsouProprioProduto] = useState(false);
+  const [showPagamento, setShowPagamento] = useState(false);
 
   const { data: ag, isLoading } = useQuery({
     queryKey: ["agendamento", id],
@@ -109,8 +103,7 @@ export function AgendamentoDetailModal({
   function cancelar()      { act({ status: "CANCELADO" }); }
   function naoCompareceu() { act({ status: "NAO_COMPARECEU" }); }
   function concluir() {
-    if (!pagamentoMethod) { toast.error("Selecione a forma de pagamento"); return; }
-    act({ status: "CONCLUIDO", pagamento: pagamentoMethod, pagamentoStatus: "PAGO", usouProprioProduto });
+    setShowPagamento(true);
   }
 
   function openWhatsApp() {
@@ -257,13 +250,13 @@ export function AgendamentoDetailModal({
                 </div>
               )}
 
-              {/* Product type toggle + payment picker — only when EM_ANDAMENTO */}
+              {/* Product type toggle — only when EM_ANDAMENTO */}
               {status === "EM_ANDAMENTO" && (
                 <div>
                   <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
                     Produto utilizado
                   </p>
-                  <div className="grid grid-cols-2 gap-2 mb-4">
+                  <div className="grid grid-cols-2 gap-2">
                     <button
                       type="button"
                       onClick={() => setUsouProprioProduto(false)}
@@ -286,35 +279,6 @@ export function AgendamentoDetailModal({
                     >
                       <Package className="w-4 h-4" /> Produto próprio
                     </button>
-                  </div>
-
-                  <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">
-                    Forma de pagamento
-                  </p>
-                  <div className="grid grid-cols-5 gap-2">
-                    {PAYMENT_OPTIONS.map(({ key, label, Icon }) => (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => setPagamentoMethod(key)}
-                        className={`flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all ${
-                          pagamentoMethod === key
-                            ? "border-violet-500 bg-violet-50 shadow-sm"
-                            : "border-gray-100 bg-white hover:border-violet-200"
-                        }`}
-                      >
-                        <Icon
-                          className={`w-5 h-5 ${pagamentoMethod === key ? "text-violet-600" : "text-gray-400"}`}
-                        />
-                        <span
-                          className={`text-[10px] font-semibold leading-tight text-center ${
-                            pagamentoMethod === key ? "text-violet-700" : "text-gray-500"
-                          }`}
-                        >
-                          {label}
-                        </span>
-                      </button>
-                    ))}
                   </div>
                 </div>
               )}
@@ -406,6 +370,23 @@ export function AgendamentoDetailModal({
           </div>
         )}
       </DialogContent>
+
+      {/* Modal de pagamento — abre sobre o modal de detalhes */}
+      {showPagamento && ag && (
+        <PagamentoModal
+          agendamentoId={ag.id}
+          totalPrice={Number(ag.totalPrice)}
+          usouProprioProduto={usouProprioProduto}
+          onSuccess={() => {
+            setShowPagamento(false);
+            toast.success("Atendimento concluído!");
+            queryClient.invalidateQueries({ queryKey: ["agendamento", id] });
+            onUpdate();
+            onClose();
+          }}
+          onClose={() => setShowPagamento(false)}
+        />
+      )}
     </Dialog>
   );
 }

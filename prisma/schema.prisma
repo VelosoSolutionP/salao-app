@@ -19,11 +19,12 @@ model User {
   passwordHash  String?
   image         String?
   role          Role      @default(CLIENT)
-  active        Boolean   @default(true)
-  blocked       Boolean   @default(false)           // manually blocked by MASTER
-  trialExpires  DateTime?                           // null = no trial limit
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  active           Boolean   @default(true)
+  blocked          Boolean   @default(false)           // manually blocked by MASTER
+  trialExpires     DateTime?                           // null = no trial limit
+  stripeCustomerId String?   @unique                   // Stripe Customer ID para cobranças de planos
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
   accounts         Account[]
   sessions         Session[]
@@ -518,8 +519,9 @@ model Agendamento {
   totalPrice           Decimal           @db.Decimal(10, 2)
   pagamento            MetodoPagamento?
   pagamentoStatus      PagamentoStatus   @default(PENDENTE)
-  pixTxid              String?
-  usouProprioProduto   Boolean           @default(false)  // profissional usou produto próprio?
+  pixTxid                 String?
+  stripePaymentIntentId   String?                          // PaymentIntent Stripe (PIX ou cartão)
+  usouProprioProduto      Boolean           @default(false)  // profissional usou produto próprio?
   canceladoMotivo      String?
   canceladoPorCliente  Boolean           @default(false)   // cliente cancelou (vs. salão)
   multaAplicada        Boolean           @default(false)   // este agendamento gerou multa (cancelamento tardio/não comparecimento)
@@ -763,6 +765,8 @@ model PlanoFidelidade {
   qtdAtendimentos     Int                 @default(1)   // atendimentos por período
   valor               Decimal             @db.Decimal(10, 2)
   servicoIds          String[]                          // serviços incluídos
+  stripeProductId     String?                           // Product ID no Stripe
+  stripePriceId       String?                           // Price ID no Stripe (recorrente)
   ativo               Boolean             @default(true)
   createdAt           DateTime            @default(now())
   updatedAt           DateTime            @updatedAt
@@ -775,16 +779,22 @@ model PlanoFidelidade {
 }
 
 model ClientePlano {
-  id              String          @id @default(cuid())
-  salonId         String
-  clienteId       String
-  planoId         String
-  dataInicio      DateTime
-  dataFim         DateTime
-  atendimentosUsados Int          @default(0)
-  ativo           Boolean         @default(true)
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id                     String   @id @default(cuid())
+  salonId                String
+  clienteId              String
+  planoId                String
+  dataInicio             DateTime
+  dataFim                DateTime
+  atendimentosUsados     Int      @default(0)
+  // Stripe
+  stripeSetupIntentId    String?
+  stripePaymentMethodId  String?
+  proximoVencimento      DateTime?
+  ultimoPagamento        DateTime?
+  pagamentoStatus        PagamentoStatus @default(PENDENTE)
+  ativo                  Boolean  @default(true)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   salon   Salon           @relation(fields: [salonId], references: [id])
   cliente Cliente         @relation(fields: [clienteId], references: [id])
