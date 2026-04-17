@@ -71,11 +71,19 @@ export async function POST(req: NextRequest) {
   // Email já cadastrado?
   const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
+    // Funcionário (BARBER/OWNER/MASTER) não pode ser cadastrado como cliente
+    if (existingUser.role !== "CLIENT") {
+      return NextResponse.json(
+        { error: "Este email pertence a um funcionário e não pode ser cadastrado como cliente." },
+        { status: 409 }
+      );
+    }
+
     const existingCliente = await prisma.cliente.findUnique({ where: { userId: existingUser.id } });
     if (existingCliente)
       return NextResponse.json({ error: "Já existe um cliente com este email" }, { status: 409 });
 
-    // Usuário existe mas sem cadastro de cliente — vincula ao salão
+    // Usuário CLIENT existe mas sem cadastro de cliente — vincula ao salão
     const cliente = await prisma.cliente.create({
       data: {
         userId: existingUser.id,

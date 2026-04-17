@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { signIn } from "next-auth/react";
+import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -47,7 +47,18 @@ export function LoginForm({
         });
         return;
       }
-      router.push(callbackUrl);
+
+      // Redireciona pelo role — ignora callbackUrl para não-clientes
+      const session = await getSession();
+      const role = (session?.user as { role?: string } | null)?.role;
+
+      if (role === "MASTER") {
+        router.push("/master");
+      } else if (role === "OWNER" || role === "BARBER") {
+        router.push("/agenda");
+      } else {
+        router.push(callbackUrl); // CLIENT vai para /agendar ou onde vier
+      }
       router.refresh();
     } catch {
       toast.error("Erro ao fazer login", {
