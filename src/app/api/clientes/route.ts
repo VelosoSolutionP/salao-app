@@ -28,7 +28,14 @@ export async function GET(req: NextRequest) {
       }
     : { role: "CLIENT" as const };
 
-  const where = { salonId: salonId!, user: userFilter };
+  // Inclui clientes diretamente do salão OU clientes sem salão que já agendaram aqui
+  const where = {
+    user: userFilter,
+    OR: [
+      { salonId: salonId! },
+      { salonId: null, agendamentos: { some: { salonId: salonId! } } },
+    ],
+  };
 
   const [clientes, total] = await Promise.all([
     prisma.cliente.findMany({

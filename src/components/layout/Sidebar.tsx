@@ -152,7 +152,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
       </div>
 
       {/* ── Nav ───────────────────────────────────────── */}
-      <nav className="flex-1 px-3 pb-4 overflow-y-auto">
+      <nav className="flex-1 px-3 pb-4 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {navGroups.map((group, gi) => {
           const visible = group.items.filter((i) => i.roles.includes(role));
           if (visible.length === 0) return null;
