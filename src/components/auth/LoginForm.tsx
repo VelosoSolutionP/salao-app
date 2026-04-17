@@ -55,7 +55,7 @@ export function LoginForm({
       if (role === "MASTER") {
         router.push("/master");
       } else if (role === "OWNER" || role === "BARBER") {
-        router.push("/agenda");
+        router.push("/dashboard");
       } else {
         router.push(callbackUrl); // CLIENT vai para /agendar ou onde vier
       }

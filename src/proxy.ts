@@ -35,7 +35,7 @@ export async function proxy(request: NextRequest) {
     if (session?.user) {
       const role = (session.user as { role: string }).role;
       if (role === "OWNER" || role === "BARBER") {
-        return NextResponse.redirect(new URL("/agenda", request.url));
+        return NextResponse.redirect(new URL("/dashboard", request.url));
       }
       if (role === "MASTER") {
         const res = NextResponse.redirect(new URL("/master", request.url));
