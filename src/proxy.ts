@@ -4,15 +4,14 @@ import type { NextRequest } from "next/server";
 
 const PUBLIC_PATHS = [
   "/login",
-  "/registro",        // kept for potential future admin-invite flow
+  "/registro",
   "/recuperar-senha",
   "/esqueci-senha",
   "/redefinir-senha",
-  "/bloqueado",       // trial/blocked page — always accessible
-  "/agendar",                              // público — visitantes podem ver e iniciar agendamento
-  "/api/agendamentos/disponibilidade",     // leitura pública de horários disponíveis
+  "/bloqueado",
+  "/api/agendamentos/disponibilidade",
   "/api/auth",
-  "/api/webhook",     // webhooks externos (Mercado Pago, etc.)
+  "/api/webhook",
   "/_next",
   "/favicon.ico",
   "/icons",
@@ -30,6 +29,23 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // /agendar é público para visitantes, mas salão/equipe/master → redireciona pro painel
+  if (pathname.startsWith("/agendar")) {
+    const session = await auth();
+    if (session?.user) {
+      const role = (session.user as { role: string }).role;
+      if (role === "OWNER" || role === "BARBER") {
+        return NextResponse.redirect(new URL("/agenda", request.url));
+      }
+      if (role === "MASTER") {
+        const res = NextResponse.redirect(new URL("/master", request.url));
+        res.cookies.delete("active_salon_id");
+        return res;
+      }
+    }
+    return NextResponse.next();
+  }
+
   const session = await auth();
 
   if (!session?.user) {
@@ -44,7 +60,7 @@ export async function proxy(request: NextRequest) {
     trialExpires: string | null;
   };
 
-  // ── Trial / block check (skip for MASTER — never restricted) ────────────
+  // ── Trial / block check ──────────────────────────────────────────────────
   if (role !== "MASTER" && !pathname.startsWith("/api/")) {
     if (blocked) {
       return NextResponse.redirect(new URL("/bloqueado?motivo=bloqueado", request.url));
@@ -56,7 +72,7 @@ export async function proxy(request: NextRequest) {
 
   // ── Role routing ─────────────────────────────────────────────────────────
 
-  // CLIENT → only /agendar
+  // CLIENT → só /agendar
   if (role === "CLIENT") {
     if (!pathname.startsWith("/agendar") && !pathname.startsWith("/api/")) {
       return NextResponse.redirect(new URL("/agendar", request.url));
@@ -64,18 +80,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // MASTER → sempre vai para /master, nunca acessa rotas de salão
+  // MASTER → /master
   if (role === "MASTER") {
     if (pathname.startsWith("/master") || pathname.startsWith("/api/")) {
       return NextResponse.next();
     }
-    // Limpa o cookie de salão ativo e redireciona para o painel master
     const res = NextResponse.redirect(new URL("/master", request.url));
     res.cookies.delete("active_salon_id");
     return res;
   }
 
-  // OWNER-only management routes (BARBER gets redirected to agenda)
+  // OWNER-only routes (BARBER → /agenda)
   if (
     (pathname.startsWith("/relatorios") ||
       pathname.startsWith("/financeiro") ||
@@ -86,8 +101,6 @@ export async function proxy(request: NextRequest) {
   ) {
     return NextResponse.redirect(new URL("/agenda", request.url));
   }
-
-  // /transformacoes is accessible to OWNER and BARBER (already passed role checks above)
 
   return NextResponse.next();
 }

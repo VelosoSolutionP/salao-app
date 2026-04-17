@@ -16,17 +16,19 @@ export async function GET(req: NextRequest) {
   const limit = parseInt(searchParams.get("limit") ?? "20");
   const skip = (page - 1) * limit;
 
-  const where: Record<string, unknown> = { salonId: salonId! };
+  // Só role CLIENT — exclui BARBER/OWNER/MASTER cadastrados por acidente como cliente
+  const userFilter = search
+    ? {
+        role: "CLIENT" as const,
+        OR: [
+          { name: { contains: search, mode: "insensitive" as const } },
+          { email: { contains: search, mode: "insensitive" as const } },
+          { phone: { contains: search } },
+        ],
+      }
+    : { role: "CLIENT" as const };
 
-  if (search) {
-    where.user = {
-      OR: [
-        { name: { contains: search, mode: "insensitive" } },
-        { email: { contains: search, mode: "insensitive" } },
-        { phone: { contains: search } },
-      ],
-    };
-  }
+  const where = { salonId: salonId!, user: userFilter };
 
   const [clientes, total] = await Promise.all([
     prisma.cliente.findMany({

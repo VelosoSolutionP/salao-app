@@ -24,7 +24,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-screen overflow-hidden bg-[#f4f3f8]">
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-60 flex-shrink-0 shadow-2xl shadow-black/30">
+      <aside className="hidden lg:flex w-60 flex-shrink-0">
         <Sidebar />
       </aside>
 
