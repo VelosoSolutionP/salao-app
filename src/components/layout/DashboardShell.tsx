@@ -18,8 +18,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
     staleTime: 60_000,
     enabled: role === "OWNER" || role === "BARBER",
   });
-  const salonLogo = configData?.logoUrl as string | undefined;
-  const salonName = configData?.name as string | undefined;
+  const salonLogo   = configData?.logoUrl    as string | undefined;
+  const salonName   = configData?.name       as string | undefined;
+  const brandColor  = (configData?.brandColor as string | undefined) ?? "#7c3aed";
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#f4f3f8]">
@@ -39,7 +40,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         {/* Mobile topbar */}
         <header
           className="lg:hidden flex items-center gap-3 px-4 py-3.5 border-b border-white/5"
-          style={{ background: "linear-gradient(135deg, #0c0c14, #09090f)" }}
+          style={{ background: `linear-gradient(135deg, ${brandColor}dd, ${brandColor}99)` }}
         >
           <button
             onClick={() => setMobileOpen(true)}

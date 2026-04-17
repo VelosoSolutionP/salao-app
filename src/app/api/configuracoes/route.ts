@@ -13,6 +13,7 @@ const schema = z.object({
   pixKeyType: z.enum(["CPF", "CNPJ", "EMAIL", "PHONE", "RANDOM"]).optional(),
   logoUrl: z.string().url().optional().nullable(),
   coverUrl: z.string().url().optional().nullable(),
+  brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
   // Política de cancelamento
   cancelamentoHorasMinimo: z.number().int().min(0).max(168).optional(),
   multaValor: z.number().min(0).optional(),

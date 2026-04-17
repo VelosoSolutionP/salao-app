@@ -27,6 +27,7 @@ interface SalonData {
   pixKeyType: string | null;
   logoUrl?: string | null;
   coverUrl?: string | null;
+  brandColor?: string | null;
   codigoConvite: string | null;
   cancelamentoHorasMinimo: number;
   multaValor: number | null;
@@ -69,6 +70,7 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
   const [multaTipo, setMultaTipo] = useState<"PERCENTUAL" | "FIXO">(
     (salon?.multaTipo as "PERCENTUAL" | "FIXO") ?? "FIXO"
   );
+  const [brandColor, setBrandColor] = useState(salon?.brandColor ?? "#7c3aed");
 
   async function handleLogoUpload(file: File) {
     if (!file) return;
@@ -155,6 +157,7 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
       }
 
       // Cancellation policy
+      body.brandColor = brandColor;
       body.cancelamentoHorasMinimo = cancelamentoHoras;
       if (multaValor.trim()) {
         body.multaValor = parseFloat(multaValor);
@@ -263,6 +266,37 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
               <p className="text-[11px] text-gray-400 text-center">
                 PNG, JPG ou WebP · Máx. 2 MB · Recomendado: 200×200 px
               </p>
+            </div>
+          </div>
+
+          {/* Cor do cabeçalho */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">Cor do cabeçalho</label>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <input
+                  type="color"
+                  value={brandColor}
+                  onChange={(e) => setBrandColor(e.target.value)}
+                  className="w-10 h-10 rounded-xl cursor-pointer border border-gray-200 p-0.5 bg-white"
+                />
+              </div>
+              <div className="flex gap-2 flex-wrap">
+                {["#7c3aed","#2563eb","#059669","#dc2626","#d97706","#db2777","#0891b2","#374151"].map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setBrandColor(c)}
+                    className="w-7 h-7 rounded-lg border-2 transition-all"
+                    style={{
+                      background: c,
+                      borderColor: brandColor === c ? "#111" : "transparent",
+                      transform: brandColor === c ? "scale(1.15)" : "scale(1)",
+                    }}
+                  />
+                ))}
+              </div>
+              <span className="text-xs text-gray-400 font-mono">{brandColor}</span>
             </div>
           </div>
         </CardContent>
