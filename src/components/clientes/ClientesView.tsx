@@ -25,18 +25,11 @@ import { formatBRL, formatDate, getInitials } from "@/lib/utils";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function gradientFor(name: string) {
-  const gradients = [
-    "from-violet-500 to-purple-600",
-    "from-blue-500 to-indigo-600",
-    "from-emerald-500 to-teal-600",
-    "from-orange-500 to-amber-600",
-    "from-pink-500 to-rose-600",
-    "from-cyan-500 to-blue-600",
-  ];
+const DEFAULT_COLORS = ["#7c3aed","#2563eb","#059669","#f97316","#ec4899","#0891b2"];
+function colorFor(name: string): string {
   let hash = 0;
   for (const ch of name) hash = (hash * 31 + ch.charCodeAt(0)) & 0xffff;
-  return gradients[hash % gradients.length];
+  return DEFAULT_COLORS[hash % DEFAULT_COLORS.length];
 }
 
 function statusLabel(totalVisitas: number): { label: string; color: string } {
@@ -303,6 +296,8 @@ function ClienteFormModal({
 
 // ─── Perfil do Cliente (Drawer lateral) ──────────────────────────────────────
 
+const PALETTE = ["#7c3aed","#2563eb","#059669","#dc2626","#d97706","#db2777","#0891b2","#374151","#be185d","#065f46"];
+
 function ClientePerfil({
   clienteId, onClose, onEdit, onDelete, onShare,
 }: {
@@ -312,11 +307,25 @@ function ClientePerfil({
   onDelete: (c: Record<string, unknown>) => void;
   onShare:  (c: Record<string, unknown>) => void;
 }) {
+  const qcInner = useQueryClient();
+  const [showPalette, setShowPalette] = useState(false);
+
   const { data: c, isLoading } = useQuery({
     queryKey: ["cliente", clienteId],
     queryFn: () => fetch(`/api/clientes/${clienteId}?historico=true`).then((r) => r.json()),
     enabled: !!clienteId,
   });
+
+  async function handleCorChange(cor: string) {
+    await fetch(`/api/clientes/${clienteId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cor }),
+    });
+    qcInner.invalidateQueries({ queryKey: ["cliente", clienteId] });
+    qcInner.invalidateQueries({ queryKey: ["clientes"] });
+    setShowPalette(false);
+  }
 
   if (!clienteId) return null;
 
@@ -348,10 +357,42 @@ function ClientePerfil({
         ) : (
           <div>
             {/* Header com gradiente */}
-            <div className={`bg-gradient-to-br ${gradientFor(c.user.name)} p-6 text-white rounded-t-2xl relative`}>
-              <button onClick={onClose} className="absolute top-4 right-4 w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
-                <X className="w-4 h-4" />
-              </button>
+            <div
+              className="p-6 text-white rounded-t-2xl relative"
+              style={{
+                background: `linear-gradient(135deg, ${c.cor ?? colorFor(c.user.name)}ee, ${c.cor ?? colorFor(c.user.name)}88)`,
+              }}
+            >
+              <div className="absolute top-4 right-4 flex items-center gap-2">
+                {/* Paleta de cores */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowPalette((v) => !v)}
+                    className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors"
+                    title="Mudar cor"
+                  >
+                    <span className="text-sm">🎨</span>
+                  </button>
+                  {showPalette && (
+                    <div className="absolute right-0 top-10 bg-white rounded-2xl shadow-xl p-3 z-50 flex flex-wrap gap-2 w-52">
+                      {PALETTE.map((cor) => (
+                        <button
+                          key={cor}
+                          onClick={() => handleCorChange(cor)}
+                          className="w-8 h-8 rounded-lg border-2 transition-all hover:scale-110"
+                          style={{
+                            background: cor,
+                            borderColor: c.cor === cor ? "#111" : "transparent",
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <button onClick={onClose} className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center hover:bg-white/30 transition-colors">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
 
               <div className="flex items-end gap-4">
                 <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-2xl font-black shadow-lg ring-2 ring-white/30">
@@ -595,7 +636,7 @@ export function ClientesView() {
                 >
                   <div className="flex items-start gap-3">
                     {/* Avatar */}
-                    <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${gradientFor(user.name)} flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm`}>
+                    <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0 shadow-sm" style={{ background: `linear-gradient(135deg, ${(c as Record<string,unknown>).cor as string ?? colorFor(user.name)}, ${(c as Record<string,unknown>).cor as string ?? colorFor(user.name)}88)` }}>
                       {getInitials(user.name)}
                     </div>
 

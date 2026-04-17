@@ -10,6 +10,7 @@ const updateSchema = z.object({
   notas:    z.string().optional().nullable(),
   dataNasc: z.string().optional().nullable(),
   genero:   z.string().optional().nullable(),
+  cor:      z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
 });
 
 export async function GET(
@@ -65,10 +66,9 @@ export async function PATCH(
   const cliente = await prisma.cliente.findFirst({ where: { id, salonId: salonId! } });
   if (!cliente) return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
 
-  const { name, phone, notas, dataNasc, genero } = parsed.data;
+  const { name, phone, notas, dataNasc, genero, cor } = parsed.data;
 
   await Promise.all([
-    // Atualiza dados do usuário (nome e telefone)
     (name !== undefined || phone !== undefined)
       ? prisma.user.update({
           where: { id: cliente.userId },
@@ -79,13 +79,13 @@ export async function PATCH(
         })
       : Promise.resolve(),
 
-    // Atualiza dados do cliente
     prisma.cliente.update({
       where: { id },
       data: {
         ...(notas    !== undefined && { notas:    notas ?? undefined }),
         ...(genero   !== undefined && { genero:   genero ?? undefined }),
         ...(dataNasc !== undefined && { dataNasc: dataNasc ? new Date(dataNasc) : null }),
+        ...(cor      !== undefined && { cor:      cor ?? null }),
       },
     }),
   ]);
