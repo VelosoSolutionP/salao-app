@@ -7,7 +7,10 @@ import { requireRole, requireSalon } from "@/lib/auth-guard";
 const updateSchema = z.object({
   nome: z.string().optional(),
   descricao: z.string().optional(),
-  desconto: z.number().positive().optional(),
+  tipo: z.enum(["DESCONTO", "FIDELIDADE", "PRIMEIRO_AGENDAMENTO", "ANIVERSARIO", "PACOTE"]).optional(),
+  desconto: z.number().positive().optional().nullable(),
+  tipoDesconto: z.enum(["PERCENTUAL", "FIXO"]).optional().nullable(),
+  codigo: z.string().optional().nullable(),
   ativa: z.boolean().optional(),
   validaDe: z.string().datetime().optional().nullable(),
   validaAte: z.string().datetime().optional().nullable(),

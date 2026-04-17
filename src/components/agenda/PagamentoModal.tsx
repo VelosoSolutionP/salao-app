@@ -3,125 +3,171 @@
 /**
  * PagamentoModal
  *
- * Abre na conclusão de um atendimento (status EM_ANDAMENTO → CONCLUIDO).
- * Métodos disponíveis:
- *   • Dinheiro / Transferência → registra manualmente, sem Stripe
- *   • PIX / Cartão → cria PaymentIntent e processa via Stripe Elements
- *
- * Props:
- *   agendamentoId  — ID do agendamento
- *   totalPrice     — valor do atendimento (number)
- *   usouProprioProduto — flag para cálculo de comissão
- *   onSuccess      — callback quando pagamento é confirmado
- *   onClose        — fechar o modal
+ * Conclui um atendimento e registra o pagamento.
+ * Métodos:
+ *   • Dinheiro / Transferência / Cartão → registro manual
+ *   • PIX → cobrança Woovi com QR code (polling de status)
  */
 
-import { useState, useEffect, useCallback } from "react";
-import {
-  Dialog, DialogContent, DialogTitle,
-} from "@/components/ui/dialog";
-import { loadStripe } from "@stripe/stripe-js";
-import {
-  Elements,
-  PaymentElement,
-  useStripe,
-  useElements,
-} from "@stripe/react-stripe-js";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { formatBRL } from "@/lib/utils";
 import {
   Banknote, ArrowLeftRight, Smartphone, CreditCard,
-  Loader2, CheckCircle2, ChevronRight, ArrowLeft,
+  Loader2, CheckCircle2, ChevronRight, ArrowLeft, Copy, Check,
 } from "lucide-react";
 
-/* ─── Stripe init ──────────────────────────────────────────────────────────── */
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? ""
-);
-
-/* ─── Métodos de pagamento ─────────────────────────────────────────────────── */
+/* ─── Métodos ──────────────────────────────────────────────────────────────── */
 type Metodo = "DINHEIRO" | "TRANSFERENCIA" | "PIX" | "CARTAO_CREDITO" | "CARTAO_DEBITO";
 
-const METODOS: { key: Metodo; label: string; Icon: React.ElementType; stripe: boolean; color: string }[] = [
-  { key: "DINHEIRO",       label: "Dinheiro",   Icon: Banknote,       stripe: false, color: "#16a34a" },
-  { key: "TRANSFERENCIA",  label: "Transfer.",  Icon: ArrowLeftRight, stripe: false, color: "#2563eb" },
-  { key: "PIX",            label: "PIX",        Icon: Smartphone,     stripe: true,  color: "#0891b2" },
-  { key: "CARTAO_CREDITO", label: "Crédito",    Icon: CreditCard,     stripe: true,  color: "#7c3aed" },
-  { key: "CARTAO_DEBITO",  label: "Débito",     Icon: CreditCard,     stripe: true,  color: "#9333ea" },
+const METODOS: { key: Metodo; label: string; Icon: React.ElementType; color: string; pix?: boolean }[] = [
+  { key: "DINHEIRO",       label: "Dinheiro",  Icon: Banknote,       color: "#16a34a" },
+  { key: "TRANSFERENCIA",  label: "Transfer.", Icon: ArrowLeftRight, color: "#2563eb" },
+  { key: "PIX",            label: "PIX",       Icon: Smartphone,     color: "#0891b2", pix: true },
+  { key: "CARTAO_CREDITO", label: "Crédito",   Icon: CreditCard,     color: "#7c3aed" },
+  { key: "CARTAO_DEBITO",  label: "Débito",    Icon: CreditCard,     color: "#9333ea" },
 ];
 
-/* ─── Stripe payment form ──────────────────────────────────────────────────── */
-function StripeForm({
-  clientSecret,
-  metodo,
+/* ─── QR Code PIX (Woovi) ──────────────────────────────────────────────────── */
+function PixWooviStep({
   agendamentoId,
+  totalPrice,
   usouProprioProduto,
   onSuccess,
 }: {
-  clientSecret: string;
-  metodo: Metodo;
   agendamentoId: string;
+  totalPrice: number;
   usouProprioProduto: boolean;
   onSuccess: () => void;
 }) {
-  const stripe   = useStripe();
-  const elements = useElements();
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading]   = useState(true);
+  const [brCode, setBrCode]     = useState("");
+  const [qrImg, setQrImg]       = useState("");
+  const [correlationID, setCorrelationID] = useState("");
+  const [copied, setCopied]     = useState(false);
+  const [waitingPay, setWaitingPay] = useState(false);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  async function handlePay() {
-    if (!stripe || !elements) return;
-    setLoading(true);
+  /* Cria cobrança */
+  useEffect(() => {
+    fetch("/api/pagamentos/pix", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ agendamentoId }),
+    })
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.error) { toast.error(d.error); return; }
+        setBrCode(d.brCode);
+        setQrImg(d.qrCodeImage);
+        setCorrelationID(d.correlationID);
+        setWaitingPay(true);
+      })
+      .catch(() => toast.error("Erro ao gerar QR code PIX"))
+      .finally(() => setLoading(false));
+  }, [agendamentoId]);
 
-    const { error, paymentIntent } = await stripe.confirmPayment({
-      elements,
-      confirmParams: { return_url: window.location.href },
-      redirect: "if_required",
-    });
+  /* Polling de status */
+  useEffect(() => {
+    if (!correlationID || !waitingPay) return;
 
-    if (error) {
-      toast.error(error.message ?? "Erro no pagamento");
-      setLoading(false);
-      return;
-    }
+    pollRef.current = setInterval(async () => {
+      try {
+        const res  = await fetch(`/api/pagamentos/pix?correlationId=${correlationID}`);
+        const data = await res.json();
 
-    if (paymentIntent?.status === "succeeded") {
-      // Confirma no servidor — o webhook também faz isso, mas aqui é mais imediato
-      await fetch(`/api/agendamentos/${agendamentoId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          status: "CONCLUIDO",
-          pagamento: metodo,
-          pagamentoStatus: "PAGO",
-          usouProprioProduto,
-          stripePaymentIntentId: paymentIntent.id,
-        }),
-      });
-      onSuccess();
-    } else {
-      toast.error("Pagamento ainda não confirmado. Aguarde ou tente novamente.");
-      setLoading(false);
-    }
+        if (data.status === "COMPLETED") {
+          clearInterval(pollRef.current!);
+          // Atualiza agendamento local (webhook já fez no servidor, mas garante UI)
+          await fetch(`/api/agendamentos/${agendamentoId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              status: "CONCLUIDO",
+              pagamento: "PIX",
+              pagamentoStatus: "PAGO",
+              usouProprioProduto,
+            }),
+          });
+          onSuccess();
+        }
+      } catch {
+        // ignora erro de rede pontual
+      }
+    }, 3000);
+
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [correlationID, waitingPay, agendamentoId, usouProprioProduto, onSuccess]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(brCode);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-10">
+        <Loader2 className="w-7 h-7 animate-spin text-cyan-500" />
+        <p className="text-sm text-gray-500">Gerando QR code PIX…</p>
+      </div>
+    );
   }
 
+  if (!brCode) {
+    return (
+      <p className="text-sm text-red-500 text-center py-6">
+        Não foi possível gerar o PIX. Verifique a configuração Woovi.
+      </p>
+    );
+  }
+
+  /* QR via qrserver.com (sem dependência extra) */
+  const qrSrc = qrImg || `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(brCode)}&size=200x200&margin=1`;
+
   return (
-    <div className="space-y-4">
-      <PaymentElement options={{ layout: "tabs" }} />
+    <div className="flex flex-col items-center gap-4">
+      {/* QR Code */}
+      <div className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={qrSrc} alt="QR Code PIX" width={192} height={192} className="rounded-xl" />
+      </div>
+
+      {/* Valor */}
+      <p className="text-sm text-gray-500">
+        Valor: <span className="font-bold text-gray-800">{formatBRL(totalPrice)}</span>
+      </p>
+
+      {/* Copia e Cola */}
       <button
         type="button"
-        onClick={handlePay}
-        disabled={loading || !stripe}
-        className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl text-sm font-bold text-white disabled:opacity-60 transition-opacity"
-        style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
+        onClick={handleCopy}
+        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40 transition-all"
       >
-        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-        {loading ? "Processando…" : "Confirmar pagamento"}
+        <span className="flex-1 text-xs text-gray-500 truncate text-left font-mono">
+          {brCode.slice(0, 48)}…
+        </span>
+        {copied
+          ? <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
+          : <Copy className="w-4 h-4 text-gray-400 flex-shrink-0" />
+        }
       </button>
+
+      {/* Status */}
+      <div className="flex items-center gap-2 text-sm text-cyan-600">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        <span>Aguardando pagamento…</span>
+      </div>
+
+      <p className="text-xs text-gray-400 text-center">
+        O atendimento será concluído automaticamente após o pagamento.
+      </p>
     </div>
   );
 }
 
-/* ─── Main modal ───────────────────────────────────────────────────────────── */
+/* ─── Modal principal ──────────────────────────────────────────────────────── */
 export function PagamentoModal({
   agendamentoId,
   totalPrice,
@@ -135,31 +181,10 @@ export function PagamentoModal({
   onSuccess: () => void;
   onClose: () => void;
 }) {
-  const [metodo, setMetodo]             = useState<Metodo | null>(null);
-  const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [loadingIntent, setLoadingIntent] = useState(false);
+  const [metodo, setMetodo]         = useState<Metodo | null>(null);
   const [manualLoading, setManualLoading] = useState(false);
-  const [done, setDone]                 = useState(false);
+  const [done, setDone]             = useState(false);
 
-  /* Cria PaymentIntent quando método Stripe é selecionado */
-  useEffect(() => {
-    if (!metodo) return;
-    const m = METODOS.find((x) => x.key === metodo);
-    if (!m?.stripe) { setClientSecret(null); return; }
-
-    setLoadingIntent(true);
-    fetch("/api/pagamentos/intencao", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ agendamentoId }),
-    })
-      .then((r) => r.json())
-      .then((d) => { if (d.clientSecret) setClientSecret(d.clientSecret); })
-      .catch(() => toast.error("Erro ao iniciar pagamento"))
-      .finally(() => setLoadingIntent(false));
-  }, [metodo, agendamentoId]);
-
-  /* Pagamento manual (dinheiro / transferência) */
   const handleManual = useCallback(async () => {
     if (!metodo) return;
     setManualLoading(true);
@@ -180,7 +205,7 @@ export function PagamentoModal({
     setTimeout(onSuccess, 1200);
   }, [metodo, agendamentoId, usouProprioProduto, onSuccess]);
 
-  const handleStripeSuccess = useCallback(() => {
+  const handlePixSuccess = useCallback(() => {
     setDone(true);
     setTimeout(onSuccess, 1200);
   }, [onSuccess]);
@@ -189,10 +214,7 @@ export function PagamentoModal({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent
-        showCloseButton={false}
-        className="max-w-md p-0 gap-0 overflow-hidden"
-      >
+      <DialogContent showCloseButton={false} className="max-w-md p-0 gap-0 overflow-hidden">
         <DialogTitle className="sr-only">Pagamento do atendimento</DialogTitle>
 
         {/* Header */}
@@ -204,7 +226,7 @@ export function PagamentoModal({
           {metodo && !done && (
             <button
               type="button"
-              onClick={() => { setMetodo(null); setClientSecret(null); }}
+              onClick={() => setMetodo(null)}
               className="absolute top-3 left-3 w-7 h-7 flex items-center justify-center rounded-full bg-white/15 hover:bg-white/25 transition-colors"
             >
               <ArrowLeft className="w-3.5 h-3.5 text-white" />
@@ -257,8 +279,18 @@ export function PagamentoModal({
             </div>
           )}
 
-          {/* Pagamento manual */}
-          {metodo && metodoInfo && !metodoInfo.stripe && !done && (
+          {/* PIX — Woovi QR */}
+          {metodo === "PIX" && !done && (
+            <PixWooviStep
+              agendamentoId={agendamentoId}
+              totalPrice={totalPrice}
+              usouProprioProduto={usouProprioProduto}
+              onSuccess={handlePixSuccess}
+            />
+          )}
+
+          {/* Manual — dinheiro, transferência, cartão */}
+          {metodo && metodo !== "PIX" && metodoInfo && !done && (
             <div className="space-y-4">
               <div className="flex items-center gap-3 p-4 rounded-2xl bg-gray-50 border border-gray-100">
                 <div
@@ -285,41 +317,6 @@ export function PagamentoModal({
                 }
                 {manualLoading ? "Registrando…" : "Confirmar recebimento"}
               </button>
-            </div>
-          )}
-
-          {/* Stripe Elements */}
-          {metodo && metodoInfo?.stripe && !done && (
-            <div>
-              {loadingIntent || !clientSecret ? (
-                <div className="flex items-center justify-center py-10">
-                  <Loader2 className="w-6 h-6 animate-spin text-violet-400" />
-                </div>
-              ) : (
-                <Elements
-                  stripe={stripePromise}
-                  options={{
-                    clientSecret,
-                    appearance: {
-                      theme: "stripe",
-                      variables: {
-                        colorPrimary: "#7c3aed",
-                        borderRadius: "12px",
-                        fontFamily: "Inter, sans-serif",
-                      },
-                    },
-                    locale: "pt-BR",
-                  }}
-                >
-                  <StripeForm
-                    clientSecret={clientSecret}
-                    metodo={metodo}
-                    agendamentoId={agendamentoId}
-                    usouProprioProduto={usouProprioProduto}
-                    onSuccess={handleStripeSuccess}
-                  />
-                </Elements>
-              )}
             </div>
           )}
 

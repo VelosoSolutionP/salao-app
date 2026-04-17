@@ -520,7 +520,8 @@ model Agendamento {
   pagamento            MetodoPagamento?
   pagamentoStatus      PagamentoStatus   @default(PENDENTE)
   pixTxid                 String?
-  stripePaymentIntentId   String?                          // PaymentIntent Stripe (PIX ou cartão)
+  stripePaymentIntentId   String?                          // PaymentIntent Stripe (legado)
+  wooviCorrelationId      String?                          // Correlação Woovi PIX
   usouProprioProduto      Boolean           @default(false)  // profissional usou produto próprio?
   canceladoMotivo      String?
   canceladoPorCliente  Boolean           @default(false)   // cliente cancelou (vs. salão)

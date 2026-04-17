@@ -3,26 +3,32 @@
 import { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
+import {
   Plus, Loader2, Building2, TrendingUp, CalendarDays, Users,
-  DollarSign, ChevronDown, ChevronUp, MapPin,
+  DollarSign, ChevronDown, ChevronUp, MapPin, Pencil, Trash2,
+  Network, ArrowUpRight,
 } from "lucide-react";
 import { formatBRL } from "@/lib/utils";
 
 const inputCls =
-  "w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 bg-white";
+  "w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-300 bg-white transition-all";
 
 export function RedeView() {
   const queryClient = useQueryClient();
-  const [modalOpen, setModalOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editingRede, setEditingRede] = useState<{ id: string; nome: string } | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [addSalonModal, setAddSalonModal] = useState<string | null>(null);
 
-  // Form state
   const [nome, setNome] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
@@ -37,7 +43,6 @@ export function RedeView() {
     enabled: !!expandedId,
   });
 
-  // All salons of this owner (to add to a network)
   const { data: allSalons = [] } = useQuery({
     queryKey: ["all-salons"],
     queryFn: () => fetch("/api/saloes").then((r) => r.json()),
@@ -57,11 +62,40 @@ export function RedeView() {
       if (!res.ok) { toast.error(json.error ?? "Erro ao criar rede"); return; }
       toast.success("Rede criada!");
       queryClient.invalidateQueries({ queryKey: ["redes"] });
-      setModalOpen(false);
+      setCreateOpen(false);
       setNome("");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleEdit() {
+    if (!editingRede || !editingRede.nome.trim()) { toast.error("Nome obrigatório"); return; }
+    setSubmitting(true);
+    try {
+      const res = await fetch(`/api/rede/${editingRede.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ nome: editingRede.nome.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error ?? "Erro ao atualizar rede"); return; }
+      toast.success("Rede atualizada!");
+      queryClient.invalidateQueries({ queryKey: ["redes"] });
+      setEditingRede(null);
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleDelete(id: string) {
+    const res = await fetch(`/api/rede/${id}`, { method: "DELETE" });
+    if (res.ok) {
+      toast.success("Rede removida");
+      queryClient.invalidateQueries({ queryKey: ["redes"] });
+      if (expandedId === id) setExpandedId(null);
+    }
+    setDeletingId(null);
   }
 
   async function handleAddSalon(redeId: string, salonId: string) {
@@ -93,179 +127,206 @@ export function RedeView() {
 
   return (
     <>
-      <div className="flex justify-end">
-        <Button onClick={() => setModalOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" /> Nova rede
+      <div className="flex items-center justify-between mb-6">
+        <p className="text-sm text-gray-500">
+          <span className="font-bold text-gray-800">{redes.length}</span> rede(s) configurada(s)
+        </p>
+        <Button
+          onClick={() => { setNome(""); setCreateOpen(true); }}
+          className="gap-2 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-md shadow-violet-200"
+        >
+          <Plus className="w-4 h-4" /> Nova rede
         </Button>
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-gray-400" /></div>
+        <div className="flex justify-center py-16">
+          <Loader2 className="w-6 h-6 animate-spin text-violet-400" />
+        </div>
       ) : redes.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center py-16">
-            <Building2 className="w-14 h-14 text-gray-200 mb-3" />
-            <p className="font-semibold text-gray-500">Nenhuma rede configurada</p>
-            <p className="text-sm text-gray-400 mt-1 text-center max-w-xs">
-              Agrupe seus salões em uma rede para visualizar métricas consolidadas de todas as unidades
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex flex-col items-center py-20 text-center">
+          <div className="w-16 h-16 bg-violet-50 rounded-2xl flex items-center justify-center mb-4">
+            <Network className="w-8 h-8 text-violet-300" />
+          </div>
+          <p className="font-semibold text-gray-700">Nenhuma rede configurada</p>
+          <p className="text-sm text-gray-400 mt-1 max-w-xs">
+            Agrupe seus salões para visualizar métricas consolidadas de todas as unidades
+          </p>
+          <Button onClick={() => { setNome(""); setCreateOpen(true); }} className="mt-5 gap-2">
+            <Plus className="w-4 h-4" /> Criar rede
+          </Button>
+        </div>
       ) : (
         <div className="space-y-4">
           {redes.map((rede: any) => {
             const isExpanded = expandedId === rede.id;
             const detail = isExpanded ? redeDetail : null;
+            const unidades = rede.salons?.length ?? 0;
 
             return (
-              <Card key={rede.id}>
-                <CardContent className="p-5">
-                  {/* Header */}
-                  <div className="flex items-center justify-between">
+              <div key={rede.id} className="rounded-2xl border border-gray-100 bg-white shadow-sm overflow-hidden hover:shadow-md transition-all">
+                {/* Header */}
+                <div className="bg-gradient-to-r from-violet-600 to-purple-700 px-5 py-4 text-white relative overflow-hidden">
+                  <div className="absolute -top-4 -right-4 w-20 h-20 bg-white/10 rounded-full" />
+                  <div className="flex items-center justify-between relative">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-violet-100 rounded-xl flex items-center justify-center">
-                        <Building2 className="w-5 h-5 text-violet-600" />
+                      <div className="w-10 h-10 bg-white/15 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <Network className="w-5 h-5 text-white" />
                       </div>
                       <div>
-                        <p className="font-bold text-gray-900">{rede.nome}</p>
-                        <p className="text-xs text-gray-400">
-                          {rede.salons?.length ?? 0} unidade{(rede.salons?.length ?? 0) !== 1 ? "s" : ""}
+                        <p className="font-black text-base">{rede.nome}</p>
+                        <p className="text-white/70 text-xs">
+                          {unidades} unidade{unidades !== 1 ? "s" : ""}
                         </p>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setExpandedId(isExpanded ? null : rede.id);
-                      }}
-                      className="flex items-center gap-1.5 text-sm text-violet-600 font-semibold hover:text-violet-700"
-                    >
-                      {isExpanded ? "Fechar" : "Ver detalhes"}
-                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                    </button>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setEditingRede({ id: rede.id, nome: rede.nome })}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/15 hover:bg-white/25 transition-colors"
+                        title="Editar"
+                      >
+                        <Pencil className="w-3.5 h-3.5 text-white" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeletingId(rede.id)}
+                        className="w-8 h-8 flex items-center justify-center rounded-lg bg-white/15 hover:bg-red-500/50 transition-colors"
+                        title="Excluir"
+                      >
+                        <Trash2 className="w-3.5 h-3.5 text-white" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedId(isExpanded ? null : rede.id)}
+                        className="flex items-center gap-1 ml-1 bg-white/15 hover:bg-white/25 transition-colors rounded-lg px-3 py-1.5 text-xs font-semibold text-white"
+                      >
+                        {isExpanded ? "Fechar" : "Detalhes"}
+                        {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
                   </div>
+                </div>
 
-                  {/* Expanded view */}
-                  {isExpanded && (
-                    <div className="mt-5 space-y-4">
-                      {/* Consolidated KPIs */}
-                      {detail?.metrics && (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                          <div className="bg-green-50 rounded-xl p-3 text-center">
-                            <DollarSign className="w-4 h-4 text-green-600 mx-auto mb-1" />
-                            <p className="text-lg font-black text-green-700">{formatBRL(detail.metrics.receitaMes)}</p>
-                            <p className="text-[10px] text-gray-500">Receita do mês</p>
+                {/* Expanded */}
+                {isExpanded && (
+                  <div className="p-5 space-y-5">
+                    {detail?.metrics && (
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        {[
+                          { icon: DollarSign, label: "Receita do mês", value: formatBRL(detail.metrics.receitaMes), color: "text-emerald-600", bg: "bg-emerald-50" },
+                          { icon: CalendarDays, label: "Agend. hoje", value: detail.metrics.agendamentosHoje, color: "text-blue-600", bg: "bg-blue-50" },
+                          { icon: TrendingUp, label: "Atend./mês", value: detail.metrics.agendamentosMes, color: "text-violet-600", bg: "bg-violet-50" },
+                          { icon: Users, label: "Clientes", value: detail.metrics.clientesTotal, color: "text-pink-600", bg: "bg-pink-50" },
+                        ].map(({ icon: Icon, label, value, color, bg }) => (
+                          <div key={label} className={`${bg} rounded-2xl p-3 text-center`}>
+                            <Icon className={`w-4 h-4 ${color} mx-auto mb-1`} />
+                            <p className={`text-lg font-black ${color}`}>{value}</p>
+                            <p className="text-[10px] text-gray-500">{label}</p>
                           </div>
-                          <div className="bg-blue-50 rounded-xl p-3 text-center">
-                            <CalendarDays className="w-4 h-4 text-blue-600 mx-auto mb-1" />
-                            <p className="text-lg font-black text-blue-700">{detail.metrics.agendamentosHoje}</p>
-                            <p className="text-[10px] text-gray-500">Agendamentos hoje</p>
-                          </div>
-                          <div className="bg-violet-50 rounded-xl p-3 text-center">
-                            <TrendingUp className="w-4 h-4 text-violet-600 mx-auto mb-1" />
-                            <p className="text-lg font-black text-violet-700">{detail.metrics.agendamentosMes}</p>
-                            <p className="text-[10px] text-gray-500">Atendimentos/mês</p>
-                          </div>
-                          <div className="bg-pink-50 rounded-xl p-3 text-center">
-                            <Users className="w-4 h-4 text-pink-600 mx-auto mb-1" />
-                            <p className="text-lg font-black text-pink-700">{detail.metrics.clientesTotal}</p>
-                            <p className="text-[10px] text-gray-500">Clientes total</p>
-                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div>
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="text-sm font-bold text-gray-700">Unidades</h4>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="gap-1.5 text-violet-600 border-violet-200 hover:bg-violet-50"
+                          onClick={() => setAddSalonModal(rede.id)}
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Adicionar
+                        </Button>
+                      </div>
+
+                      {!detail?.salonMetrics ? (
+                        <div className="flex justify-center py-6">
+                          <Loader2 className="w-5 h-5 animate-spin text-gray-300" />
+                        </div>
+                      ) : detail.salonMetrics.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-6">
+                          Nenhuma unidade nesta rede ainda
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {detail.salonMetrics.map((s: any) => (
+                            <div
+                              key={s.id}
+                              className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100/80 transition-colors group"
+                            >
+                              <div className="w-9 h-9 bg-white rounded-xl border border-gray-100 flex items-center justify-center flex-shrink-0 shadow-sm">
+                                <Building2 className="w-4 h-4 text-gray-400" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-semibold text-gray-900 truncate">{s.name}</p>
+                                {s.city && (
+                                  <p className="text-xs text-gray-400 flex items-center gap-0.5">
+                                    <MapPin className="w-3 h-3" /> {s.city}
+                                  </p>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-4 text-right flex-shrink-0">
+                                <div>
+                                  <p className="text-xs font-bold text-emerald-600">{formatBRL(s.receitaMes)}</p>
+                                  <p className="text-[10px] text-gray-400">mês</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold text-blue-600">{s.agendamentosHoje}</p>
+                                  <p className="text-[10px] text-gray-400">hoje</p>
+                                </div>
+                                <div>
+                                  <p className="text-xs font-bold text-gray-700">{s.clientes}</p>
+                                  <p className="text-[10px] text-gray-400">clientes</p>
+                                </div>
+                                <Badge
+                                  variant={s.active ? "default" : "secondary"}
+                                  className="text-[10px] hidden sm:inline-flex"
+                                >
+                                  {s.active ? "Ativo" : "Inativo"}
+                                </Badge>
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveSalon(rede.id, s.id)}
+                                  className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity font-medium flex items-center gap-1"
+                                >
+                                  <ArrowUpRight className="w-3 h-3" /> Remover
+                                </button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       )}
-
-                      {/* Per-salon metrics */}
-                      <div>
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-sm font-bold text-gray-700">Unidades</h4>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setAddSalonModal(rede.id)}
-                          >
-                            <Plus className="w-3.5 h-3.5 mr-1" /> Adicionar unidade
-                          </Button>
-                        </div>
-
-                        {!detail?.salonMetrics ? (
-                          <div className="flex justify-center py-4">
-                            <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                          </div>
-                        ) : detail.salonMetrics.length === 0 ? (
-                          <p className="text-sm text-gray-400 text-center py-4">
-                            Nenhuma unidade nesta rede
-                          </p>
-                        ) : (
-                          <div className="space-y-2">
-                            {detail.salonMetrics.map((s: any) => (
-                              <div
-                                key={s.id}
-                                className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors group"
-                              >
-                                <div className="w-8 h-8 bg-white rounded-lg border flex items-center justify-center flex-shrink-0">
-                                  <Building2 className="w-4 h-4 text-gray-400" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold text-gray-900 truncate">{s.name}</p>
-                                  {s.city && (
-                                    <p className="text-xs text-gray-400 flex items-center gap-0.5">
-                                      <MapPin className="w-3 h-3" />{s.city}
-                                    </p>
-                                  )}
-                                </div>
-                                <div className="flex items-center gap-4 text-right flex-shrink-0">
-                                  <div>
-                                    <p className="text-xs font-bold text-green-600">{formatBRL(s.receitaMes)}</p>
-                                    <p className="text-[10px] text-gray-400">mês</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-bold text-blue-600">{s.agendamentosHoje}</p>
-                                    <p className="text-[10px] text-gray-400">hoje</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs font-bold text-gray-700">{s.clientes}</p>
-                                    <p className="text-[10px] text-gray-400">clientes</p>
-                                  </div>
-                                  <Badge variant={s.active ? "default" : "secondary"} className="text-[10px]">
-                                    {s.active ? "Ativo" : "Inativo"}
-                                  </Badge>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleRemoveSalon(rede.id, s.id)}
-                                    className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    Remover
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
                     </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </div>
+                )}
+              </div>
             );
           })}
         </div>
       )}
 
-      {/* Modal criar rede */}
-      <Dialog open={modalOpen} onOpenChange={(o) => { if (!o) setModalOpen(false); }}>
-        <DialogContent>
+      {/* Modal criar */}
+      <Dialog open={createOpen} onOpenChange={(o) => { if (!o) setCreateOpen(false); }}>
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Nova Rede de Salões</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
             <div>
-              <label className="text-sm font-medium text-gray-700 block mb-1">Nome da rede *</label>
-              <input type="text" placeholder="Rede Bellefy" value={nome}
+              <label className="text-sm font-medium text-gray-700 block mb-1.5">Nome da rede *</label>
+              <input type="text" placeholder="Rede Bellefy SP" value={nome}
                 onChange={(e) => setNome(e.target.value)} className={inputCls} />
             </div>
-            <div className="flex gap-3 pt-1">
-              <Button variant="outline" className="flex-1" onClick={() => setModalOpen(false)}>Cancelar</Button>
-              <Button className="flex-1" disabled={submitting} onClick={handleCreate}>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+              <Button
+                className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600"
+                disabled={submitting}
+                onClick={handleCreate}
+              >
                 {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Criar rede
               </Button>
@@ -274,30 +335,80 @@ export function RedeView() {
         </DialogContent>
       </Dialog>
 
+      {/* Modal editar */}
+      <Dialog open={!!editingRede} onOpenChange={(o) => { if (!o) setEditingRede(null); }}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Editar Rede</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-2">
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-1.5">Nome da rede *</label>
+              <input
+                type="text"
+                value={editingRede?.nome ?? ""}
+                onChange={(e) => setEditingRede((prev) => prev ? { ...prev, nome: e.target.value } : null)}
+                className={inputCls}
+              />
+            </div>
+            <div className="flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setEditingRede(null)}>Cancelar</Button>
+              <Button
+                className="flex-1 bg-gradient-to-r from-violet-600 to-purple-600"
+                disabled={submitting}
+                onClick={handleEdit}
+              >
+                {submitting && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirmar exclusão */}
+      <AlertDialog open={!!deletingId} onOpenChange={(o) => { if (!o) setDeletingId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir rede?</AlertDialogTitle>
+            <AlertDialogDescription>
+              A rede será desativada. Os salões vinculados não serão afetados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => deletingId && handleDelete(deletingId)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Modal adicionar unidade */}
       <Dialog open={!!addSalonModal} onOpenChange={(o) => { if (!o) setAddSalonModal(null); }}>
-        <DialogContent>
+        <DialogContent className="max-w-sm">
           <DialogHeader>
             <DialogTitle>Adicionar Unidade</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-2">
+          <div className="space-y-2 mt-2 max-h-72 overflow-y-auto">
             {(Array.isArray(allSalons) ? allSalons : allSalons?.salons ?? []).map((s: any) => (
-              <div key={s.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
+              <div key={s.id} className="flex items-center justify-between p-3 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
                 <div>
-                  <p className="text-sm font-semibold">{s.name}</p>
+                  <p className="text-sm font-semibold text-gray-900">{s.name}</p>
                   {s.city && <p className="text-xs text-gray-400">{s.city}</p>}
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => handleAddSalon(addSalonModal!, s.id)}
-                >
+                <Button size="sm" variant="outline"
+                  className="text-violet-600 border-violet-200 hover:bg-violet-50"
+                  onClick={() => handleAddSalon(addSalonModal!, s.id)}>
                   Adicionar
                 </Button>
               </div>
             ))}
             {(Array.isArray(allSalons) ? allSalons : allSalons?.salons ?? []).length === 0 && (
-              <p className="text-sm text-gray-400 text-center py-4">Nenhum salão disponível</p>
+              <p className="text-sm text-gray-400 text-center py-6">Nenhum salão disponível</p>
             )}
           </div>
         </DialogContent>
