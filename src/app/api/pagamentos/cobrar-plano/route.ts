@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stripe, toCents } from "@/lib/stripe";
+import { getStripe, toCents } from "@/lib/stripe";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
   const amount = toCents(cp.plano.valor);
 
   // Cobra fora da sessão (off_session = sem presença do cliente)
+  const stripe = getStripe();
   const pi = await stripe.paymentIntents.create({
     amount,
     currency: "brl",

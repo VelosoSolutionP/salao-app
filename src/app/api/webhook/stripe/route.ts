@@ -15,7 +15,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -29,6 +29,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "STRIPE_WEBHOOK_SECRET não configurado" }, { status: 500 });
   }
 
+  const stripe = getStripe();
   let event;
   try {
     event = stripe.webhooks.constructEvent(body, sig, secret);

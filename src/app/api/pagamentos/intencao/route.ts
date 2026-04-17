@@ -11,7 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stripe, toCents } from "@/lib/stripe";
+import { getStripe, toCents } from "@/lib/stripe";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -41,6 +41,8 @@ export async function POST(req: NextRequest) {
   if (amount < 50) {
     return NextResponse.json({ error: "Valor mínimo R$0,50" }, { status: 400 });
   }
+
+  const stripe = getStripe();
 
   // Cria ou reutiliza PaymentIntent existente
   if (ag.stripePaymentIntentId) {

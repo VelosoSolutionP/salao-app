@@ -12,7 +12,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -40,6 +40,8 @@ export async function POST(req: NextRequest) {
   }
 
   const clienteUser = cp.cliente.user;
+
+  const stripe = getStripe();
 
   // 1. Cria Customer no Stripe se não existir
   let stripeCustomerId = clienteUser.stripeCustomerId;
