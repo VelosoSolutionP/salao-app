@@ -44,7 +44,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         >
           <button
             onClick={() => setMobileOpen(true)}
-            className="text-zinc-500 hover:text-zinc-200 p-1 transition-colors"
+            className="text-white/80 hover:text-white p-1 transition-colors"
           >
             <Menu className="w-5 h-5" />
           </button>
