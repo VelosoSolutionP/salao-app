@@ -13,11 +13,6 @@ const nextConfig: NextConfig = {
 export default withSentryConfig(nextConfig, {
   org: "msbtec",
   project: "salao-app",
-  silent: !process.env.CI,
-  widenClientFileUpload: true,
-  sourcemaps: { disable: true },
-  webpack: {
-    treeshake: { removeDebugLogging: true },
-    automaticVercelMonitors: true,
-  },
+  silent: true,
+  telemetry: false,
 });
