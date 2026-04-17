@@ -3,9 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { addHours, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { sendPush } from "@/lib/push";
+import { sendWhatsApp, msgLembrete24h, msgLembrete1h } from "@/lib/whatsapp";
 
-// Vercel Cron: runs every 30 minutes
-// Configure in vercel.json: { "crons": [{ "path": "/api/cron/lembretes", "schedule": "*/30 * * * *" }] }
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
@@ -16,13 +15,9 @@ export async function GET(req: NextRequest) {
 
   const now = new Date();
 
-  // Find appointments needing 24h reminder
   const lembrete24h = await prisma.agendamento.findMany({
     where: {
-      inicio: {
-        gte: addHours(now, 23),
-        lte: addHours(now, 25),
-      },
+      inicio: { gte: addHours(now, 23), lte: addHours(now, 25) },
       status: { in: ["PENDENTE", "CONFIRMADO"] },
       lembrete24hEnviado: false,
     },
@@ -30,17 +25,14 @@ export async function GET(req: NextRequest) {
       cliente: { include: { user: true } },
       colaborador: { include: { user: true } },
       salon: true,
+      servicos: { include: { servico: { select: { nome: true } } } },
     },
     take: 50,
   });
 
-  // Find appointments needing 1h reminder
   const lembrete1h = await prisma.agendamento.findMany({
     where: {
-      inicio: {
-        gte: addHours(now, 0.75),
-        lte: addHours(now, 1.25),
-      },
+      inicio: { gte: addHours(now, 0.75), lte: addHours(now, 1.25) },
       status: { in: ["PENDENTE", "CONFIRMADO"] },
       lembrete1hEnviado: false,
     },
@@ -54,29 +46,32 @@ export async function GET(req: NextRequest) {
 
   const results = { sent24h: 0, sent1h: 0 };
 
-  // Process 24h reminders
-  for (const agendamento of lembrete24h) {
+  for (const ag of lembrete24h) {
     try {
-      const notifConfig = agendamento.cliente ? await prisma.notifConfig.findUnique({
-        where: { userId: agendamento.cliente.userId },
-      }) : null;
+      const hora = format(ag.inicio, "HH:mm", { locale: ptBR });
+      const diaLabel = format(ag.inicio, "EEEE", { locale: ptBR });
+      const clienteNome = ag.cliente?.user?.name ?? "Cliente";
+      const clientePhone = ag.cliente?.user?.phone;
 
-      // Push notification para o cliente
-      if (agendamento.cliente?.userId) {
-        const hora = format(agendamento.inicio, "HH:mm", { locale: ptBR });
-        const dia = format(agendamento.inicio, "EEEE", { locale: ptBR });
-        await sendPush(agendamento.cliente.userId, {
+      // Push para o cliente
+      if (ag.cliente?.userId) {
+        await sendPush(ag.cliente.userId, {
           title: "📅 Lembrete de agendamento",
-          body: `Seu horário é ${dia === format(new Date(), "EEEE", { locale: ptBR }) ? "hoje" : "amanhã"} às ${hora} em ${agendamento.salon.name}`,
+          body: `Seu horário é amanhã às ${hora} em ${ag.salon.name}`,
           url: "/agendar",
         });
       }
 
-      // Push para o barbeiro/colaborador
-      if (agendamento.colaborador?.userId) {
-        const hora = format(agendamento.inicio, "HH:mm", { locale: ptBR });
-        const clienteNome = agendamento.cliente?.user?.name ?? "Cliente";
-        await sendPush(agendamento.colaborador.userId, {
+      // WhatsApp para o cliente
+      if (clientePhone) {
+        const servicos = ag.servicos.map((s) => s.servico.nome).join(", ");
+        sendWhatsApp(clientePhone, msgLembrete24h(clienteNome, ag.salon.name, hora, servicos))
+          .catch(() => {});
+      }
+
+      // Push para o profissional
+      if (ag.colaborador?.userId) {
+        await sendPush(ag.colaborador.userId, {
           title: "✂️ Agendamento amanhã",
           body: `${clienteNome} às ${hora}`,
           url: "/agenda",
@@ -84,41 +79,45 @@ export async function GET(req: NextRequest) {
       }
 
       await prisma.agendamento.update({
-        where: { id: agendamento.id },
+        where: { id: ag.id },
         data: { lembrete24hEnviado: true },
       });
 
       results.sent24h++;
     } catch (e) {
-      console.error(`Failed to send 24h reminder for ${agendamento.id}:`, e);
+      console.error(`Failed 24h reminder ${ag.id}:`, e);
     }
   }
 
-  // Process 1h reminders
-  for (const agendamento of lembrete1h) {
+  for (const ag of lembrete1h) {
     try {
-      const notifConfig = agendamento.cliente ? await prisma.notifConfig.findUnique({
-        where: { userId: agendamento.cliente.userId },
-      }) : null;
+      const hora = format(ag.inicio, "HH:mm", { locale: ptBR });
+      const clienteNome = ag.cliente?.user?.name ?? "Cliente";
+      const clientePhone = ag.cliente?.user?.phone;
 
-      // Push 1h antes — só para o cliente
-      if (agendamento.cliente?.userId) {
-        const hora = format(agendamento.inicio, "HH:mm", { locale: ptBR });
-        await sendPush(agendamento.cliente.userId, {
+      // Push para o cliente
+      if (ag.cliente?.userId) {
+        await sendPush(ag.cliente.userId, {
           title: "⏰ Seu horário é em 1 hora!",
-          body: `${hora} em ${agendamento.salon.name} — não se esqueça!`,
+          body: `${hora} em ${ag.salon.name} — não se esqueça!`,
           url: "/agendar",
         });
       }
 
+      // WhatsApp para o cliente
+      if (clientePhone) {
+        sendWhatsApp(clientePhone, msgLembrete1h(clienteNome, ag.salon.name, hora))
+          .catch(() => {});
+      }
+
       await prisma.agendamento.update({
-        where: { id: agendamento.id },
+        where: { id: ag.id },
         data: { lembrete1hEnviado: true },
       });
 
       results.sent1h++;
     } catch (e) {
-      console.error(`Failed to send 1h reminder for ${agendamento.id}:`, e);
+      console.error(`Failed 1h reminder ${ag.id}:`, e);
     }
   }
 

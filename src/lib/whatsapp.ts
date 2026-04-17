@@ -37,6 +37,34 @@ export async function sendWhatsApp(phone: string, message: string): Promise<bool
   }
 }
 
+export function msgConfirmacaoAgendamento(
+  clienteNome: string,
+  salonName: string,
+  data: string,
+  hora: string,
+  servicos: string,
+  profissional: string,
+) {
+  return `Olá, *${clienteNome}*! 👋\n\nSeu agendamento foi confirmado:\n\n📅 *${data}* às *${hora}*\n💇 *${servicos}*\n👤 Profissional: *${profissional}*\n🏠 *${salonName}*\n\nQualquer dúvida, entre em contato conosco. Te esperamos! ✂️\n\n_${salonName}_`;
+}
+
+export function msgLembrete24h(
+  clienteNome: string,
+  salonName: string,
+  hora: string,
+  servicos: string,
+) {
+  return `Olá, *${clienteNome}*! 📅\n\nLembrete: seu agendamento é *amanhã às ${hora}*.\n\n💇 ${servicos}\n🏠 *${salonName}*\n\nTe esperamos! Caso precise remarcar, entre em contato com antecedência.\n\n_${salonName}_`;
+}
+
+export function msgLembrete1h(
+  clienteNome: string,
+  salonName: string,
+  hora: string,
+) {
+  return `⏰ *${clienteNome}*, seu horário em *${salonName}* é em *1 hora* (${hora})!\n\nNão se esqueça. Te esperamos! ✂️`;
+}
+
 export function msgVencimentoProximo(salonName: string, dias: number, valor: string) {
   return `Olá! 👋\n\nSeu plano *Bellefy* para o salão *${salonName}* vence em *${dias} dia${dias > 1 ? "s" : ""}*.\n\n💰 Valor: *R$ ${valor}*\n\nEvite o bloqueio automático realizando o pagamento. Em caso de dúvidas, entre em contato.\n\n_Bellefy — Controle Total de Salões_`;
 }

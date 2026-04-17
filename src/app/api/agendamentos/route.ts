@@ -5,7 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { requireAuth, requireSalon } from "@/lib/auth-guard";
 import { redis, CK, invalidateCache } from "@/lib/redis";
 import { queueSSEEvent } from "@/lib/sse";
-import { addMinutes } from "date-fns";
+import { addMinutes, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { sendWhatsApp, msgConfirmacaoAgendamento } from "@/lib/whatsapp";
 import { Ratelimit } from "@upstash/ratelimit";
 
 const createSchema = z.object({
@@ -207,6 +209,7 @@ export async function POST(req: NextRequest) {
         cliente: { include: { user: { select: { name: true, phone: true } } } },
         colaborador: { include: { user: { select: { name: true } } } },
         servicos: { include: { servico: true } },
+        salon: { select: { name: true } },
       },
     });
 
@@ -234,6 +237,23 @@ export async function POST(req: NextRequest) {
       CK.SLOTS(colaboradorId, data),
       CK.RELATORIO(salonId!, "agendamentos", "hoje")
     );
+
+    // WhatsApp — confirmação para o cliente
+    const clientePhone = agendamento.cliente?.user?.phone;
+    if (clientePhone) {
+      const dia  = format(inicio, "dd/MM/yyyy (EEEE)", { locale: ptBR });
+      const hora = format(inicio, "HH:mm",              { locale: ptBR });
+      const nomesServicos = agendamento.servicos.map((s) => s.servico.nome).join(", ");
+      const profissional  = agendamento.colaborador?.user?.name ?? "profissional";
+      sendWhatsApp(
+        clientePhone,
+        msgConfirmacaoAgendamento(
+          agendamento.cliente!.user.name,
+          agendamento.salon?.name ?? "Salão",
+          dia, hora, nomesServicos, profissional,
+        ),
+      ).catch(() => {});
+    }
 
     // Broadcast SSE event
     await queueSSEEvent(salonId!, {
