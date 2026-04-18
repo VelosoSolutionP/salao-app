@@ -33,9 +33,11 @@ function fmt(v: number) {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 }
 
-function StatusBadge({ owner }: { owner: SalonItem["owner"] }) {
+function StatusBadge({ owner, temContrato }: { owner: SalonItem["owner"]; temContrato: boolean }) {
   if (owner.blocked)
     return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">Bloqueado</span>;
+  if (temContrato)
+    return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-green-500/20 text-green-400">Ativo</span>;
   if (owner.trialExpires && new Date(owner.trialExpires) > new Date())
     return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">Trial até {new Date(owner.trialExpires).toLocaleDateString("pt-BR")}</span>;
   if (!owner.trialExpires)
@@ -318,7 +320,7 @@ export function MasterSaloes() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-white text-sm font-bold">{salon.name}</span>
-                      <StatusBadge owner={salon.owner} />
+                      <StatusBadge owner={salon.owner} temContrato={salon.contratos.length > 0} />
                     </div>
                     <p className="text-zinc-600 text-xs mt-0.5 truncate">
                       {salon.owner.name} · {salon.city ?? "—"}
