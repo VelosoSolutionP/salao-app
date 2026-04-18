@@ -182,6 +182,7 @@ model PagamentoContrato {
   mpPreferenciaId String?  // Mercado Pago preference ID
   linkPagamento   String?  // Checkout Pro URL
   mpPagamentoId   String?  // MP payment ID (from webhook)
+  efiTxid         String?  // Efi Pro PIX txid
   createdAt       DateTime @default(now())
 
   comissoes  Comissao[]
@@ -537,6 +538,7 @@ model Agendamento {
   pixTxid                 String?
   stripePaymentIntentId   String?                          // PaymentIntent Stripe (legado)
   wooviCorrelationId      String?                          // Correlação Woovi PIX
+  efiTxid                 String?                          // Efi Pro PIX txid
   usouProprioProduto      Boolean           @default(false)  // profissional usou produto próprio?
   canceladoMotivo      String?
   canceladoPorCliente  Boolean           @default(false)   // cliente cancelou (vs. salão)
