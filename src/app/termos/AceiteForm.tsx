@@ -19,11 +19,18 @@ export function AceiteForm() {
     setErro("");
     try {
       const res = await fetch("/api/termos/aceitar", { method: "POST" });
-      if (!res.ok) throw new Error("Erro ao registrar aceite");
+      const json = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setErro(json.error ?? `Erro ${res.status} ao registrar aceite`);
+        setLoading(false);
+        return;
+      }
+
       router.push("/dashboard");
       router.refresh();
-    } catch {
-      setErro("Ocorreu um erro. Tente novamente.");
+    } catch (err: any) {
+      setErro(err?.message ?? "Erro de conexão. Tente novamente.");
       setLoading(false);
     }
   }
@@ -43,7 +50,11 @@ export function AceiteForm() {
         </Label>
       </div>
 
-      {erro && <p className="text-sm text-red-600">{erro}</p>}
+      {erro && (
+        <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {erro}
+        </p>
+      )}
 
       <Button
         onClick={handleAceitar}

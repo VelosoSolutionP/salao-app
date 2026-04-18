@@ -15,15 +15,17 @@ export default async function TermosPage() {
   if (!session?.user) redirect("/login");
   if (session.user.role !== "OWNER") redirect("/dashboard");
 
-  const salonId = session.user.salonId;
-  if (!salonId) redirect("/dashboard");
-
-  const salon = await prisma.salon.findUnique({
-    where: { id: salonId },
+  // salonId pode estar null no JWT se criado antes do salão existir
+  const salon = await prisma.salon.findFirst({
+    where: session.user.salonId
+      ? { id: session.user.salonId }
+      : { ownerId: session.user.id },
+    orderBy: { createdAt: "asc" },
     select: { name: true, termoAceito: true, termoAceitoEm: true },
   });
 
-  if (salon?.termoAceito) redirect("/dashboard");
+  if (!salon) redirect("/dashboard");
+  if (salon.termoAceito) redirect("/dashboard");
 
   const hoje = new Date().toLocaleDateString("pt-BR", {
     day: "2-digit",
