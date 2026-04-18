@@ -120,6 +120,8 @@ model Salon {
   termoAceitoEm DateTime?
   termoAceitoIp String?
 
+  lembreteAntecedenciaMinutos Int @default(60)
+
   indicacaoId  String?    @unique
   indicacao    Indicacao? @relation(fields: [indicacaoId], references: [id])
 

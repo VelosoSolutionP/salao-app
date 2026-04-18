@@ -61,8 +61,14 @@ export function msgLembrete1h(
   clienteNome: string,
   salonName: string,
   hora: string,
+  minutos = 60,
 ) {
-  return `⏰ *${clienteNome}*, seu horário em *${salonName}* é em *1 hora* (${hora})!\n\nNão se esqueça. Te esperamos! ✂️`;
+  const tempo = minutos < 60
+    ? `${minutos} minutos`
+    : minutos === 60
+      ? "1 hora"
+      : `${Math.round(minutos / 60)} horas`;
+  return `⏰ *${clienteNome}*, seu horário em *${salonName}* é em *${tempo}* (${hora})!\n\nNão se esqueça. Te esperamos! ✂️`;
 }
 
 export function msgVencimentoProximo(salonName: string, dias: number, valor: string) {

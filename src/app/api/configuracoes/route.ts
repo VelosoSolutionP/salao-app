@@ -18,6 +18,8 @@ const schema = z.object({
   cancelamentoHorasMinimo: z.number().int().min(0).max(168).optional(),
   multaValor: z.number().min(0).optional(),
   multaTipo: z.enum(["PERCENTUAL", "FIXO"]).optional().nullable(),
+  // Lembretes WhatsApp
+  lembreteAntecedenciaMinutos: z.number().int().min(15).max(1440).optional(),
   horarios: z
     .array(
       z.object({
@@ -50,8 +52,22 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   const { session, error } = await requireRole(["OWNER"]);
   if (error) return error;
-  const { salonId, error: salonError } = await requireSalon(session!);
-  if (salonError) return salonError;
+
+  const salonResult = await requireSalon(session!);
+  let salonId: string | null = salonResult.salonId;
+
+  if (!salonId) {
+    const salon = await prisma.salon.findFirst({
+      where: { ownerId: session!.user.id },
+      select: { id: true },
+      orderBy: { createdAt: "asc" },
+    });
+    salonId = salon?.id ?? null;
+  }
+
+  if (!salonId) {
+    return NextResponse.json({ error: "Salão não encontrado" }, { status: 404 });
+  }
 
   const body = await req.json();
   const parsed = schema.safeParse(body);
@@ -60,7 +76,7 @@ export async function PUT(req: NextRequest) {
   }
 
   const { horarios, multaValor, ...rest } = parsed.data;
-  const salonData = {
+  const salonData: Record<string, unknown> = {
     ...rest,
     ...(multaValor !== undefined && { multaValor }),
   };

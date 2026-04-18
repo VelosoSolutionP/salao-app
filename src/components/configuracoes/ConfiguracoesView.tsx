@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { upload } from "@vercel/blob/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Save, Copy, Check, Users, ShieldAlert, ImagePlus, Trash2, Palette } from "lucide-react";
+import { Loader2, Save, Copy, Check, Users, ShieldAlert, ImagePlus, Trash2, Palette, Bell, Send } from "lucide-react";
 import { BellefyIcon } from "@/components/brand/BrandLogo";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -32,6 +32,7 @@ interface SalonData {
   cancelamentoHorasMinimo: number;
   multaValor: number | null;
   multaTipo: string | null;
+  lembreteAntecedenciaMinutos: number;
   horarios: Array<{
     diaSemana: number;
     abre: string;
@@ -46,6 +47,7 @@ const inputCls =
 export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
   const qc = useQueryClient();
   const [saving, setSaving] = useState(false);
+  const [testingWpp, setTestingWpp] = useState(false);
   const [copied, setCopied] = useState(false);
   const [logoUrl, setLogoUrl]   = useState(salon?.logoUrl ?? "");
   const [logoUploading, setLogoUploading] = useState(false);
@@ -71,6 +73,9 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
     (salon?.multaTipo as "PERCENTUAL" | "FIXO") ?? "FIXO"
   );
   const [brandColor, setBrandColor] = useState(salon?.brandColor ?? "#7c3aed");
+  const [lembreteMinutos, setLembreteMinutos] = useState(
+    salon?.lembreteAntecedenciaMinutos ?? 60
+  );
 
   async function handleLogoUpload(file: File) {
     if (!file) return;
@@ -159,6 +164,7 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
       // Cancellation policy
       body.brandColor = brandColor;
       body.cancelamentoHorasMinimo = cancelamentoHoras;
+      body.lembreteAntecedenciaMinutos = lembreteMinutos;
       if (multaValor.trim()) {
         body.multaValor = parseFloat(multaValor);
         body.multaTipo  = multaTipo;
@@ -184,6 +190,23 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
       toast.error("Erro ao salvar");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleTestarWhatsApp() {
+    setTestingWpp(true);
+    try {
+      const res = await fetch("/api/configuracoes/testar-whatsapp", { method: "POST" });
+      const json = await res.json().catch(() => ({}));
+      if (res.ok) {
+        toast.success(`Mensagem de teste enviada para ${json.phone}!`);
+      } else {
+        toast.error(json.error ?? "Erro ao enviar teste");
+      }
+    } catch {
+      toast.error("Erro de conexão");
+    } finally {
+      setTestingWpp(false);
     }
   }
 
@@ -483,6 +506,52 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
               comparecimento, mas nenhuma taxa será cobrada.
             </p>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Alertas WhatsApp */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className="w-4 h-4 text-violet-500" />
+            Alertas WhatsApp
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-gray-500">
+            Configure com quanto tempo de antecedência o cliente recebe o lembrete de agendamento
+            pelo WhatsApp. O aviso de 24h antes é sempre enviado.
+          </p>
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1">
+              Lembrete próximo ao horário
+            </label>
+            <select
+              value={lembreteMinutos}
+              onChange={(e) => setLembreteMinutos(Number(e.target.value))}
+              className={inputCls}
+            >
+              <option value={15}>15 minutos antes</option>
+              <option value={30}>30 minutos antes</option>
+              <option value={60}>1 hora antes</option>
+              <option value={90}>1h30 antes</option>
+              <option value={120}>2 horas antes</option>
+              <option value={180}>3 horas antes</option>
+              <option value={240}>4 horas antes</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-3 pt-1">
+            <button
+              type="button"
+              onClick={handleTestarWhatsApp}
+              disabled={testingWpp}
+              className="flex items-center gap-2 px-4 py-2 bg-green-50 hover:bg-green-100 text-green-700 rounded-xl text-sm font-semibold transition-colors disabled:opacity-60"
+            >
+              {testingWpp ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              {testingWpp ? "Enviando…" : "Enviar mensagem de teste"}
+            </button>
+            <p className="text-xs text-gray-400">Envia para o seu número cadastrado</p>
+          </div>
         </CardContent>
       </Card>
 
