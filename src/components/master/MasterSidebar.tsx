@@ -12,12 +12,14 @@ import {
   UserCheck,
   UserPlus,
   MapPin,
+  Gem,
 } from "lucide-react";
 import { BellefyIcon } from "@/components/brand/BrandLogo";
 
 const NAV = [
   { href: "/master",                  label: "Dashboard",       icon: LayoutDashboard, exact: true },
   { href: "/master/saloes",           label: "Salões",          icon: Store },
+  { href: "/master/planos",           label: "Planos",          icon: Gem },
   { href: "/master/financeiro",       label: "Financeiro",      icon: DollarSign },
   { href: "/master/revendedores",     label: "Revendedores",    icon: UserCheck },
   { href: "/master/indicadores",      label: "Indicadores",     icon: UserPlus },
