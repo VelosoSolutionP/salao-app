@@ -240,12 +240,24 @@ export default function LoginPage() {
                 </div>
                 <ChevronRight className="w-4 h-4 text-amber-700/60 group-hover:translate-x-0.5 transition-transform flex-shrink-0"/>
               </Link>
-              <p className="text-center text-xs text-zinc-600 mt-5">
-                Sem conta?{" "}
-                <Link href="/registro" className="text-violet-400 hover:text-violet-300 font-bold transition-colors">
-                  Cadastrar salão grátis
-                </Link>
-              </p>
+              <Link
+                href="/registro"
+                className="group flex items-center gap-3 w-full px-4 py-3.5 rounded-2xl transition-all hover:opacity-90 active:scale-[.98] mt-3"
+                style={{
+                  background:"linear-gradient(135deg,rgba(124,58,237,.12),rgba(79,70,229,.1))",
+                  border:"1px solid rgba(124,58,237,.2)",
+                }}
+              >
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{background:"linear-gradient(135deg,#7c3aed,#6d28d9)"}}>
+                  <Users className="w-4 h-4 text-white"/>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-black text-violet-300">Criar conta</p>
+                  <p className="text-xs text-violet-900 mt-0.5">Cadastre-se para agendar serviços</p>
+                </div>
+                <ChevronRight className="w-4 h-4 text-violet-700/60 group-hover:translate-x-0.5 transition-transform flex-shrink-0"/>
+              </Link>
             </div>
           </div>
 

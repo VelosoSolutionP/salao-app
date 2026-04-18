@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,13 +16,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Eye, EyeOff, Loader2, UserPlus } from "lucide-react";
 
 const schema = z.object({
@@ -31,18 +24,9 @@ const schema = z.object({
   phone: z.string().optional(),
   password: z.string().min(6, "Mínimo 6 caracteres"),
   confirmPassword: z.string(),
-  role: z.enum(["OWNER", "CLIENT", "BARBER"]),
-  salonName: z.string().optional(),
-  codigoConvite: z.string().optional(),
 }).refine((d) => d.password === d.confirmPassword, {
   message: "Senhas não coincidem",
   path: ["confirmPassword"],
-}).refine((d) => d.role !== "OWNER" || (d.salonName && d.salonName.length >= 2), {
-  message: "Nome do salão é obrigatório",
-  path: ["salonName"],
-}).refine((d) => d.role !== "BARBER" || (d.codigoConvite && d.codigoConvite.length >= 4), {
-  message: "Código do salão é obrigatório",
-  path: ["codigoConvite"],
 });
 
 type FormData = z.infer<typeof schema>;
@@ -52,23 +36,14 @@ const inputClass =
 
 export function RegistroForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [refCode, setRefCode] = useState<string | null>(null);
-
-  useEffect(() => {
-    const ref = searchParams.get("ref");
-    if (ref) setRefCode(ref.toUpperCase());
-  }, [searchParams]);
 
   const form = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", email: "", phone: "", password: "", confirmPassword: "", role: "CLIENT", codigoConvite: "" },
+    defaultValues: { name: "", email: "", phone: "", password: "", confirmPassword: "" },
   });
-
-  const role = form.watch("role");
 
   async function onSubmit(data: FormData) {
     setLoading(true);
@@ -76,7 +51,7 @@ export function RegistroForm() {
       const res = await fetch("/api/auth/registro", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, ...(refCode ? { refCode } : {}) }),
+        body: JSON.stringify({ ...data, role: "CLIENT" }),
       });
 
       const json = await res.json();
@@ -101,80 +76,6 @@ export function RegistroForm() {
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
 
-        {/* Referral banner */}
-        {refCode && (
-          <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm" style={{ background: "rgba(124,58,237,0.08)", border: "1px solid rgba(124,58,237,0.2)" }}>
-            <span className="text-violet-500">🎁</span>
-            <span className="text-violet-700 font-semibold text-xs">Indicação ativa — código <strong>{refCode}</strong></span>
-          </div>
-        )}
-
-        {/* Account type */}
-        <FormField
-          control={form.control}
-          name="role"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-sm font-semibold text-gray-700">Tipo de conta</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger className={inputClass}>
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="CLIENT">Cliente — Quero agendar serviços</SelectItem>
-                  <SelectItem value="OWNER">Proprietário — Tenho um salão</SelectItem>
-                  <SelectItem value="BARBER">Funcionário — Trabalho em um salão</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        {/* Salon name (owner only) */}
-        {role === "OWNER" && (
-          <FormField
-            control={form.control}
-            name="salonName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-semibold text-gray-700">Nome do salão</FormLabel>
-                <FormControl>
-                  <Input className={inputClass} placeholder="Ex: Barbearia do João" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        {/* Invite code (barber only) */}
-        {role === "BARBER" && (
-          <FormField
-            control={form.control}
-            name="codigoConvite"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-sm font-semibold text-gray-700">Código do salão</FormLabel>
-                <FormControl>
-                  <Input
-                    className={inputClass}
-                    placeholder="Ex: XK7P2Q"
-                    autoCapitalize="characters"
-                    {...field}
-                    onChange={(e) => field.onChange(e.target.value.toUpperCase())}
-                  />
-                </FormControl>
-                <p className="text-[11px] text-gray-400 mt-1">Peça o código ao proprietário do salão.</p>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        {/* Full name */}
         <FormField
           control={form.control}
           name="name"
@@ -189,14 +90,13 @@ export function RegistroForm() {
           )}
         />
 
-        {/* Email + Phone */}
         <div className="grid grid-cols-2 gap-3">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-sm font-semibold text-gray-700">Email</FormLabel>
+                <FormLabel className="text-sm font-semibold text-gray-700">E-mail</FormLabel>
                 <FormControl>
                   <Input type="email" className={inputClass} placeholder="seu@email.com" autoComplete="email" {...field} />
                 </FormControl>
@@ -204,7 +104,6 @@ export function RegistroForm() {
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="phone"
@@ -220,7 +119,6 @@ export function RegistroForm() {
           />
         </div>
 
-        {/* Password + Confirm */}
         <div className="grid grid-cols-2 gap-3">
           <FormField
             control={form.control}
@@ -251,7 +149,6 @@ export function RegistroForm() {
               </FormItem>
             )}
           />
-
           <FormField
             control={form.control}
             name="confirmPassword"
@@ -292,14 +189,7 @@ export function RegistroForm() {
           }}
           disabled={loading}
         >
-          {loading ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <>
-              <UserPlus className="w-4 h-4" />
-              Criar conta grátis
-            </>
-          )}
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><UserPlus className="w-4 h-4" />Criar conta</>}
         </Button>
 
         <p className="text-center text-[11px] text-gray-400 pt-1">

@@ -1,10 +1,11 @@
 "use client";
 
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import { upload } from "@vercel/blob/client";
 import {
-  Plus, Search, XCircle, CheckCircle,
-  Clock, DollarSign, Loader2, X, Store,
+  Plus, Search, XCircle, CheckCircle, Clock, DollarSign,
+  Loader2, X, Store, Pencil, ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow, addDays } from "date-fns";
@@ -14,13 +15,15 @@ interface SalonItem {
   id: string;
   name: string;
   city: string | null;
+  logoUrl: string | null;
   active: boolean;
   createdAt: string;
-  contratos: { id: string; valorMensal: number; ativo: boolean }[];
+  contratos: { id: string; valorMensal: number; ativo: boolean; diaVencimento: number }[];
   owner: {
     id: string;
     name: string;
     email: string;
+    phone: string | null;
     blocked: boolean;
     trialExpires: string | null;
   };
@@ -40,21 +43,41 @@ function StatusBadge({ owner }: { owner: SalonItem["owner"] }) {
   return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">Trial expirado</span>;
 }
 
-const novoSalonDefault = { salonName: "", name: "", email: "", phone: "", password: "" };
+const fieldClass = "w-full px-3 py-2 rounded-lg text-sm text-white bg-white/5 border border-white/10 outline-none focus:border-violet-500/50 placeholder-zinc-600";
+const labelClass = "text-zinc-400 text-xs font-semibold block mb-1";
+
+const novoDefault = {
+  salonName: "", name: "", email: "", phone: "",
+  comContrato: false, contratoValor: "", contratoDia: "10",
+};
 
 export function MasterSaloes() {
   const qc = useQueryClient();
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
   const [search, setSearch] = useState("");
   const [actionId, setActionId] = useState<string | null>(null);
+
+  // Contrato modal
   const [contratoModal, setContratoModal] = useState<SalonItem | null>(null);
   const [contratoValor, setContratoValor] = useState("");
   const [contratoDia, setContratoDia] = useState("10");
+
+  // Trial modal
   const [trialModal, setTrialModal] = useState<SalonItem | null>(null);
   const [trialDias, setTrialDias] = useState("30");
+
+  // Novo salão modal
   const [novoModal, setNovoModal] = useState(false);
-  const [novoForm, setNovoForm] = useState(novoSalonDefault);
+  const [novoForm, setNovoForm] = useState(novoDefault);
   const [novoSaving, setNovoSaving] = useState(false);
   const [senhaGerada, setSenhaGerada] = useState<string | null>(null);
+
+  // Editar salão modal
+  const [editModal, setEditModal] = useState<SalonItem | null>(null);
+  const [editForm, setEditForm] = useState({ salonName: "", ownerName: "", phone: "", city: "", logoUrl: "" });
+  const [editLogoUploading, setEditLogoUploading] = useState(false);
+  const [editSaving, setEditSaving] = useState(false);
 
   const { data: saloes = [], isLoading } = useQuery<SalonItem[]>({
     queryKey: ["master-saloes"],
@@ -69,6 +92,7 @@ export function MasterSaloes() {
       s.owner.email.toLowerCase().includes(search.toLowerCase())
   );
 
+  /* ── Bloquear / Liberar ─────────────────────────────── */
   async function toggleBlock(owner: SalonItem["owner"]) {
     setActionId(owner.id);
     try {
@@ -81,12 +105,13 @@ export function MasterSaloes() {
       toast.success(owner.blocked ? "Acesso liberado" : "Usuário bloqueado");
       qc.invalidateQueries({ queryKey: ["master-saloes"] });
     } catch {
-      toast.error("Erro ao atualizar");
+      toast.error("Erro ao atualizar acesso");
     } finally {
       setActionId(null);
     }
   }
 
+  /* ── Salvar contrato ────────────────────────────────── */
   async function saveContrato() {
     if (!contratoModal || !contratoValor) return;
     setActionId("contrato");
@@ -97,7 +122,7 @@ export function MasterSaloes() {
         body: JSON.stringify({
           salonId: contratoModal.id,
           valorMensal: parseFloat(contratoValor.replace(",", ".")),
-          diaVencimento: parseInt(contratoDia),
+          diaVencimento: parseInt(contratoDia) || 10,
         }),
       });
       if (!res.ok) throw new Error();
@@ -111,15 +136,18 @@ export function MasterSaloes() {
     }
   }
 
+  /* ── Salvar trial ───────────────────────────────────── */
   async function saveTrial() {
     if (!trialModal) return;
     setActionId("trial");
     try {
-      const novaData = addDays(new Date(), parseInt(trialDias));
       const res = await fetch("/api/master/usuarios", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: trialModal.owner.id, trialExpires: novaData.toISOString() }),
+        body: JSON.stringify({
+          id: trialModal.owner.id,
+          trialExpires: addDays(new Date(), parseInt(trialDias) || 30).toISOString(),
+        }),
       });
       if (!res.ok) throw new Error();
       toast.success(`Trial estendido por ${trialDias} dias`);
@@ -132,16 +160,24 @@ export function MasterSaloes() {
     }
   }
 
+  /* ── Criar salão ────────────────────────────────────── */
   async function criarSalon() {
-    const { salonName, name, email, password } = novoForm;
-    if (!salonName || !name || !email) return;
-    const senha = password || Math.random().toString(36).slice(-10) + "A1!";
+    const { salonName, name, email, comContrato, contratoValor: cv, contratoDia: cd } = novoForm;
+    if (!salonName.trim() || !name.trim() || !email.trim()) return;
+    if (comContrato && !cv) { toast.error("Informe o valor mensal do contrato"); return; }
+
     setNovoSaving(true);
     try {
-      const res = await fetch("/api/auth/registro", {
+      const res = await fetch("/api/master/saloes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ salonName, name, email, phone: novoForm.phone, password: senha, role: "OWNER" }),
+        body: JSON.stringify({
+          salonName: novoForm.salonName,
+          ownerName: novoForm.name,
+          email: novoForm.email,
+          phone: novoForm.phone,
+          ...(comContrato && cv ? { contratoValor: cv, contratoDia: cd } : {}),
+        }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -149,19 +185,84 @@ export function MasterSaloes() {
         return;
       }
       toast.success("Salão cadastrado!");
-      if (!password) setSenhaGerada(senha);
-      else {
-        setNovoModal(false);
-        setNovoForm(novoSalonDefault);
-      }
       qc.invalidateQueries({ queryKey: ["master-saloes"] });
+      if (json.senhaGerada) {
+        setSenhaGerada(json.senhaGerada);
+      } else {
+        setNovoModal(false);
+        setNovoForm(novoDefault);
+      }
     } catch {
-      toast.error("Erro ao cadastrar salão");
+      toast.error("Erro de conexão. Tente novamente.");
     } finally {
       setNovoSaving(false);
     }
   }
 
+  /* ── Upload logo (edição) ───────────────────────────── */
+  async function handleLogoUpload(file: File) {
+    if (file.size > 2 * 1024 * 1024) { toast.error("Imagem deve ter no máximo 2 MB"); return; }
+    setEditLogoUploading(true);
+    try {
+      const blob = await upload(`logos/${Date.now()}-${file.name}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      });
+      setEditForm((f) => ({ ...f, logoUrl: blob.url }));
+      toast.success("Logo carregada");
+    } catch {
+      toast.error("Erro ao enviar logo");
+    } finally {
+      setEditLogoUploading(false);
+    }
+  }
+
+  /* ── Salvar edição ──────────────────────────────────── */
+  async function salvarEdicao() {
+    if (!editModal) return;
+    setEditSaving(true);
+    try {
+      const res = await fetch("/api/master/saloes", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          salonId: editModal.id,
+          salonName: editForm.salonName,
+          city: editForm.city,
+          logoUrl: editForm.logoUrl || null,
+          ownerName: editForm.ownerName,
+          phone: editForm.phone,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Salão atualizado");
+      setEditModal(null);
+      qc.invalidateQueries({ queryKey: ["master-saloes"] });
+    } catch {
+      toast.error("Erro ao salvar alterações");
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  function openEdit(salon: SalonItem) {
+    setEditModal(salon);
+    setEditForm({
+      salonName: salon.name,
+      ownerName: salon.owner.name,
+      phone: salon.owner.phone ?? "",
+      city: salon.city ?? "",
+      logoUrl: salon.logoUrl ?? "",
+    });
+  }
+
+  function openContrato(salon: SalonItem) {
+    setContratoModal(salon);
+    setContratoValor(salon.contratos[0] ? String(salon.contratos[0].valorMensal) : "");
+    setContratoDia(salon.contratos[0] ? String(salon.contratos[0].diaVencimento) : "10");
+  }
+
+  /* ── RENDER ─────────────────────────────────────────── */
   return (
     <div className="p-6 space-y-5 max-w-6xl mx-auto">
       <div className="flex items-center justify-between gap-3">
@@ -170,12 +271,11 @@ export function MasterSaloes() {
           <p className="text-zinc-500 text-sm mt-0.5">{saloes.length} salão(ões) cadastrado(s)</p>
         </div>
         <button
-          onClick={() => { setNovoModal(true); setNovoForm(novoSalonDefault); setSenhaGerada(null); }}
+          onClick={() => { setNovoModal(true); setNovoForm(novoDefault); setSenhaGerada(null); }}
           className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition-all"
           style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}
         >
-          <Plus className="w-4 h-4" />
-          Cadastrar novo
+          <Plus className="w-4 h-4" /> Cadastrar novo
         </button>
       </div>
 
@@ -192,10 +292,7 @@ export function MasterSaloes() {
       </div>
 
       {/* List */}
-      <div
-        className="rounded-2xl overflow-hidden"
-        style={{ background: "#12102a", border: "1px solid rgba(255,255,255,0.07)" }}
-      >
+      <div className="rounded-2xl overflow-hidden" style={{ background: "#12102a", border: "1px solid rgba(255,255,255,0.07)" }}>
         {isLoading ? (
           <div className="flex items-center justify-center py-16">
             <Loader2 className="w-5 h-5 text-violet-400 animate-spin" />
@@ -209,13 +306,14 @@ export function MasterSaloes() {
           <div className="divide-y divide-white/5">
             {filtered.map((salon) => (
               <div key={salon.id} className="px-4 py-4 space-y-3">
-                {/* Row 1: avatar + info */}
                 <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-black text-sm flex-shrink-0"
-                    style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
-                  >
-                    {salon.name.charAt(0).toUpperCase()}
+                  {/* Avatar */}
+                  <div className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden"
+                    style={salon.logoUrl ? { border: "1px solid rgba(255,255,255,0.1)" } : { background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}>
+                    {salon.logoUrl
+                      ? <img src={salon.logoUrl} alt={salon.name} className="w-full h-full object-cover" />
+                      : <span className="w-full h-full flex items-center justify-center text-white font-black text-sm">{salon.name.charAt(0).toUpperCase()}</span>
+                    }
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
@@ -237,10 +335,10 @@ export function MasterSaloes() {
                   </div>
                 </div>
 
-                {/* Row 2: action buttons */}
+                {/* Actions */}
                 <div className="flex gap-2">
                   <button
-                    onClick={() => { setContratoModal(salon); setContratoValor(salon.contratos[0] ? String(salon.contratos[0].valorMensal) : ""); }}
+                    onClick={() => openContrato(salon)}
                     className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-colors"
                     style={{ background: "rgba(16,185,129,0.12)", color: "#10b981" }}
                   >
@@ -252,6 +350,13 @@ export function MasterSaloes() {
                     style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}
                   >
                     <Clock className="w-3 h-3" /> Trial
+                  </button>
+                  <button
+                    onClick={() => openEdit(salon)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                    style={{ background: "rgba(124,58,237,0.15)", color: "#a78bfa" }}
+                  >
+                    <Pencil className="w-3 h-3" /> Editar
                   </button>
                   <button
                     disabled={actionId === salon.owner.id}
@@ -274,45 +379,69 @@ export function MasterSaloes() {
         )}
       </div>
 
-      {/* Modal: Contrato */}
+      {/* ── Modal: Contrato ──────────────────────────────── */}
       {contratoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "#1a1040", border: "1px solid rgba(124,58,237,0.3)" }}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
-              <p className="text-white font-black text-sm">Contrato — {contratoModal.name}</p>
-              <button onClick={() => setContratoModal(null)} className="text-zinc-500 hover:text-zinc-300"><X className="w-4 h-4" /></button>
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "#1a1040", border: "1px solid rgba(16,185,129,0.25)" }}>
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between"
+              style={{ background: "rgba(16,185,129,0.08)" }}>
+              <div>
+                <p className="text-white font-black text-sm flex items-center gap-2">
+                  <DollarSign className="w-4 h-4 text-emerald-400" />
+                  {contratoModal.contratos[0] ? "Editar contrato" : "Ativar contrato"}
+                </p>
+                <p className="text-zinc-500 text-xs mt-0.5">{contratoModal.name}</p>
+              </div>
+              <button onClick={() => setContratoModal(null)}><X className="w-4 h-4 text-zinc-500 hover:text-zinc-300" /></button>
             </div>
+
+            {/* Contrato ativo badge */}
+            {contratoModal.contratos[0] && (
+              <div className="mx-5 mt-4 px-3 py-2 rounded-lg flex items-center gap-2"
+                style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.2)" }}>
+                <CheckCircle className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                <p className="text-emerald-400 text-xs font-semibold">
+                  Contrato ativo · {fmt(Number(contratoModal.contratos[0].valorMensal))}/mês · Vence dia {contratoModal.contratos[0].diaVencimento}
+                </p>
+              </div>
+            )}
+
             <div className="px-5 py-5 space-y-3">
               <div>
-                <label className="text-zinc-400 text-xs font-semibold block mb-1.5">Valor mensal (R$)</label>
+                <label className={labelClass}>Valor mensal (R$) *</label>
                 <input
                   type="number"
                   value={contratoValor}
                   onChange={(e) => setContratoValor(e.target.value)}
-                  placeholder="99.90"
-                  className="w-full px-3 py-2 rounded-lg text-sm text-white bg-white/5 border border-white/10 outline-none focus:border-violet-500/50"
+                  placeholder="97.00"
+                  className={fieldClass}
                 />
               </div>
               <div>
-                <label className="text-zinc-400 text-xs font-semibold block mb-1.5">Dia de vencimento</label>
+                <label className={labelClass}>Dia de vencimento (1–28)</label>
                 <input
                   type="number"
-                  min={1}
-                  max={28}
+                  min={1} max={28}
                   value={contratoDia}
                   onChange={(e) => setContratoDia(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg text-sm text-white bg-white/5 border border-white/10 outline-none focus:border-violet-500/50"
+                  className={fieldClass}
                 />
+                <p className="text-zinc-600 text-[10px] mt-1.5">
+                  A cobrança começa após o trial de 30 dias da criação do salão.
+                </p>
               </div>
             </div>
             <div className="px-5 pb-5 flex gap-2">
               <button
                 onClick={saveContrato}
                 disabled={!contratoValor || actionId === "contrato"}
-                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50"
-                style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 flex items-center justify-center gap-2"
+                style={{ background: "linear-gradient(135deg,#059669,#047857)" }}
               >
-                {actionId === "contrato" ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Salvar contrato"}
+                {actionId === "contrato"
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <><CheckCircle className="w-4 h-4" />{contratoModal.contratos[0] ? "Atualizar" : "Ativar contrato"}</>}
               </button>
               <button onClick={() => setContratoModal(null)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-zinc-500 hover:text-zinc-300">Cancelar</button>
             </div>
@@ -320,23 +449,22 @@ export function MasterSaloes() {
         </div>
       )}
 
-      {/* Modal: Trial */}
+      {/* ── Modal: Trial ─────────────────────────────────── */}
       {trialModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "#1a1040", border: "1px solid rgba(124,58,237,0.3)" }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
               <p className="text-white font-black text-sm">Estender trial — {trialModal.name}</p>
-              <button onClick={() => setTrialModal(null)} className="text-zinc-500 hover:text-zinc-300"><X className="w-4 h-4" /></button>
+              <button onClick={() => setTrialModal(null)}><X className="w-4 h-4 text-zinc-500 hover:text-zinc-300" /></button>
             </div>
             <div className="px-5 py-5">
-              <label className="text-zinc-400 text-xs font-semibold block mb-1.5">Dias a partir de hoje</label>
+              <label className={labelClass}>Dias a partir de hoje</label>
               <input
                 type="number"
                 value={trialDias}
                 onChange={(e) => setTrialDias(e.target.value)}
-                min={1}
-                max={365}
-                className="w-full px-3 py-2 rounded-lg text-sm text-white bg-white/5 border border-white/10 outline-none focus:border-violet-500/50"
+                min={1} max={365}
+                className={fieldClass}
               />
               <p className="text-zinc-600 text-xs mt-2">
                 Nova expiração: {addDays(new Date(), parseInt(trialDias || "0")).toLocaleDateString("pt-BR")}
@@ -357,26 +485,109 @@ export function MasterSaloes() {
         </div>
       )}
 
-      {/* Modal: Novo salão */}
+      {/* ── Modal: Editar salão ───────────────────────────── */}
+      {editModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "#1a1040", border: "1px solid rgba(124,58,237,0.3)" }}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <p className="text-white font-black text-sm">Editar — {editModal.name}</p>
+              <button onClick={() => setEditModal(null)}><X className="w-4 h-4 text-zinc-500 hover:text-zinc-300" /></button>
+            </div>
+            <div className="px-5 py-5 space-y-3">
+              {/* Logo */}
+              <div>
+                <label className={labelClass}>Logo do salão</label>
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center"
+                    style={editForm.logoUrl ? { border: "1px solid rgba(255,255,255,0.15)" } : { background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}>
+                    {editForm.logoUrl
+                      ? <img src={editForm.logoUrl} alt="logo" className="w-full h-full object-cover" />
+                      : <ImageIcon className="w-6 h-6 text-white/50" />
+                    }
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <button
+                      type="button"
+                      disabled={editLogoUploading}
+                      onClick={() => logoInputRef.current?.click()}
+                      className="w-full py-1.5 rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 transition-colors"
+                      style={{ background: "rgba(124,58,237,0.2)", color: "#a78bfa", border: "1px solid rgba(124,58,237,0.3)" }}
+                    >
+                      {editLogoUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <><ImageIcon className="w-3 h-3" /> Enviar logo</>}
+                    </button>
+                    {editForm.logoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setEditForm((f) => ({ ...f, logoUrl: "" }))}
+                        className="w-full py-1.5 rounded-lg text-xs font-bold text-zinc-500 hover:text-red-400 transition-colors"
+                      >
+                        Remover
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <input
+                  ref={logoInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.target.value = ""; }}
+                />
+              </div>
+
+              {/* Fields */}
+              {[
+                { label: "Nome do salão", key: "salonName" as const },
+                { label: "Nome do proprietário", key: "ownerName" as const },
+                { label: "WhatsApp", key: "phone" as const },
+                { label: "Cidade", key: "city" as const },
+              ].map(({ label, key }) => (
+                <div key={key}>
+                  <label className={labelClass}>{label}</label>
+                  <input
+                    value={editForm[key]}
+                    onChange={(e) => setEditForm((f) => ({ ...f, [key]: e.target.value }))}
+                    className={fieldClass}
+                  />
+                </div>
+              ))}
+              <p className="text-zinc-700 text-xs">E-mail: {editModal.owner.email}</p>
+            </div>
+            <div className="px-5 pb-5 flex gap-2">
+              <button
+                onClick={salvarEdicao}
+                disabled={editSaving || editLogoUploading}
+                className="flex-1 py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50"
+                style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}
+              >
+                {editSaving ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Salvar alterações"}
+              </button>
+              <button onClick={() => setEditModal(null)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-zinc-500 hover:text-zinc-300">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Novo salão ─────────────────────────────── */}
       {novoModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
           <div className="w-full max-w-sm rounded-2xl overflow-hidden" style={{ background: "#1a1040", border: "1px solid rgba(124,58,237,0.3)" }}>
             <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
               <p className="text-white font-black text-sm">Cadastrar novo salão</p>
-              <button onClick={() => setNovoModal(false)} className="text-zinc-500 hover:text-zinc-300"><X className="w-4 h-4" /></button>
+              <button onClick={() => setNovoModal(false)}><X className="w-4 h-4 text-zinc-500 hover:text-zinc-300" /></button>
             </div>
 
             {senhaGerada ? (
               <div className="px-5 py-6 space-y-4">
                 <p className="text-green-400 text-sm font-bold">Salão cadastrado com sucesso!</p>
                 <div>
-                  <p className="text-zinc-400 text-xs mb-1.5">Senha gerada automaticamente — anote e repasse ao proprietário:</p>
+                  <p className="text-zinc-400 text-xs mb-1.5">Senha gerada automaticamente — anote e envie ao proprietário:</p>
                   <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: "rgba(124,58,237,0.1)", border: "1px solid rgba(124,58,237,0.2)" }}>
-                    <code className="text-violet-300 text-sm font-mono flex-1">{senhaGerada}</code>
+                    <code className="text-violet-300 text-sm font-mono flex-1 select-all">{senhaGerada}</code>
                   </div>
                 </div>
                 <button
-                  onClick={() => { setNovoModal(false); setNovoForm(novoSalonDefault); setSenhaGerada(null); }}
+                  onClick={() => { setNovoModal(false); setNovoForm(novoDefault); setSenhaGerada(null); }}
                   className="w-full py-2.5 rounded-xl text-sm font-bold text-white"
                   style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}
                 >
@@ -384,27 +595,69 @@ export function MasterSaloes() {
                 </button>
               </div>
             ) : (
-              <>
+              <div className="overflow-y-auto max-h-[80vh]">
                 <div className="px-5 py-5 space-y-3">
                   {[
                     { label: "Nome do salão *", key: "salonName", type: "text", placeholder: "Barbearia do João" },
                     { label: "Nome do proprietário *", key: "name", type: "text", placeholder: "João Silva" },
                     { label: "E-mail *", key: "email", type: "email", placeholder: "joao@email.com" },
                     { label: "WhatsApp", key: "phone", type: "tel", placeholder: "(11) 99999-9999" },
-                    { label: "Senha (deixe vazio para gerar)", key: "password", type: "password", placeholder: "••••••" },
                   ].map(({ label, key, type, placeholder }) => (
                     <div key={key}>
-                      <label className="text-zinc-400 text-xs font-semibold block mb-1">{label}</label>
+                      <label className={labelClass}>{label}</label>
                       <input
                         type={type}
                         value={(novoForm as any)[key]}
                         onChange={(e) => setNovoForm((f) => ({ ...f, [key]: e.target.value }))}
                         placeholder={placeholder}
-                        className="w-full px-3 py-2 rounded-lg text-sm text-white bg-white/5 border border-white/10 outline-none focus:border-violet-500/50"
+                        className={fieldClass}
                       />
                     </div>
                   ))}
+
+                  {/* Contrato */}
+                  <div
+                    className="rounded-xl p-3 cursor-pointer select-none"
+                    style={{ background: novoForm.comContrato ? "rgba(16,185,129,0.1)" : "rgba(255,255,255,0.03)", border: `1px solid ${novoForm.comContrato ? "rgba(16,185,129,0.3)" : "rgba(255,255,255,0.07)"}` }}
+                    onClick={() => setNovoForm((f) => ({ ...f, comContrato: !f.comContrato }))}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className={`w-4 h-4 rounded flex items-center justify-center flex-shrink-0 transition-colors ${novoForm.comContrato ? "bg-emerald-500" : "bg-white/10"}`}>
+                        {novoForm.comContrato && <CheckCircle className="w-3 h-3 text-white" />}
+                      </div>
+                      <span className="text-xs font-bold text-white">Criar contrato de cobrança</span>
+                    </div>
+                    {novoForm.comContrato && (
+                      <p className="text-zinc-500 text-[10px] mt-1 ml-6">Cobrança inicia após 30 dias de trial.</p>
+                    )}
+                  </div>
+
+                  {novoForm.comContrato && (
+                    <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
+                      <div>
+                        <label className={labelClass}>Valor mensal (R$) *</label>
+                        <input
+                          type="number"
+                          value={novoForm.contratoValor}
+                          onChange={(e) => setNovoForm((f) => ({ ...f, contratoValor: e.target.value }))}
+                          placeholder="99.90"
+                          className={fieldClass}
+                        />
+                      </div>
+                      <div>
+                        <label className={labelClass}>Dia vencimento</label>
+                        <input
+                          type="number"
+                          min={1} max={28}
+                          value={novoForm.contratoDia}
+                          onChange={(e) => setNovoForm((f) => ({ ...f, contratoDia: e.target.value }))}
+                          className={fieldClass}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
+
                 <div className="px-5 pb-5 flex gap-2">
                   <button
                     onClick={criarSalon}
@@ -416,7 +669,7 @@ export function MasterSaloes() {
                   </button>
                   <button onClick={() => setNovoModal(false)} className="flex-1 py-2.5 rounded-xl text-sm font-bold text-zinc-500 hover:text-zinc-300">Cancelar</button>
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>

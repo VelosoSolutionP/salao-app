@@ -116,6 +116,10 @@ model Salon {
   multaValor           Decimal?  @db.Decimal(10,2) // valor da multa por cancelamento tardio/não comparecimento
   multaTipo            MultaTipo?                  // PERCENTUAL ou FIXO
 
+  termoAceito   Boolean   @default(false)
+  termoAceitoEm DateTime?
+  termoAceitoIp String?
+
   indicacaoId  String?    @unique
   indicacao    Indicacao? @relation(fields: [indicacaoId], references: [id])
 

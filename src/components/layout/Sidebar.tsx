@@ -25,6 +25,7 @@ import {
   Star,
   Building2,
   Download,
+  FileText,
 } from "lucide-react";
 import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
 import { BellefyIcon } from "@/components/brand/BrandLogo";
@@ -69,6 +70,7 @@ const navGroups: Array<{ label?: string; items: NavItem[] }> = [
     items: [
       { href: "/notificacoes", label: "Notificações",  icon: Bell,            roles: ["OWNER", "BARBER", "MASTER"] },
       { href: "/configuracoes",label: "Configurações", icon: Settings,        roles: ["OWNER", "MASTER"] },
+      { href: "/contrato",     label: "Contrato",      icon: FileText,        roles: ["OWNER"] },
     ],
   },
 ];
