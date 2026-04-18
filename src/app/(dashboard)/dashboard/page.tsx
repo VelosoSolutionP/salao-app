@@ -17,9 +17,22 @@ function buildGreeting(name: string): string {
 
 export default async function DashboardPage() {
   const session = await auth();
-  const salonId = session?.user.salonId ?? null;
   const userName = session?.user.name ?? "gestor";
   const firstName = userName.split(" ")[0];
+  const role = session?.user.role;
+
+  // Fallback: JWT may have salonId = null for older sessions
+  let salonId = session?.user.salonId ?? null;
+  if (!salonId && (role === "OWNER" || role === "BARBER")) {
+    const salon = await prisma.salon.findFirst({
+      where: role === "OWNER"
+        ? { ownerId: session!.user.id }
+        : { colaboradores: { some: { userId: session!.user.id } } },
+      select: { id: true },
+      orderBy: { createdAt: "asc" },
+    });
+    salonId = salon?.id ?? null;
+  }
 
   if (!salonId) {
     return (
