@@ -4,6 +4,7 @@ import { z } from "zod";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireRole, requireSalon } from "@/lib/auth-guard";
+import { getPlano } from "@/lib/planos";
 import { redis, CK, TTL, invalidateCache } from "@/lib/redis";
 
 const createSchema = z.object({
@@ -51,6 +52,22 @@ export async function POST(req: NextRequest) {
   if (error) return error;
   const { salonId, error: salonError } = await requireSalon(session!);
   if (salonError) return salonError;
+
+  // Check plan employee limit
+  const salon = await prisma.salon.findUnique({
+    where: { id: salonId! },
+    select: {
+      contratos: { where: { ativo: true }, select: { plano: true }, orderBy: { createdAt: "desc" }, take: 1 },
+      _count: { select: { colaboradores: { where: { active: true } } } },
+    },
+  });
+  const planoConfig = getPlano(salon?.contratos[0]?.plano);
+  if (salon && salon._count.colaboradores >= planoConfig.maxFuncionarios) {
+    return NextResponse.json(
+      { error: `Limite do plano ${planoConfig.nome}: máximo de ${planoConfig.maxFuncionarios} funcionário(s). Faça upgrade para adicionar mais.` },
+      { status: 403 }
+    );
+  }
 
   const body = await req.json();
   const parsed = createSchema.safeParse(body);

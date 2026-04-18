@@ -23,7 +23,7 @@ export async function GET() {
       },
       contratos: {
         where: { ativo: true },
-        select: { id: true, valorMensal: true, ativo: true, diaVencimento: true },
+        select: { id: true, valorMensal: true, ativo: true, diaVencimento: true, plano: true },
       },
     },
   });
@@ -36,7 +36,7 @@ export async function POST(req: NextRequest) {
   if (session?.user?.role !== "MASTER") return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json();
-  const { salonName, ownerName, email, phone, password, contratoValor, contratoDia } = body;
+  const { salonName, ownerName, email, phone, password, contratoValor, contratoDia, contratoPlano } = body;
 
   if (!salonName?.trim() || !ownerName?.trim() || !email?.trim()) {
     return NextResponse.json({ error: "Nome do salão, proprietário e e-mail são obrigatórios" }, { status: 400 });
@@ -88,6 +88,7 @@ export async function POST(req: NextRequest) {
           salonId: salon.id,
           valorMensal: parseFloat(String(contratoValor).replace(",", ".")),
           diaVencimento: Number(contratoDia) || 10,
+          plano: body.contratoPlano ?? "BASICO",
         },
       });
     }

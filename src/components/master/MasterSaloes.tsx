@@ -18,7 +18,7 @@ interface SalonItem {
   logoUrl: string | null;
   active: boolean;
   createdAt: string;
-  contratos: { id: string; valorMensal: number; ativo: boolean; diaVencimento: number }[];
+  contratos: { id: string; valorMensal: number; ativo: boolean; diaVencimento: number; plano: string }[];
   owner: {
     id: string;
     name: string;
@@ -45,12 +45,21 @@ function StatusBadge({ owner, temContrato }: { owner: SalonItem["owner"]; temCon
   return <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/20 text-red-400">Trial expirado</span>;
 }
 
+function PlanoBadge({ plano }: { plano: string }) {
+  const info = { BASICO: { label: "Básico", cor: "#6366f1" }, PRATA: { label: "Prata", cor: "#94a3b8" }, OURO: { label: "Ouro", cor: "#d97706" } }[plano] ?? { label: plano, cor: "#6366f1" };
+  return (
+    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: `${info.cor}22`, color: info.cor }}>
+      {info.label}
+    </span>
+  );
+}
+
 const fieldClass = "w-full px-3 py-2 rounded-lg text-sm text-white bg-white/5 border border-white/10 outline-none focus:border-violet-500/50 placeholder-zinc-600";
 const labelClass = "text-zinc-400 text-xs font-semibold block mb-1";
 
 const novoDefault = {
   salonName: "", name: "", email: "", phone: "",
-  comContrato: false, contratoValor: "", contratoDia: "10",
+  comContrato: false, contratoValor: "", contratoDia: "10", contratoPlano: "BASICO" as "BASICO" | "PRATA" | "OURO",
 };
 
 export function MasterSaloes() {
@@ -64,6 +73,7 @@ export function MasterSaloes() {
   const [contratoModal, setContratoModal] = useState<SalonItem | null>(null);
   const [contratoValor, setContratoValor] = useState("");
   const [contratoDia, setContratoDia] = useState("10");
+  const [contratoPlano, setContratoPlano] = useState<"BASICO" | "PRATA" | "OURO">("BASICO");
 
   // Trial modal
   const [trialModal, setTrialModal] = useState<SalonItem | null>(null);
@@ -125,6 +135,7 @@ export function MasterSaloes() {
           salonId: contratoModal.id,
           valorMensal: parseFloat(contratoValor.replace(",", ".")),
           diaVencimento: parseInt(contratoDia) || 10,
+          plano: contratoPlano,
         }),
       });
       if (!res.ok) throw new Error();
@@ -178,7 +189,7 @@ export function MasterSaloes() {
           ownerName: novoForm.name,
           email: novoForm.email,
           phone: novoForm.phone,
-          ...(comContrato && cv ? { contratoValor: cv, contratoDia: cd } : {}),
+          ...(comContrato && cv ? { contratoValor: cv, contratoDia: cd, contratoPlano: novoForm.contratoPlano } : {}),
         }),
       });
       const json = await res.json();
@@ -262,6 +273,7 @@ export function MasterSaloes() {
     setContratoModal(salon);
     setContratoValor(salon.contratos[0] ? String(salon.contratos[0].valorMensal) : "");
     setContratoDia(salon.contratos[0] ? String(salon.contratos[0].diaVencimento) : "10");
+    setContratoPlano(salon.contratos[0]?.plano as any ?? "BASICO");
   }
 
   /* ── RENDER ─────────────────────────────────────────── */
@@ -321,6 +333,9 @@ export function MasterSaloes() {
                     <div className="flex items-center gap-2 flex-wrap">
                       <span className="text-white text-sm font-bold">{salon.name}</span>
                       <StatusBadge owner={salon.owner} temContrato={salon.contratos.length > 0} />
+                      {salon.contratos[0] && (
+                        <PlanoBadge plano={salon.contratos[0].plano} />
+                      )}
                     </div>
                     <p className="text-zinc-600 text-xs mt-0.5 truncate">
                       {salon.owner.name} · {salon.city ?? "—"}
@@ -410,6 +425,31 @@ export function MasterSaloes() {
             )}
 
             <div className="px-5 py-5 space-y-3">
+              {/* Plan selector */}
+              <div>
+                <label className={labelClass}>Plano *</label>
+                <div className="grid grid-cols-3 gap-1.5">
+                  {(["BASICO", "PRATA", "OURO"] as const).map((p) => {
+                    const info = { BASICO: { nome: "Básico", preco: "R$ 60", cor: "#6366f1" }, PRATA: { nome: "Prata", preco: "R$ 90", cor: "#64748b" }, OURO: { nome: "Ouro", preco: "R$ 250", cor: "#d97706" } }[p];
+                    const sel = contratoPlano === p;
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => { setContratoPlano(p); setContratoValor(info.preco.replace("R$ ", "")); }}
+                        className="py-2 px-1 rounded-lg text-center transition-all"
+                        style={{
+                          background: sel ? `${info.cor}22` : "rgba(255,255,255,0.04)",
+                          border: `1px solid ${sel ? info.cor : "rgba(255,255,255,0.08)"}`,
+                        }}
+                      >
+                        <p className="text-[10px] font-black" style={{ color: sel ? info.cor : "#6b7280" }}>{info.nome}</p>
+                        <p className="text-[9px] text-zinc-600 mt-0.5">{info.preco}/mês</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <div>
                 <label className={labelClass}>Valor mensal (R$) *</label>
                 <input
@@ -635,26 +675,53 @@ export function MasterSaloes() {
                   </div>
 
                   {novoForm.comContrato && (
-                    <div className="grid grid-cols-2 gap-2" onClick={(e) => e.stopPropagation()}>
+                    <div className="space-y-2" onClick={(e) => e.stopPropagation()}>
+                      {/* Plan selector */}
                       <div>
-                        <label className={labelClass}>Valor mensal (R$) *</label>
-                        <input
-                          type="number"
-                          value={novoForm.contratoValor}
-                          onChange={(e) => setNovoForm((f) => ({ ...f, contratoValor: e.target.value }))}
-                          placeholder="99.90"
-                          className={fieldClass}
-                        />
+                        <label className={labelClass}>Plano *</label>
+                        <div className="grid grid-cols-3 gap-1.5">
+                          {(["BASICO", "PRATA", "OURO"] as const).map((p) => {
+                            const info = { BASICO: { nome: "Básico", preco: "R$ 60", cor: "#6366f1" }, PRATA: { nome: "Prata", preco: "R$ 90", cor: "#64748b" }, OURO: { nome: "Ouro", preco: "R$ 250", cor: "#d97706" } }[p];
+                            const sel = novoForm.contratoPlano === p;
+                            return (
+                              <button
+                                key={p}
+                                type="button"
+                                onClick={() => setNovoForm((f) => ({ ...f, contratoPlano: p, contratoValor: info.preco.replace("R$ ", "") }))}
+                                className="py-2 px-1 rounded-lg text-center transition-all"
+                                style={{
+                                  background: sel ? `${info.cor}22` : "rgba(255,255,255,0.04)",
+                                  border: `1px solid ${sel ? info.cor : "rgba(255,255,255,0.08)"}`,
+                                }}
+                              >
+                                <p className="text-[10px] font-black" style={{ color: sel ? info.cor : "#6b7280" }}>{info.nome}</p>
+                                <p className="text-[9px] text-zinc-600 mt-0.5">{info.preco}/mês</p>
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div>
-                        <label className={labelClass}>Dia vencimento</label>
-                        <input
-                          type="number"
-                          min={1} max={28}
-                          value={novoForm.contratoDia}
-                          onChange={(e) => setNovoForm((f) => ({ ...f, contratoDia: e.target.value }))}
-                          className={fieldClass}
-                        />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className={labelClass}>Valor mensal (R$) *</label>
+                          <input
+                            type="number"
+                            value={novoForm.contratoValor}
+                            onChange={(e) => setNovoForm((f) => ({ ...f, contratoValor: e.target.value }))}
+                            placeholder="99.90"
+                            className={fieldClass}
+                          />
+                        </div>
+                        <div>
+                          <label className={labelClass}>Dia vencimento</label>
+                          <input
+                            type="number"
+                            min={1} max={28}
+                            value={novoForm.contratoDia}
+                            onChange={(e) => setNovoForm((f) => ({ ...f, contratoDia: e.target.value }))}
+                            className={fieldClass}
+                          />
+                        </div>
                       </div>
                     </div>
                   )}

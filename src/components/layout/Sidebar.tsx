@@ -26,9 +26,17 @@ import {
   Building2,
   Download,
   FileText,
+  Lock,
 } from "lucide-react";
 import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
 import { BellefyIcon } from "@/components/brand/BrandLogo";
+import { PLANOS } from "@/lib/planos";
+
+const UPGRADE_LABEL: Record<string, string> = Object.fromEntries(
+  (["BASICO", "PRATA", "OURO"] as const).flatMap((t) =>
+    PLANOS[t].routes.map((r) => [r, `Disponível no plano ${PLANOS[t].nome}`])
+  )
+);
 
 type NavItem = {
   href: string;
@@ -97,6 +105,14 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const salonName = configData?.name ?? "Bellefy";
   const salonLogo = configData?.logoUrl as string | undefined;
 
+  const { data: planoData } = useQuery({
+    queryKey: ["plano-atual"],
+    queryFn: () => fetch("/api/plano").then((r) => r.json()),
+    staleTime: 60_000,
+    enabled: role === "OWNER" || role === "BARBER",
+  });
+  const planoRoutes: string[] | null = planoData?.plano?.routes ?? null; // null = no restriction (MASTER)
+
   // PWA install
   const [installPrompt, setInstallPrompt] = useState<{ prompt: () => Promise<void> } | null>(null);
   const [pwaInstalled, setPwaInstalled] = useState(false);
@@ -148,6 +164,14 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             <div className="flex items-center gap-1.5 mt-0.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[10px] text-zinc-500 font-semibold">Online</span>
+              {planoData?.plano && role === "OWNER" && (
+                <span
+                  className="text-[9px] font-black px-1.5 py-0.5 rounded-full"
+                  style={{ background: `${planoData.plano.cor}22`, color: planoData.plano.cor }}
+                >
+                  {planoData.plano.nome}
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -171,6 +195,21 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
               )}
               <div className="space-y-0.5">
                 {visible.map((item) => {
+                  const locked = planoRoutes !== null && !planoRoutes.includes(item.href);
+                  if (locked) {
+                    return (
+                      <div
+                        key={item.href}
+                        className="relative flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-zinc-700 cursor-not-allowed select-none"
+                        title={UPGRADE_LABEL[item.href] ?? "Plano superior"}
+                      >
+                        <item.icon className="w-4 h-4 flex-shrink-0 text-zinc-800" />
+                        <span className="flex-1 truncate">{item.label}</span>
+                        <Lock className="w-3 h-3 text-zinc-800" />
+                      </div>
+                    );
+                  }
+
                   const active =
                     pathname === item.href ||
                     pathname.startsWith(item.href + "/");

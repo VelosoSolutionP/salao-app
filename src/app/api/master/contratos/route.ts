@@ -9,7 +9,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { salonId, valorMensal, diaVencimento, observacao } = body;
+  const { salonId, valorMensal, diaVencimento, observacao, plano } = body;
 
   if (!salonId || !valorMensal) {
     return NextResponse.json({ error: "salonId e valorMensal são obrigatórios" }, { status: 400 });
@@ -27,6 +27,7 @@ export async function POST(request: Request) {
       valorMensal,
       diaVencimento: diaVencimento ?? 10,
       observacao,
+      plano: plano ?? "BASICO",
     },
   });
 

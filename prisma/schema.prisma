@@ -160,6 +160,7 @@ model ContratoSalao {
   diaVencimento Int    @default(10)   // dia do mês para cobrar
   ativo       Boolean  @default(true)
   observacao  String?
+  plano       PlanoTipo @default(BASICO)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -347,6 +348,12 @@ enum PixKeyType {
 enum MultaTipo {
   PERCENTUAL
   FIXO
+}
+
+enum PlanoTipo {
+  BASICO
+  PRATA
+  OURO
 }
 
 model HorarioSalon {
