@@ -34,7 +34,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
         <SheetContent
           side="left"
           showCloseButton={false}
-          className="p-0 w-60 border-0 gap-0 bg-[#0a0812]"
+          className="p-0 w-60 border-transparent gap-0 bg-[#0a0812]"
         >
           <Sidebar onClose={() => setMobileOpen(false)} />
         </SheetContent>

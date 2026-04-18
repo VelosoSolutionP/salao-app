@@ -19,7 +19,11 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
 
       {/* Mobile sidebar (Sheet) */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-        <SheetContent side="left" className="p-0 w-60 border-0">
+        <SheetContent
+          side="left"
+          showCloseButton={false}
+          className="p-0 w-60 border-transparent gap-0 bg-[#0e0b1a]"
+        >
           <MasterSidebar onClose={() => setMobileOpen(false)} />
         </SheetContent>
       </Sheet>

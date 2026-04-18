@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { PlanosSistemaView } from "@/components/planos/PlanosSistemaView";
 import {
   FileText,
   CheckCircle2,
@@ -35,7 +36,7 @@ export default async function ContratoPage() {
         where: { ativo: true },
         orderBy: { createdAt: "desc" },
         take: 1,
-        select: { valorMensal: true, diaVencimento: true, observacao: true, createdAt: true },
+        select: { valorMensal: true, diaVencimento: true, observacao: true, createdAt: true, plano: true },
       },
     },
   });
@@ -53,14 +54,17 @@ export default async function ContratoPage() {
     : null;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-8">
       {/* Page title */}
       <div>
         <h1 className="text-2xl font-black text-gray-900">Contrato de Uso</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Detalhes do seu contrato com a plataforma Bellefy.
+          Detalhes do seu contrato e plano com a plataforma Bellefy.
         </p>
       </div>
+
+      {/* Plans by modules — premium art */}
+      <PlanosSistemaView planoAtual={contrato?.plano ?? null} />
 
       {/* Status card */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
