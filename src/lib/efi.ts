@@ -15,8 +15,13 @@ function isSandbox(): boolean {
   return process.env.EFI_SANDBOX !== "false";
 }
 
+/** Mock quando faltar qualquer uma das três variáveis obrigatórias para PIX real */
 export function isMockMode(): boolean {
-  return !process.env.EFI_CLIENT_ID;
+  return (
+    !process.env.EFI_CLIENT_ID ||
+    !process.env.EFI_PIX_KEY ||
+    !process.env.EFI_CERTIFICATE_B64
+  );
 }
 
 function getBaseUrl(): string {
