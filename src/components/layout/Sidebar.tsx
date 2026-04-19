@@ -26,6 +26,7 @@ import {
   Download,
   FileText,
   Lock,
+  ShoppingBag,
 } from "lucide-react";
 import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
 import { BellefyIcon } from "@/components/brand/BrandLogo";
@@ -56,10 +57,11 @@ const navGroups: Array<{ label?: string; items: NavItem[] }> = [
   {
     label: "Gestão",
     items: [
-      { href: "/servicos",      label: "Serviços",          icon: Scissors,  roles: ["OWNER", "MASTER"] },
-      { href: "/equipe",        label: "Equipe",            icon: UserCheck, roles: ["OWNER", "MASTER"] },
-      { href: "/estoque",       label: "Estoque",           icon: Package,   roles: ["OWNER", "MASTER"] },
-      { href: "/transformacoes",label: "Transformações",    icon: Sparkles,  roles: ["OWNER", "BARBER", "MASTER"] },
+      { href: "/servicos",      label: "Serviços",          icon: Scissors,     roles: ["OWNER", "MASTER"] },
+      { href: "/equipe",        label: "Equipe",            icon: UserCheck,    roles: ["OWNER", "MASTER"] },
+      { href: "/estoque",       label: "Estoque",           icon: Package,      roles: ["OWNER", "MASTER"] },
+      { href: "/pdv",           label: "PDV",               icon: ShoppingBag,  roles: ["OWNER", "BARBER", "MASTER"] },
+      { href: "/transformacoes",label: "Transformações",    icon: Sparkles,     roles: ["OWNER", "BARBER", "MASTER"] },
     ],
   },
   {

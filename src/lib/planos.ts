@@ -29,7 +29,7 @@ export const PLANOS: Record<PlanoTipo, PlanoConfig> = {
     maxFuncionarios: 5,
     maxSaloesRede: 2,
     maxClientesPorFuncionario: null,
-    routes: ["/dashboard", "/agenda", "/clientes", "/servicos", "/equipe", "/estoque", "/financeiro", "/configuracoes", "/contrato", "/notificacoes"],
+    routes: ["/dashboard", "/agenda", "/clientes", "/servicos", "/equipe", "/estoque", "/pdv", "/financeiro", "/configuracoes", "/contrato", "/notificacoes"],
     cor: "#64748b",
   },
   OURO: {
@@ -39,7 +39,7 @@ export const PLANOS: Record<PlanoTipo, PlanoConfig> = {
     maxFuncionarios: 10,
     maxSaloesRede: 5,
     maxClientesPorFuncionario: 100,
-    routes: ["/dashboard", "/agenda", "/clientes", "/servicos", "/equipe", "/estoque", "/financeiro", "/relatorios", "/marketing", "/transformacoes", "/planos", "/rede", "/configuracoes", "/contrato", "/notificacoes"],
+    routes: ["/dashboard", "/agenda", "/clientes", "/servicos", "/equipe", "/estoque", "/pdv", "/financeiro", "/relatorios", "/marketing", "/transformacoes", "/planos", "/rede", "/configuracoes", "/contrato", "/notificacoes"],
     cor: "#d97706",
   },
 };
