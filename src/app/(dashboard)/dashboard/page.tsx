@@ -5,8 +5,10 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { HomeView } from "@/components/home/HomeView";
 import { ArrowRight } from "lucide-react";
-import { startOfDay, endOfDay } from "date-fns";
+import { startOfDay, endOfDay, subDays, format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
+export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Início — Bellefy" };
 
 function buildGreeting(name: string): string {
@@ -62,13 +64,21 @@ export default async function DashboardPage() {
   const todayStart = startOfDay(now);
   const todayEnd   = endOfDay(now);
 
-  const [agendamentosHoje, pendentesCount, configData] = await Promise.all([
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const d = subDays(now, 6 - i);
+    return { label: format(d, "EEE", { locale: ptBR }), start: startOfDay(d), end: endOfDay(d) };
+  });
+
+  const [agendamentosHoje, pendentesCount, configData, ...weekCounts] = await Promise.all([
     prisma.agendamento.findMany({
       where: { salonId, inicio: { gte: todayStart, lte: todayEnd } },
-      include: {
-        cliente: { include: { user: { select: { name: true, phone: true } } } },
-        colaborador: { include: { user: { select: { name: true, image: true } } } },
-        servicos: { include: { servico: { select: { nome: true } } } },
+      select: {
+        id: true,
+        inicio: true,
+        status: true,
+        cliente: { select: { user: { select: { name: true, phone: true } } } },
+        colaborador: { select: { id: true, user: { select: { name: true, image: true } } } },
+        servicos: { select: { servico: { select: { nome: true } } } },
       },
       orderBy: { inicio: "asc" },
     }),
@@ -76,15 +86,23 @@ export default async function DashboardPage() {
     prisma.agendamento.count({ where: { salonId, status: "PENDENTE" } }),
 
     prisma.salon.findUnique({ where: { id: salonId }, select: { name: true, logoUrl: true } }),
+    ...weekDays.map((d) =>
+      prisma.agendamento.count({ where: { salonId, inicio: { gte: d.start, lte: d.end } } })
+    ),
   ]);
+
+  const weekData = weekDays.map((d, i) => ({ label: d.label, total: weekCounts[i] }));
+
+  const agendamentosSerializados = agendamentosHoje;
 
   return (
     <HomeView
       greeting={buildGreeting(firstName)}
       salonName={configData?.name ?? "Bellefy"}
       salonLogo={configData?.logoUrl ?? null}
-      agendamentosHoje={agendamentosHoje}
+      agendamentosHoje={agendamentosSerializados}
       pendentesCount={pendentesCount}
+      weekData={weekData}
     />
   );
 }

@@ -8,7 +8,6 @@ function createPrismaClient(): PrismaClient {
   const connectionString = process.env.DATABASE_URL!;
 
   if (connectionString?.includes("neon.tech")) {
-    // Production: Neon serverless adapter
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { neonConfig } = require("@neondatabase/serverless");
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -17,6 +16,8 @@ function createPrismaClient(): PrismaClient {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       neonConfig.webSocketConstructor = require("ws");
     }
+    // Aumenta timeout para cold start do Neon free tier (~3s para acordar)
+    neonConfig.fetchConnectionCache = true;
     const adapter = new PrismaNeon({ connectionString });
     return new PrismaClient({ adapter } as any);
   }
@@ -26,7 +27,7 @@ function createPrismaClient(): PrismaClient {
   const { Pool } = require("pg");
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { PrismaPg } = require("@prisma/adapter-pg");
-  const pool = new Pool({ connectionString });
+  const pool = new Pool({ connectionString, connectionTimeoutMillis: 8000 });
   const adapter = new PrismaPg(pool);
   return new PrismaClient({ adapter } as any);
 }

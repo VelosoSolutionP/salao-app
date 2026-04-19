@@ -37,6 +37,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('theme')||'dark';document.documentElement.classList.add(t)}catch(e){document.documentElement.classList.add('dark')}`,
+          }}
+        />
+      </head>
       <body className={`${inter.className} h-full antialiased`}>
         <Providers>
           <PwaInit />

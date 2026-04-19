@@ -63,17 +63,17 @@ export function PlanosView() {
 
   const { data: planos = [], isLoading } = useQuery({
     queryKey: ["planos"],
-    queryFn: () => fetch("/api/planos").then((r) => r.json()),
+    queryFn: () => fetch("/api/planos").then((r) => r.json()).then((d) => Array.isArray(d) ? d : (d ?? [])),
   });
 
   const { data: clientesPlano = [] } = useQuery({
     queryKey: ["clientes-plano"],
-    queryFn: () => fetch("/api/planos/clientes?ativo=true").then((r) => r.json()),
+    queryFn: () => fetch("/api/planos/clientes?ativo=true").then((r) => r.json()).then((d) => Array.isArray(d) ? d : (d ?? [])),
   });
 
   const { data: clientes = [] } = useQuery({
     queryKey: ["clientes-lista"],
-    queryFn: () => fetch("/api/clientes").then((r) => r.json()),
+    queryFn: () => fetch("/api/clientes").then((r) => r.json()).then((d) => Array.isArray(d) ? d : (d ?? [])),
   });
 
   function openCreate() {

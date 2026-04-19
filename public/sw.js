@@ -1,5 +1,5 @@
-// Veloso Solution — Service Worker v3
-const CACHE = "veloso-v3";
+// Veloso Solution — Service Worker v4
+const CACHE = "veloso-v4";
 const OFFLINE_URL = "/";
 
 const PRECACHE = [
@@ -77,24 +77,7 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  if (
-    url.pathname.startsWith("/_next/static") ||
-    url.pathname.startsWith("/icons") ||
-    url.pathname.endsWith(".png") ||
-    url.pathname.endsWith(".svg") ||
-    url.pathname.endsWith(".ico")
-  ) {
-    event.respondWith(
-      caches.match(request).then(
-        (cached) =>
-          cached ||
-          fetch(request).then((res) => {
-            const clone = res.clone();
-            caches.open(CACHE).then((c) => c.put(request, clone));
-            return res;
-          })
-      )
-    );
-    return;
-  }
+  // _next/static chunks NUNCA cachear no SW — o browser já faz isso
+  // e o SW serve versão velha quando o código muda
+  if (url.pathname.startsWith("/_next/")) return;
 });

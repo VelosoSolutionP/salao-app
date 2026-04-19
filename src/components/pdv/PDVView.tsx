@@ -87,12 +87,12 @@ export function PDVView() {
   /* queries */
   const { data: produtos = [] } = useQuery<Produto[]>({
     queryKey: ["estoque-pdv"],
-    queryFn: () => fetch("/api/estoque").then((r) => r.json()),
+    queryFn: () => fetch("/api/estoque").then((r) => r.json()).then((d) => Array.isArray(d) ? d : []),
     staleTime: 30_000,
   });
   const { data: servicos = [] } = useQuery<Servico[]>({
     queryKey: ["servicos-pdv"],
-    queryFn: () => fetch("/api/servicos").then((r) => r.json()),
+    queryFn: () => fetch("/api/servicos").then((r) => r.json()).then((d) => Array.isArray(d) ? d : []),
     staleTime: 30_000,
   });
 
@@ -437,15 +437,17 @@ export function PDVView() {
 
             <div className="p-5 space-y-4">
               {/* QR Code */}
-              {venda.qrCodeImage ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={venda.qrCodeImage} alt="QR Code PIX" className="w-full rounded-xl border border-white/[0.06]" />
-              ) : (
-                <div className="aspect-square bg-white/[0.03] rounded-xl flex flex-col items-center justify-center gap-2 border border-white/[0.06]">
-                  <QrCode className="w-16 h-16 text-zinc-800" />
-                  <p className="text-xs text-zinc-700">QR Code</p>
-                </div>
-              )}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={
+                  venda.qrCodeImage ||
+                  (venda.brCode
+                    ? `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(venda.brCode)}&size=300x300&margin=1`
+                    : "")
+                }
+                alt="QR Code PIX"
+                className="w-48 h-48 mx-auto rounded-xl border border-white/[0.06] bg-white"
+              />
 
               {/* Copiar */}
               <button
@@ -464,6 +466,17 @@ export function PDVView() {
                 <Loader2 className="w-3.5 h-3.5 text-violet-500 animate-spin" />
                 <p className="text-xs text-zinc-500">Verificando pagamento a cada 3s...</p>
               </div>
+
+              {/* Confirmação manual — quando PIX vai pra banco externo (não Efí) */}
+              {venda.mockMode && (
+                <button
+                  onClick={() => { setVenda((v) => v ? { ...v, pago: true } : v); }}
+                  className="w-full py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all"
+                  style={{ background: "linear-gradient(135deg,#059669,#10b981)", boxShadow: "0 6px 20px -6px rgba(16,185,129,0.5)" }}
+                >
+                  <CheckCircle2 className="w-4 h-4" /> Confirmar Recebimento
+                </button>
+              )}
 
               <button onClick={novaVenda} className="w-full text-xs text-zinc-700 hover:text-zinc-400 transition-colors py-1">
                 Cancelar e voltar

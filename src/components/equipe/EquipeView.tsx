@@ -82,7 +82,7 @@ export function EquipeView() {
 
   const { data: colaboradores, isLoading } = useQuery({
     queryKey: ["colaboradores"],
-    queryFn: () => fetch("/api/colaboradores").then((r) => r.json()),
+    queryFn: () => fetch("/api/colaboradores").then((r) => r.json()).then((d) => Array.isArray(d) ? d : (d ?? [])),
   });
 
   async function handleCreate() {
@@ -172,7 +172,7 @@ export function EquipeView() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-      }).then((r) => r.json()),
+      }).then((r) => r.json()).then((d) => Array.isArray(d) ? d : (d ?? [])),
     onSuccess: () => {
       toast.success("Horários salvos!");
       setHorariosModalOpen(false);

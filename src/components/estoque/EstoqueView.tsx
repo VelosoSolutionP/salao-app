@@ -77,11 +77,11 @@ export function EstoqueView() {
 
   const { data: produtos = [], isLoading } = useQuery<any[]>({
     queryKey: ["estoque"],
-    queryFn: () => fetch("/api/estoque").then((r) => r.json()),
+    queryFn: () => fetch("/api/estoque").then((r) => r.json()).then((d) => Array.isArray(d) ? d : (d ?? [])),
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => fetch(`/api/estoque/${id}`, { method: "DELETE" }).then((r) => r.json()),
+    mutationFn: (id: string) => fetch(`/api/estoque/${id}`, { method: "DELETE" }).then((r) => r.json()).then((d) => Array.isArray(d) ? d : (d ?? [])),
     onSuccess: () => { toast.success("Produto removido"); qc.invalidateQueries({ queryKey: ["estoque"] }); },
   });
 

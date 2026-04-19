@@ -1,13 +1,6 @@
-/**
- * Efi Pro (Efí Bank) — cliente PIX
- * Docs: https://dev.efipay.com.br/docs/api-pix/
- *
- * Suporta modo mock quando EFI_CLIENT_ID não está configurado.
- * mTLS via pfx (PKCS12 base64) quando EFI_CERTIFICATE_B64 está presente.
- */
-
 import https from "https";
 import crypto from "crypto";
+import QRCode from "qrcode";
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -31,7 +24,7 @@ function getBaseUrl(): string {
 }
 
 function getPixKey(): string {
-  return process.env.EFI_PIX_KEY ?? "mock-pix-key@efipay.com.br";
+  return normalizePixKey(process.env.EFI_PIX_KEY ?? "mock-pix-key@efipay.com.br");
 }
 
 // ─── Token cache (OAuth2) ────────────────────────────────────────────────────
@@ -171,31 +164,95 @@ interface EfiStatusResponse {
   pix?: Array<{ infoPagador?: { nome?: string; cpf?: string } }>;
 }
 
-// ─── Mock helpers ────────────────────────────────────────────────────────────
+// ─── QR Code generator ───────────────────────────────────────────────────────
 
-function mockBrCode(txid: string, valor: string): string {
-  // Realistically structured mock Pix brCode (EMV-like, not valid for payment)
-  return `00020126580014BR.GOV.BCB.PIX0136mock-pix-key@efipay.com.br52040000530398654${String(valor).padStart(2, "0")}${valor}5802BR5925Salao Mock6009SAO PAULO62290525${txid.slice(0, 25)}6304ABCD`;
+export async function generateQrImage(brCode: string): Promise<string> {
+  return QRCode.toDataURL(brCode, {
+    errorCorrectionLevel: "M",
+    margin: 1,
+    width: 300,
+    color: { dark: "#000000", light: "#ffffff" },
+  });
 }
 
-function mockQrCodeImage(txid: string): string {
-  // Data-URI placeholder (1x1 transparent PNG + txid hint)
-  return `data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==`;
+// ─── Mock helpers ────────────────────────────────────────────────────────────
+
+/** Normaliza a chave PIX conforme spec BACEN: CNPJ/CPF só dígitos, resto inalterado */
+function normalizePixKey(raw: string): string {
+  // CNPJ formatado: XX.XXX.XXX/XXXX-XX → 14 dígitos
+  if (/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(raw)) return raw.replace(/\D/g, "");
+  // CPF formatado: XXX.XXX.XXX-XX → 11 dígitos
+  if (/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(raw)) return raw.replace(/\D/g, "");
+  return raw;
+}
+
+export function buildFallbackBrCode(txid: string, valor: string, overrideKey?: string): string {
+  const amount   = parseFloat(valor).toFixed(2);
+  const rawKey   = overrideKey ?? process.env.EFI_PIX_KEY ?? "contato@bellefy.com.br";
+  const pixKey   = normalizePixKey(rawKey);
+  const keyLen   = String(pixKey.length).padStart(2, "0");
+  const keyField = `01${keyLen}${pixKey}`;
+  const guiField = `0014BR.GOV.BCB.PIX`;
+  const maInfo   = guiField + keyField;
+  const maLen    = String(maInfo.length).padStart(2, "0");
+  const amtLen   = String(amount.length).padStart(2, "0");
+  const txidSafe = txid.replace(/[^a-zA-Z0-9]/g, "").slice(0, 25).padEnd(25, "0");
+  const addData  = `0525${txidSafe}`;
+  const addLen   = String(addData.length).padStart(2, "0");
+  const base =
+    `000201` +
+    `26${maLen}${maInfo}` +
+    `52040000` +
+    `5303986` +
+    `54${amtLen}${amount}` +
+    `5802BR` +
+    `5913Bellefy PDV  ` +
+    `6009SAO PAULO` +
+    `62${addLen}${addData}` +
+    `6304`;
+  return base + crc16(base);
+}
+
+async function mockQrCodeImage(brCode: string): Promise<string> {
+  return generateQrImage(brCode);
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function normalizeQrImage(raw: string): string {
+  if (!raw) return "";
+  if (raw.startsWith("data:")) return raw;
+  return `data:image/png;base64,${raw}`;
+}
+
+/** CRC16-CCITT conforme padrão EMV QR Code (BCB Pix) */
+function crc16(str: string): string {
+  let crc = 0xffff;
+  for (let i = 0; i < str.length; i++) {
+    crc ^= str.charCodeAt(i) << 8;
+    for (let j = 0; j < 8; j++) {
+      crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) : crc << 1;
+    }
+    crc &= 0xffff;
+  }
+  return crc.toString(16).toUpperCase().padStart(4, "0");
 }
 
 // ─── PIX Imediato ─────────────────────────────────────────────────────────────
 
 export async function efiCreatePix(params: {
   txid: string;
-  valor: string; // e.g. "59.90"
+  valor: string;
   descricao: string;
+  pixKey?: string;
 }): Promise<EfiPixResult> {
   if (isMockMode()) {
     console.warn("[Efi] Mock mode — EFI_CLIENT_ID não configurado. Retornando dados fictícios.");
+    const brCode = buildFallbackBrCode(params.txid, params.valor);
     return {
       txid: params.txid,
-      brCode: mockBrCode(params.txid, params.valor),
-      qrCodeImage: mockQrCodeImage(params.txid),
+      brCode,
+      qrCodeImage: await mockQrCodeImage(brCode),
       status: "ATIVA",
       mockMode: true,
     };
@@ -218,10 +275,14 @@ export async function efiCreatePix(params: {
         `/v2/loc/${cob.loc.id}/qrcode`
       );
       brCode = qr.qrcode;
-      qrCodeImage = qr.imagemQrcode;
+      qrCodeImage = normalizeQrImage(qr.imagemQrcode);
     } catch (err) {
       console.error("[Efi] Erro ao buscar QR Code:", err);
     }
+  }
+
+  if (!qrCodeImage && brCode) {
+    qrCodeImage = await generateQrImage(brCode);
   }
 
   return {
@@ -245,10 +306,11 @@ export async function efiCreatePixContrato(params: {
 }): Promise<EfiPixResult> {
   if (isMockMode()) {
     console.warn("[Efi] Mock mode — EFI_CLIENT_ID não configurado. Retornando dados fictícios.");
+    const brCode = buildFallbackBrCode(params.txid, params.valor);
     return {
       txid: params.txid,
-      brCode: mockBrCode(params.txid, params.valor),
-      qrCodeImage: mockQrCodeImage(params.txid),
+      brCode,
+      qrCodeImage: await mockQrCodeImage(brCode),
       status: "ATIVA",
       mockMode: true,
     };
@@ -274,10 +336,14 @@ export async function efiCreatePixContrato(params: {
         `/v2/loc/${cob.loc.id}/qrcode`
       );
       brCode = qr.qrcode;
-      qrCodeImage = qr.imagemQrcode;
+      qrCodeImage = normalizeQrImage(qr.imagemQrcode);
     } catch (err) {
-      console.error("[Efi] Erro ao buscar QR Code:", err);
+      console.error("[Efi] Erro ao buscar QR Code contrato:", err);
     }
+  }
+
+  if (!qrCodeImage && brCode) {
+    qrCodeImage = await generateQrImage(brCode);
   }
 
   return {
@@ -301,7 +367,16 @@ export async function efiGetPixStatus(txid: string): Promise<{
     return { status: "ATIVA" };
   }
 
-  const data = await makeEfiRequest<EfiStatusResponse>("GET", `/v2/cob/${txid}`);
+  let data: EfiStatusResponse;
+  try {
+    data = await makeEfiRequest<EfiStatusResponse>("GET", `/v2/cob/${txid}`);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("cobranca_nao_encontrada") || msg.includes("404")) {
+      return { status: "ATIVA" };
+    }
+    throw err;
+  }
 
   const pagador = data.pix?.[0]?.infoPagador;
 

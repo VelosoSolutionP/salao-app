@@ -3,7 +3,6 @@
 import { useState, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { upload } from "@vercel/blob/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, Save, Copy, Check, Users, ShieldAlert, ImagePlus, Trash2, Palette, Bell, Send } from "lucide-react";
 import { BellefyIcon } from "@/components/brand/BrandLogo";
@@ -79,28 +78,28 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
 
   async function handleLogoUpload(file: File) {
     if (!file) return;
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Logo deve ter no máximo 2 MB");
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Logo deve ter no máximo 5 MB");
       return;
     }
     setLogoUploading(true);
     try {
-      const blob = await upload(`logos/${Date.now()}-${file.name}`, file, {
-        access: "public",
-        handleUploadUrl: "/api/upload",
-      });
-      setLogoUrl(blob.url);
-      // Save immediately so it persists even if user doesn't click "Salvar"
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Erro no upload");
+      setLogoUrl(data.url);
       await fetch("/api/configuracoes", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim() || salon?.name, logoUrl: blob.url }),
+        body: JSON.stringify({ name: name.trim() || salon?.name, logoUrl: data.url }),
       });
       qc.invalidateQueries({ queryKey: ["salon-name"] });
       qc.invalidateQueries({ queryKey: ["salon-logo"] });
       toast.success("Logo atualizada!");
-    } catch {
-      toast.error("Erro ao enviar logo");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Erro ao enviar logo");
     } finally {
       setLogoUploading(false);
     }

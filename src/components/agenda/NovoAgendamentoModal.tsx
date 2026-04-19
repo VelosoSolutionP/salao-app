@@ -86,13 +86,13 @@ export function NovoAgendamentoModal({
 
   const { data: servicos, refetch: refetchServicos } = useQuery({
     queryKey: ["servicos"],
-    queryFn: () => fetch("/api/servicos").then((r) => r.json()),
+    queryFn: () => fetch("/api/servicos").then((r) => r.json()).then((d) => Array.isArray(d) ? d : (d ?? [])),
     staleTime: 0,
   });
 
   const { data: clientesData } = useQuery({
     queryKey: ["clientes-search"],
-    queryFn: () => fetch("/api/clientes?limit=100").then((r) => r.json()),
+    queryFn: () => fetch("/api/clientes?limit=100").then((r) => r.json()).then((d) => Array.isArray(d) ? d : (d ?? [])),
   });
 
   /* ── force-refetch when dialog opens ── */

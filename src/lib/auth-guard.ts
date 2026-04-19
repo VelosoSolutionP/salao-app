@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import type { Role } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { prisma } from "@/lib/prisma";
 
 export type AuthSession = {
   user: {
@@ -44,15 +45,25 @@ export async function requireRole(
   return { session: result.session, error: null };
 }
 
-/** Returns the active salonId — checks the multi-salon cookie first, then falls back to the session JWT. */
+/** Returns the active salonId — checks cookie → JWT → DB fallback (stale JWT fix). */
 export async function requireSalon(
   session: AuthSession
 ): Promise<{ salonId: string; error: null } | { salonId: null; error: Response }> {
-  // Multi-salon: honour the cookie set by /api/saloes/switch
   const cookieStore = await cookies();
   const cookieSalonId = cookieStore.get("active_salon_id")?.value;
 
-  const salonId = cookieSalonId || session?.user?.salonId || null;
+  let salonId: string | null = cookieSalonId || session?.user?.salonId || null;
+
+  if (!salonId) {
+    const salon = await prisma.salon.findFirst({
+      where: session.user.role === "OWNER"
+        ? { ownerId: session.user.id }
+        : { colaboradores: { some: { userId: session.user.id } } },
+      select: { id: true },
+      orderBy: { createdAt: "asc" },
+    });
+    salonId = salon?.id ?? null;
+  }
 
   if (!salonId) {
     return {

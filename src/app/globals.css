@@ -3,6 +3,7 @@
 @import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
+@custom-variant baiano (&:is(.baiano *));
 
 @theme inline {
   --color-background: var(--background);
@@ -117,6 +118,41 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+.baiano {
+  --background: oklch(0.97 0.025 80);
+  --foreground: oklch(0.18 0.04 55);
+  --card: oklch(1 0.012 80);
+  --card-foreground: oklch(0.18 0.04 55);
+  --popover: oklch(1 0.012 80);
+  --popover-foreground: oklch(0.18 0.04 55);
+  --primary: oklch(0.52 0.19 142);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.90 0.06 80);
+  --secondary-foreground: oklch(0.25 0.05 55);
+  --muted: oklch(0.92 0.04 80);
+  --muted-foreground: oklch(0.48 0.05 65);
+  --accent: oklch(0.78 0.17 65);
+  --accent-foreground: oklch(0.15 0.04 55);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.87 0.05 80);
+  --input: oklch(0.87 0.05 80);
+  --ring: oklch(0.52 0.19 142);
+  --chart-1: oklch(0.52 0.19 142);
+  --chart-2: oklch(0.78 0.17 65);
+  --chart-3: oklch(0.60 0.18 230);
+  --chart-4: oklch(0.70 0.18 30);
+  --chart-5: oklch(0.65 0.18 300);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.24 0.06 142);
+  --sidebar-foreground: oklch(0.95 0.02 80);
+  --sidebar-primary: oklch(0.78 0.17 65);
+  --sidebar-primary-foreground: oklch(0.15 0.04 55);
+  --sidebar-accent: oklch(0.32 0.08 142);
+  --sidebar-accent-foreground: oklch(0.95 0.02 80);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.78 0.17 65);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
@@ -127,4 +163,45 @@
   html {
     @apply font-sans;
   }
+}
+
+/* ── Dark-mode override for hardcoded Tailwind colors ───────────────────────
+   Components built before theming use bg-white/gray-50/gray-100 without
+   dark: variants. These rules make them adapt automatically.              */
+.dark {
+  & .bg-white                { background-color: var(--card) !important; }
+  & .bg-gray-50              { background-color: var(--muted) !important; }
+  & .bg-gray-50\/60          { background-color: color-mix(in oklch, var(--muted) 60%, transparent) !important; }
+  & .bg-gray-100             { background-color: color-mix(in oklch, var(--muted) 80%, transparent) !important; }
+  & .text-gray-900           { color: var(--foreground) !important; }
+  & .text-gray-800           { color: var(--foreground) !important; }
+  & .text-gray-700           { color: var(--muted-foreground) !important; }
+  & .text-gray-600           { color: var(--muted-foreground) !important; }
+  & .text-gray-500           { color: var(--muted-foreground) !important; }
+  & .text-gray-400           { color: color-mix(in oklch, var(--muted-foreground) 70%, transparent) !important; }
+  & .border-gray-50          { border-color: var(--border) !important; }
+  & .border-gray-100         { border-color: var(--border) !important; }
+  & .border-gray-200         { border-color: var(--border) !important; }
+  & .divide-gray-50          > * + * { border-color: var(--border) !important; }
+  & .divide-gray-100         > * + * { border-color: var(--border) !important; }
+  & .ring-gray-100           { --tw-ring-color: var(--border) !important; }
+  & .shadow-sm               { box-shadow: 0 1px 3px rgba(0,0,0,.4) !important; }
+  & .hover\:bg-gray-50:hover { background-color: var(--accent) !important; }
+  & .hover\:bg-gray-100:hover{ background-color: var(--accent) !important; }
+}
+
+/* ── Dark-mode: força inputs legíveis independente de qualquer componente ────
+   Usa seletor direto (sem nesting) para garantir especificidade máxima.      */
+.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+.dark textarea,
+.dark select {
+  background-color: oklch(0.19 0 0) !important;
+  color: oklch(0.94 0 0) !important;
+  border-color: oklch(1 0 0 / 12%) !important;
+  caret-color: oklch(0.94 0 0) !important;
+}
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: oklch(0.5 0 0) !important;
+  opacity: 1 !important;
 }

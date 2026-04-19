@@ -1,18 +1,16 @@
 /**
  * POST /api/pagamentos/pix
- * Cria cobrança Woovi PIX para um agendamento.
- * Body: { agendamentoId: string }
- * Response: { correlationID, brCode, qrCodeImage, value }
+ * Gera cobrança PIX para agendamento usando chave Inter configurada.
+ * Retorna brCode + qrCodeImage gerados server-side.
  *
- * GET /api/pagamentos/pix?correlationId=xxx
- * Consulta status da cobrança (polling do frontend).
- * Response: { status: "ACTIVE" | "COMPLETED" | "EXPIRED" }
+ * GET /api/pagamentos/pix?txid=xxx
+ * Consulta status (sempre retorna ATIVA — confirmação é manual).
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { wooviCreateCharge, wooviGetCharge } from "@/lib/woovi";
+import { buildFallbackBrCode, generateQrImage, generateEfiTxid } from "@/lib/efi";
 
 /* ─── POST: criar cobrança ─────────────────────────────────────────────────── */
 export async function POST(req: NextRequest) {
@@ -28,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   const ag = await prisma.agendamento.findUnique({
     where: { id: agendamentoId },
-    include: { salon: { select: { name: true } } },
+    include: { salon: { select: { name: true, pixKey: true } } },
   });
 
   if (!ag) return NextResponse.json({ error: "Agendamento não encontrado" }, { status: 404 });
@@ -36,63 +34,36 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Agendamento já pago" }, { status: 409 });
   }
 
-  // Reutiliza correlationId se já existir
-  if (ag.wooviCorrelationId) {
-    try {
-      const existing = await wooviGetCharge(ag.wooviCorrelationId);
-      if (existing.status === "ACTIVE") {
-        // Recria a cobrança para buscar brCode atualizado
-        const charge = await wooviCreateCharge({
-          correlationID: `${ag.id}-${Date.now()}`,
-          value: Math.round(Number(ag.totalPrice) * 100),
-          comment: `Atendimento — ${ag.salon.name}`,
-        });
-        await prisma.agendamento.update({
-          where: { id: ag.id },
-          data: { wooviCorrelationId: charge.correlationID },
-        });
-        return NextResponse.json({ ...charge, value: Number(ag.totalPrice) });
-      }
-      if (existing.status === "COMPLETED") {
-        return NextResponse.json({ error: "Pagamento já confirmado" }, { status: 409 });
-      }
-    } catch {
-      // correlationId inválido — cria novo
-    }
-  }
-
-  const value = Math.round(Number(ag.totalPrice) * 100);
-  if (value < 1) {
+  const valor = Number(ag.totalPrice);
+  if (valor < 0.01) {
     return NextResponse.json({ error: "Valor inválido" }, { status: 400 });
   }
 
-  const correlationID = `${ag.id}-${Date.now()}`;
-  const charge = await wooviCreateCharge({
-    correlationID,
-    value,
-    comment: `Atendimento — ${ag.salon.name}`,
-  });
+  const pixKey = ag.salon?.pixKey ?? process.env.EFI_PIX_KEY ?? "";
+  if (!pixKey) {
+    return NextResponse.json({ error: "Chave PIX não configurada" }, { status: 400 });
+  }
 
-  await prisma.agendamento.update({
-    where: { id: ag.id },
-    data: { wooviCorrelationId: charge.correlationID },
-  });
+  const txid    = generateEfiTxid("AGD");
+  const brCode  = buildFallbackBrCode(txid, valor.toFixed(2), pixKey);
+  const qrCodeImage = await generateQrImage(brCode);
 
-  return NextResponse.json({ ...charge, value: Number(ag.totalPrice) });
+  return NextResponse.json({
+    txid,
+    brCode,
+    qrCodeImage,
+    correlationID: null,
+    value: valor,
+  });
 }
 
-/* ─── GET: polling de status ───────────────────────────────────────────────── */
+/* ─── GET: status (confirmação manual) ────────────────────────────────────── */
 export async function GET(req: NextRequest) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
   }
 
-  const correlationId = req.nextUrl.searchParams.get("correlationId");
-  if (!correlationId) {
-    return NextResponse.json({ error: "correlationId obrigatório" }, { status: 400 });
-  }
-
-  const { status } = await wooviGetCharge(correlationId);
-  return NextResponse.json({ status });
+  void req;
+  return NextResponse.json({ status: "ATIVA" });
 }

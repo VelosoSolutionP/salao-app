@@ -43,7 +43,7 @@ export function SalonSwitcher({ displayName }: { displayName?: string }) {
 
   const { data: salons = [] } = useQuery<SalonItem[]>({
     queryKey: ["my-salons"],
-    queryFn: () => fetch("/api/saloes").then((r) => r.json()),
+    queryFn: () => fetch("/api/saloes").then((r) => r.json()).then((d) => Array.isArray(d) ? d : (d ?? [])),
     enabled: isMaster,
     staleTime: 60_000,
   });

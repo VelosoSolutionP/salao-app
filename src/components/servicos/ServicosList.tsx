@@ -47,7 +47,7 @@ export function ServicosList() {
 
   const { data: servicos, isLoading } = useQuery({
     queryKey: ["servicos"],
-    queryFn: () => fetch("/api/servicos").then((r) => r.json()),
+    queryFn: () => fetch("/api/servicos").then((r) => r.json()).then((d) => Array.isArray(d) ? d : []),
   });
 
   const deleteMutation = useMutation({

@@ -79,7 +79,7 @@ export function AgendaDia() {
 
   const { data: colaboradores = [] } = useQuery<Colaborador[]>({
     queryKey: ["colaboradores"],
-    queryFn: () => fetch("/api/colaboradores").then((r) => r.json()),
+    queryFn: () => fetch("/api/colaboradores").then((r) => r.json()).then((d) => Array.isArray(d) ? d : (d ?? [])),
     staleTime: 300_000,
   });
 

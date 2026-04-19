@@ -2,7 +2,7 @@ export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { requireAuth, requireSalon } from "@/lib/auth-guard";
 import { prisma } from "@/lib/prisma";
-import { efiCreatePix, efiGetPixStatus, generateEfiTxid, isMockMode } from "@/lib/efi";
+import { efiCreatePix, efiGetPixStatus, generateEfiTxid, isMockMode, buildFallbackBrCode, generateQrImage } from "@/lib/efi";
 
 type Item = { tipo: "produto" | "servico"; id: string; nome: string; preco: number; quantidade: number };
 type MetodoPagamento = "PIX" | "DINHEIRO" | "CARTAO_DEBITO" | "CARTAO_CREDITO";
@@ -34,18 +34,38 @@ export async function POST(req: NextRequest) {
     let result;
     let forcedMock = false;
 
-    try {
-      result = await efiCreatePix({ txid, valor: total.toFixed(2), descricao });
-    } catch (err) {
-      console.error("[PDV] Efi API falhou, usando simulação:", err);
-      forcedMock = true;
+    // Busca chave PIX cadastrada nas configurações do salão
+    const salon = await prisma.salon.findUnique({
+      where: { id: salonId! },
+      select: { pixKey: true },
+    });
+    const salonPixKey = salon?.pixKey ?? undefined;
+
+    // Se salão tem chave própria, gera QR direto (sem Efí)
+    if (salonPixKey) {
+      const brCode = buildFallbackBrCode(txid, total.toFixed(2), salonPixKey);
       result = {
         txid,
-        brCode: `00020126580014BR.GOV.BCB.PIX0136mock@demo.com5204000053039865406${total.toFixed(2)}5802BR5915Demo PDV6009SAO PAULO6304ABCD`,
-        qrCodeImage: "",
+        brCode,
+        qrCodeImage: await generateQrImage(brCode),
         status: "ATIVA",
         mockMode: true,
       };
+    } else {
+      try {
+        result = await efiCreatePix({ txid, valor: total.toFixed(2), descricao });
+      } catch (err) {
+        console.error("[PDV] Efi API falhou, usando simulação:", err);
+        forcedMock = true;
+        const brCode = buildFallbackBrCode(txid, total.toFixed(2));
+        result = {
+          txid,
+          brCode,
+          qrCodeImage: await generateQrImage(brCode),
+          status: "ATIVA",
+          mockMode: true,
+        };
+      }
     }
 
     await prisma.transacao.create({
@@ -66,7 +86,7 @@ export async function POST(req: NextRequest) {
       brCode: result.brCode,
       qrCodeImage: result.qrCodeImage,
       total,
-      mockMode: isMockMode() || forcedMock,
+      mockMode: isMockMode() || forcedMock || result.mockMode,
     });
   }
 

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
-import { useTheme } from "next-themes";
 import { cn, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -28,8 +27,6 @@ import {
   FileText,
   Lock,
   ShoppingBag,
-  Sun,
-  Moon,
 } from "lucide-react";
 import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
 import { BellefyIcon } from "@/components/brand/BrandLogo";
@@ -98,7 +95,6 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = session?.user?.role ?? "CLIENT";
-  const { theme, setTheme } = useTheme();
 
   const { data: configData } = useQuery({
     queryKey: ["salon-name"],
@@ -130,7 +126,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-[#07050f] select-none">
+    <div className="flex flex-col h-full bg-sidebar select-none">
 
       {/* ── Brand ───────────────────────────────────────── */}
       <div className="px-4 pt-5 pb-4">
@@ -192,7 +188,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           return (
             <div key={gi} className={gi > 0 ? "mt-4" : ""}>
               {group.label && (
-                <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-zinc-600">
+                <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
                   {group.label}
                 </p>
               )}
@@ -208,9 +204,9 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                         className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-not-allowed"
                         title={UPGRADE_LABEL[item.href] ?? "Plano superior"}
                       >
-                        <item.icon className="w-4 h-4 flex-shrink-0 text-zinc-800" />
-                        <span className="flex-1 text-sm font-medium text-zinc-800 truncate">{item.label}</span>
-                        <Lock className="w-3 h-3 text-zinc-800 flex-shrink-0" />
+                        <item.icon className="w-4 h-4 flex-shrink-0 text-sidebar-foreground/20" />
+                        <span className="flex-1 text-sm font-medium text-sidebar-foreground/20 truncate">{item.label}</span>
+                        <Lock className="w-3 h-3 text-sidebar-foreground/20 flex-shrink-0" />
                       </div>
                     );
                   }
@@ -225,14 +221,14 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                       className={cn(
                         "group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-100",
                         active
-                          ? "bg-violet-500/10 text-white"
-                          : "text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.04]"
+                          ? "bg-sidebar-primary/10 text-sidebar-foreground"
+                          : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent"
                       )}
                     >
                       <item.icon
                         className={cn(
                           "w-4 h-4 flex-shrink-0 transition-colors",
-                          active ? "text-violet-400" : "text-zinc-600 group-hover:text-zinc-400"
+                          active ? "text-sidebar-primary" : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
                         )}
                       />
                       <span className="flex-1 truncate">{item.label}</span>
@@ -253,22 +249,9 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         })}
       </nav>
 
-      {/* ── PWA install ─────────────────────────────────── */}
-      {!pwaInstalled && installPrompt && (
-        <div className="px-2 pb-2">
-          <button
-            onClick={async () => { await installPrompt.prompt(); setInstallPrompt(null); }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.04] transition-all"
-          >
-            <Download className="w-3.5 h-3.5 flex-shrink-0" />
-            Instalar app
-          </button>
-        </div>
-      )}
-
       {/* ── User ────────────────────────────────────────── */}
       <div className="px-2 pb-4 pt-2">
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-white/[0.04] transition-colors group">
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-sidebar-accent transition-colors group">
           <Avatar className="w-7 h-7 flex-shrink-0">
             <AvatarImage src={session?.user?.image ?? ""} />
             <AvatarFallback
@@ -279,31 +262,35 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-zinc-300 truncate leading-none">
+            <p className="text-xs font-semibold text-sidebar-foreground truncate leading-none">
               {session?.user?.name}
             </p>
-            <p className="text-[10px] text-zinc-600 truncate mt-0.5">
+            <p className="text-[10px] text-sidebar-foreground/50 truncate mt-0.5">
               {roleLabel(session?.user?.role)}
             </p>
           </div>
-          <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100">
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-              className="p-1 rounded-md text-zinc-700 hover:text-violet-400 transition-colors"
-            >
-              {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-            </button>
-            <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              title="Sair"
-              className="p-1 rounded-md text-zinc-700 hover:text-rose-400 transition-colors"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-            </button>
-          </div>
+          <button
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            title="Sair"
+            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-sidebar-foreground/30 hover:text-rose-400 transition-all flex-shrink-0"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
+
+      {/* ── PWA install ─────────────────────────────────── */}
+      {!pwaInstalled && installPrompt && (
+        <div className="px-2 pb-3">
+          <button
+            onClick={async () => { await installPrompt.prompt(); setInstallPrompt(null); }}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-zinc-600 hover:text-zinc-400 hover:bg-white/[0.04] transition-all"
+          >
+            <Download className="w-3.5 h-3.5 flex-shrink-0" />
+            Instalar app
+          </button>
+        </div>
+      )}
     </div>
   );
 }

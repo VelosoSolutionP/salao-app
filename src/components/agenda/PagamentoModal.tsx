@@ -41,15 +41,12 @@ function PixWooviStep({
   usouProprioProduto: boolean;
   onSuccess: () => void;
 }) {
-  const [loading, setLoading]   = useState(true);
-  const [brCode, setBrCode]     = useState("");
-  const [qrImg, setQrImg]       = useState("");
-  const [correlationID, setCorrelationID] = useState("");
-  const [copied, setCopied]     = useState(false);
-  const [waitingPay, setWaitingPay] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [brCode, setBrCode]       = useState("");
+  const [qrImg, setQrImg]         = useState("");
+  const [copied, setCopied]       = useState(false);
+  const [confirming, setConfirming] = useState(false);
 
-  /* Cria cobrança */
   useEffect(() => {
     fetch("/api/pagamentos/pix", {
       method: "POST",
@@ -59,46 +56,12 @@ function PixWooviStep({
       .then((r) => r.json())
       .then((d) => {
         if (d.error) { toast.error(d.error); return; }
-        setBrCode(d.brCode);
-        setQrImg(d.qrCodeImage);
-        setCorrelationID(d.correlationID);
-        setWaitingPay(true);
+        setBrCode(d.brCode ?? "");
+        setQrImg(d.qrCodeImage ?? "");
       })
       .catch(() => toast.error("Erro ao gerar QR code PIX"))
       .finally(() => setLoading(false));
   }, [agendamentoId]);
-
-  /* Polling de status */
-  useEffect(() => {
-    if (!correlationID || !waitingPay) return;
-
-    pollRef.current = setInterval(async () => {
-      try {
-        const res  = await fetch(`/api/pagamentos/pix?correlationId=${correlationID}`);
-        const data = await res.json();
-
-        if (data.status === "COMPLETED") {
-          clearInterval(pollRef.current!);
-          // Atualiza agendamento local (webhook já fez no servidor, mas garante UI)
-          await fetch(`/api/agendamentos/${agendamentoId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              status: "CONCLUIDO",
-              pagamento: "PIX",
-              pagamentoStatus: "PAGO",
-              usouProprioProduto,
-            }),
-          });
-          onSuccess();
-        }
-      } catch {
-        // ignora erro de rede pontual
-      }
-    }, 3000);
-
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [correlationID, waitingPay, agendamentoId, usouProprioProduto, onSuccess]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(brCode);
@@ -106,11 +69,31 @@ function PixWooviStep({
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleConfirm = async () => {
+    setConfirming(true);
+    try {
+      await fetch(`/api/agendamentos/${agendamentoId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          status: "CONCLUIDO",
+          pagamento: "PIX",
+          pagamentoStatus: "PAGO",
+          usouProprioProduto,
+        }),
+      });
+      onSuccess();
+    } catch {
+      toast.error("Erro ao confirmar pagamento");
+      setConfirming(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex flex-col items-center gap-3 py-10">
         <Loader2 className="w-7 h-7 animate-spin text-cyan-500" />
-        <p className="text-sm text-gray-500">Gerando QR code PIX…</p>
+        <p className="text-sm text-muted-foreground">Gerando QR code PIX…</p>
       </div>
     );
   }
@@ -118,50 +101,56 @@ function PixWooviStep({
   if (!brCode) {
     return (
       <p className="text-sm text-red-500 text-center py-6">
-        Não foi possível gerar o PIX. Verifique a configuração Woovi.
+        Chave PIX não configurada. Configure em Configurações do salão.
       </p>
     );
   }
-
-  /* QR via qrserver.com (sem dependência extra) */
-  const qrSrc = qrImg || `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(brCode)}&size=200x200&margin=1`;
 
   return (
     <div className="flex flex-col items-center gap-4">
       {/* QR Code */}
       <div className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={qrSrc} alt="QR Code PIX" width={192} height={192} className="rounded-xl" />
+        <img src={qrImg} alt="QR Code PIX" width={192} height={192} className="rounded-xl" />
       </div>
 
       {/* Valor */}
-      <p className="text-sm text-gray-500">
-        Valor: <span className="font-bold text-gray-800">{formatBRL(totalPrice)}</span>
+      <p className="text-sm text-muted-foreground">
+        Valor: <span className="font-bold text-foreground">{formatBRL(totalPrice)}</span>
       </p>
 
       {/* Copia e Cola */}
       <button
         type="button"
         onClick={handleCopy}
-        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 hover:border-cyan-300 hover:bg-cyan-50/40 transition-all"
+        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-muted border border-border hover:border-cyan-400 transition-all"
       >
-        <span className="flex-1 text-xs text-gray-500 truncate text-left font-mono">
+        <span className="flex-1 text-xs text-muted-foreground truncate text-left font-mono">
           {brCode.slice(0, 48)}…
         </span>
         {copied
           ? <Check className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-          : <Copy className="w-4 h-4 text-gray-400 flex-shrink-0" />
+          : <Copy className="w-4 h-4 text-muted-foreground flex-shrink-0" />
         }
       </button>
 
-      {/* Status */}
-      <div className="flex items-center gap-2 text-sm text-cyan-600">
-        <Loader2 className="w-4 h-4 animate-spin" />
-        <span>Aguardando pagamento…</span>
-      </div>
+      {/* Confirmação manual */}
+      <button
+        type="button"
+        onClick={handleConfirm}
+        disabled={confirming}
+        className="w-full py-3 rounded-xl text-sm font-black text-white flex items-center justify-center gap-2 transition-all disabled:opacity-60"
+        style={{ background: "linear-gradient(135deg,#059669,#10b981)", boxShadow: "0 4px 16px -4px rgba(16,185,129,0.5)" }}
+      >
+        {confirming
+          ? <Loader2 className="w-4 h-4 animate-spin" />
+          : <CheckCircle2 className="w-4 h-4" />
+        }
+        Confirmar Recebimento PIX
+      </button>
 
-      <p className="text-xs text-gray-400 text-center">
-        O atendimento será concluído automaticamente após o pagamento.
+      <p className="text-xs text-muted-foreground text-center">
+        Após confirmar o pagamento no seu app Inter, clique acima.
       </p>
     </div>
   );
