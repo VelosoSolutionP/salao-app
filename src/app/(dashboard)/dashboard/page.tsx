@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { HomeView } from "@/components/home/HomeView";
@@ -21,9 +22,12 @@ export default async function DashboardPage() {
   const firstName = userName.split(" ")[0];
   const role = session?.user.role;
 
+  // MASTER has no own salon — redirect to master panel
+  if (role === "MASTER") redirect("/master");
+
   // Fallback: JWT may have salonId = null for older sessions
   let salonId = session?.user.salonId ?? null;
-  if (!salonId && (role === "OWNER" || role === "BARBER")) {
+  if (!salonId) {
     const salon = await prisma.salon.findFirst({
       where: role === "OWNER"
         ? { ownerId: session!.user.id }

@@ -200,8 +200,17 @@ async function main() {
       name: "Barbearia MSB", slug: "barbearia-msb",
       phone: "1133330001", address: "Rua das Flores, 123 — Centro", city: "São Paulo",
       pixKey: "dono@msbsolution.com", pixKeyType: PixKeyType.EMAIL,
+      termoAceito: true, termoAceitoEm: new Date(),
     },
   });
+
+  // Garante termoAceito no salão usado pelo seed (necessário para OWNER acessar o dashboard)
+  if (!salon.termoAceito) {
+    await prisma.salon.update({
+      where: { id: salon.id },
+      data: { termoAceito: true, termoAceitoEm: new Date() },
+    });
+  }
 
   // Horários do salão — idempotente via deleteMany + createMany
   await prisma.horarioSalon.deleteMany({ where: { salonId: salon.id } });
