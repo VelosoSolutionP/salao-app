@@ -76,8 +76,10 @@ function buildAgent(): https.Agent | undefined {
   const certB64 = process.env.EFI_CERTIFICATE_B64;
   if (!certB64) return undefined;
 
-  const pfx = Buffer.from(certB64, "base64");
-  return new https.Agent({ pfx, passphrase: "" });
+  // Remove whitespace/newlines that Vercel may add to long env vars
+  const clean = certB64.replace(/\s/g, "");
+  const pfx = Buffer.from(clean, "base64");
+  return new https.Agent({ pfx, passphrase: "", rejectUnauthorized: true, keepAlive: false });
 }
 
 function makeRawRequest<T>(

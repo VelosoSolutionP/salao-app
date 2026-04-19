@@ -19,13 +19,11 @@ export async function GET() {
   const { session, error } = await requireAuth();
   if (error) return error;
 
-  const config = await prisma.notifConfig.findUnique({
+  const config = await prisma.notifConfig.upsert({
     where: { userId: session!.user.id },
+    update: {},
+    create: { userId: session!.user.id },
   });
-
-  if (!config) {
-    return NextResponse.json({ error: "Configuração não encontrada" }, { status: 404 });
-  }
 
   return NextResponse.json(config);
 }

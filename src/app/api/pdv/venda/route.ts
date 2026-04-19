@@ -31,7 +31,22 @@ export async function POST(req: NextRequest) {
   /* ── PIX: gera QR code ─────────────────────────────────────────────────── */
   if (metodo === "PIX") {
     const txid = generateEfiTxid("PDV");
-    const result = await efiCreatePix({ txid, valor: total.toFixed(2), descricao });
+    let result;
+    let forcedMock = false;
+
+    try {
+      result = await efiCreatePix({ txid, valor: total.toFixed(2), descricao });
+    } catch (err) {
+      console.error("[PDV] Efi API falhou, usando simulação:", err);
+      forcedMock = true;
+      result = {
+        txid,
+        brCode: `00020126580014BR.GOV.BCB.PIX0136mock@demo.com5204000053039865406${total.toFixed(2)}5802BR5915Demo PDV6009SAO PAULO6304ABCD`,
+        qrCodeImage: "",
+        status: "ATIVA",
+        mockMode: true,
+      };
+    }
 
     await prisma.transacao.create({
       data: {
@@ -51,7 +66,7 @@ export async function POST(req: NextRequest) {
       brCode: result.brCode,
       qrCodeImage: result.qrCodeImage,
       total,
-      mockMode: isMockMode(),
+      mockMode: isMockMode() || forcedMock,
     });
   }
 
