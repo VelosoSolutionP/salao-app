@@ -23,7 +23,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const brandColor  = (configData?.brandColor as string | undefined) ?? "#7c3aed";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f4f3f8]">
+    <div className="flex h-screen overflow-hidden bg-[#f4f3f8] dark:bg-[#07050f]">
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex w-60 flex-shrink-0">
         <Sidebar />
@@ -77,7 +77,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-5 lg:p-7 bg-[#f4f3f8]">{children}</main>
+        <main className="flex-1 overflow-y-auto p-5 lg:p-7 bg-[#f4f3f8] dark:bg-[#07050f]">{children}</main>
       </div>
     </div>
   );

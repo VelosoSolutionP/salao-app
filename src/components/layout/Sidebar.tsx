@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { useQuery } from "@tanstack/react-query";
+import { useTheme } from "next-themes";
 import { cn, getInitials } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -27,6 +28,8 @@ import {
   FileText,
   Lock,
   ShoppingBag,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
 import { BellefyIcon } from "@/components/brand/BrandLogo";
@@ -95,6 +98,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const role = session?.user?.role ?? "CLIENT";
+  const { theme, setTheme } = useTheme();
 
   const { data: configData } = useQuery({
     queryKey: ["salon-name"],
@@ -282,13 +286,22 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
               {roleLabel(session?.user?.role)}
             </p>
           </div>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            title="Sair"
-            className="p-1 rounded-md text-zinc-700 hover:text-rose-400 transition-colors flex-shrink-0 opacity-0 group-hover:opacity-100"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100">
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+              className="p-1 rounded-md text-zinc-700 hover:text-violet-400 transition-colors"
+            >
+              {theme === "dark" ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+            </button>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              title="Sair"
+              className="p-1 rounded-md text-zinc-700 hover:text-rose-400 transition-colors"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
       </div>
     </div>
