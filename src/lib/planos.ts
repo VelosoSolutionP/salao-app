@@ -19,7 +19,7 @@ export const PLANOS: Record<PlanoTipo, PlanoConfig> = {
     maxFuncionarios: 1,
     maxSaloesRede: 1,
     maxClientesPorFuncionario: null,
-    routes: ["/dashboard", "/agenda", "/clientes", "/servicos", "/equipe", "/configuracoes", "/contrato", "/notificacoes"],
+    routes: ["/dashboard", "/agenda", "/clientes", "/servicos", "/equipe", "/estoque", "/pdv", "/configuracoes", "/contrato", "/notificacoes"],
     cor: "#6366f1",
   },
   PRATA: {
