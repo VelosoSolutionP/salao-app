@@ -59,11 +59,13 @@ export function HomeView({ greeting, salonName, salonLogo, agendamentosHoje, wee
   const [tab, setTab] = useState<"salao" | "clientes">("salao");
   const [search, setSearch] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [today, setToday] = useState("");
   const { resolvedTheme } = useTheme();
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    setMounted(true);
+    setToday(format(new Date(), "EEE',' dd 'de' MMM", { locale: ptBR }));
+  }, []);
   const isDark = mounted && (resolvedTheme === "dark" || resolvedTheme === "baiano");
-
-  const today = format(new Date(), "EEE',' dd 'de' MMM", { locale: ptBR });
 
   const aoVivo    = agendamentosHoje.filter((a) => a.status === "EM_ANDAMENTO");
   const pending   = agendamentosHoje.filter((a) => ["PENDENTE", "CONFIRMADO"].includes(a.status));
@@ -234,8 +236,8 @@ export function HomeView({ greeting, salonName, salonLogo, agendamentosHoje, wee
               <span className="text-[11px] text-zinc-500 font-semibold">Atendimentos</span>
             </div>
           </div>
-          <div className="h-48 sm:h-56">
-            <ResponsiveContainer width="100%" height="100%">
+          <div className="h-48 sm:h-56" style={{ minHeight: 1 }}>
+            <ResponsiveContainer width="100%" height="100%" minHeight={1}>
               <BarChart data={weekData} barCategoryGap="28%" margin={{ top: 4, right: 0, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
