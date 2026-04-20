@@ -1,10 +1,8 @@
-// Veloso Solution — Service Worker v4
-const CACHE = "veloso-v4";
+// Bellefy — Service Worker v5
+const CACHE = "bellefy-v5";
 const OFFLINE_URL = "/";
 
 const PRECACHE = [
-  "/",
-  "/login",
   "/manifest.json",
   "/icon-192.png",
   "/icon-512.png",
@@ -12,7 +10,7 @@ const PRECACHE = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE))
+    caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).catch(() => {})
   );
   self.skipWaiting();
 });
@@ -21,7 +19,7 @@ self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
       Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    )
+    ).catch(() => {})
   );
   self.clients.claim();
 });
@@ -30,7 +28,7 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("push", (event) => {
   const data = event.data?.json() ?? {};
   event.waitUntil(
-    self.registration.showNotification(data.title ?? "Veloso Solution", {
+    self.registration.showNotification(data.title ?? "Bellefy", {
       body: data.body ?? "",
       icon: data.icon ?? "/icon-192.png",
       badge: "/icon-192.png",
@@ -51,33 +49,35 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-// ── Fetch ─────────────────────────────────────────────────────────────────────
+// ── Fetch: network-first, sem cachear HTML de navegação ──────────────────────
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Ignora: não-GET, APIs, cross-origin, assets Next.js (já têm hash no nome)
   if (
     request.method !== "GET" ||
     url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/_next/") ||
     url.origin !== self.location.origin
   ) {
     return;
   }
 
-  if (request.mode === "navigate") {
+  // Apenas assets estáticos (ícones, manifest) vão pro cache
+  if (PRECACHE.some((p) => url.pathname === p)) {
     event.respondWith(
-      fetch(request)
-        .then((res) => {
-          const clone = res.clone();
-          caches.open(CACHE).then((c) => c.put(request, clone));
-          return res;
-        })
-        .catch(() => caches.match(request).then((r) => r || caches.match(OFFLINE_URL)))
+      caches.match(request).then((cached) => cached || fetch(request))
     );
     return;
   }
 
-  // _next/static chunks NUNCA cachear no SW — o browser já faz isso
-  // e o SW serve versão velha quando o código muda
-  if (url.pathname.startsWith("/_next/")) return;
+  // Navegação: sempre network-first, fallback offline simples
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request).catch(() =>
+        caches.match(OFFLINE_URL).then((r) => r || new Response("Offline", { status: 503 }))
+      )
+    );
+  }
 });
