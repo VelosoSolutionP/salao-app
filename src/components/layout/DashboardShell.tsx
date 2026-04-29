@@ -73,9 +73,9 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   const diasTrial  = planoData?.diasTrial as number  | undefined;
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: bgColor ?? "#1a1a1a" }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: bgColor ?? "#0d0d0d" }}>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex w-60 flex-shrink-0" style={{ borderRight: "1px solid #2e2e2e" }}>
+      <aside className="hidden lg:flex w-60 flex-shrink-0" style={{ borderRight: "1px solid #2a2a2a" }}>
         <Sidebar />
       </aside>
 
@@ -85,7 +85,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
           side="left"
           showCloseButton={false}
           className="p-0 w-60 border-transparent gap-0"
-          style={{ background: "#1a1a1a" }}
+          style={{ background: "#1e1e1e" }}
         >
           <Sidebar onClose={() => setMobileOpen(false)} />
         </SheetContent>
@@ -93,7 +93,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Desktop topbar */}
-        <header className="hidden lg:flex items-center justify-end px-6 py-2.5" style={{ background: "#1a1a1a", borderBottom: "1px solid #2e2e2e" }}>
+        <header className="hidden lg:flex items-center justify-end px-6 py-2.5" style={{ background: "#0d0d0d", borderBottom: "1px solid #2a2a2a" }}>
           <ThemeSwitcher />
         </header>
 
