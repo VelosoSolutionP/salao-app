@@ -125,7 +125,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   }, []);
 
   return (
-    <div className="flex flex-col h-full select-none">
+    <div className="flex flex-col h-full select-none" style={{ background: "#1a1a1a" }}>
 
       {/* ── Brand ───────────────────────────────────────── */}
       <div className="px-4 pt-5 pb-4">
@@ -143,7 +143,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                 }} />
               )}
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full" style={{ boxShadow: "0 0 0 2px #1c1c1c" }} />
+            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full" style={{ boxShadow: "0 0 0 2px #1a1a1a" }} />
           </div>
 
           {/* Name / switcher */}
