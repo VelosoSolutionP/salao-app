@@ -93,7 +93,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Desktop topbar */}
-        <header className="hidden lg:flex items-center justify-end px-6 py-2.5" style={{ background: "#0d0d0d", borderBottom: "1px solid #2a2a2a" }}>
+        <header className="hidden lg:flex items-center justify-end px-6 py-2.5 bg-background border-b border-border">
           <ThemeSwitcher />
         </header>
 
