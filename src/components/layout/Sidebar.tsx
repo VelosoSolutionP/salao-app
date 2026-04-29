@@ -125,7 +125,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
   }, []);
 
   return (
-    <div className="flex flex-col h-full select-none" style={{ background: "#1c1c1c" }}>
+    <div className="flex flex-col h-full select-none">
 
       {/* ── Brand ───────────────────────────────────────── */}
       <div className="px-4 pt-5 pb-4">

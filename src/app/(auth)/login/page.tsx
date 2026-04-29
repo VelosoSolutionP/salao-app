@@ -5,8 +5,9 @@ import Link from "next/link";
 import { LoginForm } from "@/components/auth/LoginForm";
 import {
   CalendarDays, ChevronRight,
-  Users, BarChart3, Package, Sparkles,
+  Users, BarChart3, Package, Sparkles, Scissors,
 } from "lucide-react";
+import { BellefyIcon } from "@/components/brand/BrandLogo";
 
 /* ─── Keyframes & font injected once ───────────────────────────────────────── */
 const STYLES = `
@@ -166,16 +167,14 @@ export default function LoginPage() {
           }}
         >
           <div className="bf-brand flex items-center gap-4">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/logo.jpeg"
-              alt="Bellefy"
-              style={{
-                width:60, height:60, borderRadius:18, flexShrink:0,
-                objectFit:"cover",
-                boxShadow:"0 16px 40px rgba(196,163,90,.4),0 6px 16px rgba(0,0,0,.45)",
-              }}
-            />
+            <div style={{
+              width:60, height:60, borderRadius:18, flexShrink:0,
+              background:"linear-gradient(135deg,#c4a35a,#8a6830)",
+              boxShadow:"0 16px 40px rgba(196,163,90,.4),0 6px 16px rgba(0,0,0,.45)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+            }}>
+              <BellefyIcon size={28} className="text-white" />
+            </div>
 
             <div className="flex flex-col gap-1">
               <span className="bf-wordmark">Bellefy</span>
@@ -298,18 +297,16 @@ function SplashOverlay({ phase }: { phase: "in" | "float" | "out" }) {
         transform: phase === "float" ? "translateY(-36px)" : "translateY(0)",
         transition: phase === "float" ? "transform .9s cubic-bezier(.22,1,.36,1)" : "none",
       }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/logo.jpeg"
-          alt="Bellefy"
-          style={{
-            width:72, height:72, borderRadius:22, flexShrink:0,
-            objectFit:"cover",
-            boxShadow:"0 20px 60px rgba(196,163,90,.5),0 8px 20px rgba(0,0,0,.5)",
-            animation:"sp-icon .7s cubic-bezier(.22,1,.36,1) both",
-            marginBottom:20,
-          }}
-        />
+        <div style={{
+          width:72, height:72, borderRadius:22, flexShrink:0,
+          background:"linear-gradient(135deg,#c4a35a,#8a6830)",
+          boxShadow:"0 20px 60px rgba(196,163,90,.5),0 8px 20px rgba(0,0,0,.5)",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          animation:"sp-icon .7s cubic-bezier(.22,1,.36,1) both",
+          marginBottom:20,
+        }}>
+          <BellefyIcon size={34} className="text-white" />
+        </div>
 
         <div style={{
           fontFamily:"'Outfit',sans-serif",
