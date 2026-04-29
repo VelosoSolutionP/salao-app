@@ -58,7 +58,8 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
   });
   const salonLogo  = configData?.logoUrl    as string | undefined;
   const salonName  = configData?.name       as string | undefined;
-  const brandColor = (configData?.brandColor as string | undefined) ?? "#0e0b1a";
+  const rawBrand   = configData?.brandColor as string | undefined;
+  const brandColor = (!rawBrand || rawBrand === "#7c3aed") ? "#111111" : rawBrand;
   const bgColor    = configData?.bgColor     as string | undefined;
 
   const { data: planoData } = useQuery({
@@ -91,7 +92,7 @@ export function DashboardShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex flex-col flex-1 overflow-hidden">
         {/* Desktop topbar */}
-        <header className="hidden lg:flex items-center justify-end px-6 py-2.5 border-b border-border bg-background">
+        <header className="hidden lg:flex items-center justify-end px-6 py-2.5" style={{ background: "#111111", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
           <ThemeSwitcher />
         </header>
 

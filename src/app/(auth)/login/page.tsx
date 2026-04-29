@@ -167,14 +167,20 @@ export default function LoginPage() {
         >
           <div className="bf-brand flex items-center gap-4">
             <div style={{
-              width:60, height:60, borderRadius:18, flexShrink:0,
-              background: "#000 url('/logo.jpeg') no-repeat center top",
-              backgroundSize: "94px auto",
+              width:60, height:60, borderRadius:18, flexShrink:0, overflow:"hidden",
               boxShadow:
                 "0 16px 40px rgba(196,163,90,.4)," +
                 "0 6px 16px rgba(0,0,0,.45)",
-              transform:"perspective(200px) rotateX(5deg) rotateY(-3deg)",
-            }} />
+            }}>
+              <div style={{
+                width:"100%", height:"100%",
+                backgroundColor:"#000",
+                backgroundImage:"url('/logo.jpeg')",
+                backgroundRepeat:"no-repeat",
+                backgroundPosition:"center top",
+                backgroundSize:"94px auto",
+              }} />
+            </div>
 
             <div className="flex flex-col gap-1">
               <span className="bf-wordmark">Bellefy</span>
@@ -298,22 +304,21 @@ function SplashOverlay({ phase }: { phase: "in" | "float" | "out" }) {
         transition: phase === "float" ? "transform .9s cubic-bezier(.22,1,.36,1)" : "none",
       }}>
         <div style={{
-          position:"relative",
-          width:72, height:72, borderRadius:22, flexShrink:0,
-          background: "#000 url('/logo.jpeg') no-repeat center top",
-          backgroundSize: "113px auto",
+          width:72, height:72, borderRadius:22, flexShrink:0, overflow:"hidden",
           boxShadow:
             "0 20px 60px rgba(196,163,90,.5)," +
             "0 8px 20px rgba(0,0,0,.5)",
-          transform:"perspective(240px) rotateX(6deg) rotateY(-4deg)",
           animation:"sp-icon .7s cubic-bezier(.22,1,.36,1) both",
           marginBottom:20,
         }}>
           <div style={{
-            position:"absolute", inset:-8, borderRadius:30,
-            background:"radial-gradient(circle,rgba(196,163,90,.2) 0%,transparent 70%)",
-            animation:"sp-glow-pulse 2s ease-in-out .5s infinite",
-          }}/>
+            width:"100%", height:"100%",
+            backgroundColor:"#000",
+            backgroundImage:"url('/logo.jpeg')",
+            backgroundRepeat:"no-repeat",
+            backgroundPosition:"center top",
+            backgroundSize:"113px auto",
+          }} />
         </div>
 
         <div style={{
