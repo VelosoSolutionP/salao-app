@@ -20,9 +20,16 @@ export async function POST() {
     return NextResponse.json({ error: "Salão não encontrado" }, { status: 404 });
   }
 
+  if (!process.env.ZAPI_INSTANCE_ID || !process.env.ZAPI_TOKEN) {
+    return NextResponse.json(
+      { error: "WhatsApp não configurado. Adicione ZAPI_INSTANCE_ID e ZAPI_TOKEN nas variáveis de ambiente do projeto no Vercel." },
+      { status: 503 }
+    );
+  }
+
   const phone = salon.owner?.phone;
   if (!phone) {
-    return NextResponse.json({ error: "Telefone do proprietário não cadastrado" }, { status: 400 });
+    return NextResponse.json({ error: "Telefone do proprietário não cadastrado. Adicione um número de telefone no perfil." }, { status: 400 });
   }
 
   const msg =
@@ -31,7 +38,7 @@ export async function POST() {
   const ok = await sendWhatsApp(phone, msg);
 
   if (!ok) {
-    return NextResponse.json({ error: "Falha ao enviar mensagem. Verifique as configurações do Z-API." }, { status: 500 });
+    return NextResponse.json({ error: "Falha ao enviar. Verifique se o ZAPI_INSTANCE_ID e ZAPI_TOKEN estão corretos e se a instância está conectada." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, phone });

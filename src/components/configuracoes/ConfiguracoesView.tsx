@@ -9,11 +9,11 @@ import { BellefyIcon } from "@/components/brand/BrandLogo";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 const PIX_TYPES = [
-  { value: "CPF",    label: "CPF" },
-  { value: "CNPJ",   label: "CNPJ" },
-  { value: "EMAIL",  label: "Email" },
-  { value: "PHONE",  label: "Telefone" },
-  { value: "RANDOM", label: "Chave aleatória" },
+  { value: "CPF",    label: "CPF",              placeholder: "000.000.000-00" },
+  { value: "CNPJ",   label: "CNPJ",             placeholder: "00.000.000/0000-00" },
+  { value: "EMAIL",  label: "Email",            placeholder: "email@exemplo.com.br" },
+  { value: "PHONE",  label: "Telefone",         placeholder: "+5511987654321" },
+  { value: "RANDOM", label: "Chave aleatória",  placeholder: "UUID da chave aleatória" },
 ];
 
 interface SalonData {
@@ -27,6 +27,7 @@ interface SalonData {
   logoUrl?: string | null;
   coverUrl?: string | null;
   brandColor?: string | null;
+  bgColor?: string | null;
   codigoConvite: string | null;
   cancelamentoHorasMinimo: number;
   multaValor: number | null;
@@ -72,6 +73,7 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
     (salon?.multaTipo as "PERCENTUAL" | "FIXO") ?? "FIXO"
   );
   const [brandColor, setBrandColor] = useState(salon?.brandColor ?? "#7c3aed");
+  const [bgColor, setBgColor]       = useState(salon?.bgColor ?? "");
   const [lembreteMinutos, setLembreteMinutos] = useState(
     salon?.lembreteAntecedenciaMinutos ?? 60
   );
@@ -162,6 +164,7 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
 
       // Cancellation policy
       body.brandColor = brandColor;
+      body.bgColor    = bgColor || null;
       body.cancelamentoHorasMinimo = cancelamentoHoras;
       body.lembreteAntecedenciaMinutos = lembreteMinutos;
       if (multaValor.trim()) {
@@ -292,17 +295,15 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
           </div>
 
           {/* Cor do cabeçalho */}
-          <div>
+          <div className="mt-4">
             <label className="text-sm font-medium text-gray-700 block mb-2">Cor do cabeçalho</label>
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <input
-                  type="color"
-                  value={brandColor}
-                  onChange={(e) => setBrandColor(e.target.value)}
-                  className="w-10 h-10 rounded-xl cursor-pointer border border-gray-200 p-0.5 bg-white"
-                />
-              </div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <input
+                type="color"
+                value={brandColor}
+                onChange={(e) => setBrandColor(e.target.value)}
+                className="w-10 h-10 rounded-xl cursor-pointer border border-gray-200 p-0.5 bg-white"
+              />
               <div className="flex gap-2 flex-wrap">
                 {["#7c3aed","#2563eb","#059669","#dc2626","#d97706","#db2777","#0891b2","#374151"].map((c) => (
                   <button
@@ -319,6 +320,46 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
                 ))}
               </div>
               <span className="text-xs text-gray-400 font-mono">{brandColor}</span>
+            </div>
+          </div>
+
+          {/* Cor de fundo do app */}
+          <div className="mt-4">
+            <label className="text-sm font-medium text-gray-700 block mb-1">Cor de fundo do app</label>
+            <p className="text-xs text-gray-400 mb-2">Substitui o fundo padrão em todo o painel</p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <input
+                type="color"
+                value={bgColor || "#ffffff"}
+                onChange={(e) => setBgColor(e.target.value)}
+                className="w-10 h-10 rounded-xl cursor-pointer border border-gray-200 p-0.5 bg-white"
+              />
+              <div className="flex gap-2 flex-wrap">
+                {["#ffffff","#f8f7ff","#0e0b1a","#111827","#1e1b4b","#0f172a","#fafaf9","#f0fdf4"].map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setBgColor(c)}
+                    className="w-7 h-7 rounded-lg border-2 transition-all"
+                    style={{
+                      background: c,
+                      borderColor: bgColor === c ? "#7c3aed" : "#e5e7eb",
+                      transform: bgColor === c ? "scale(1.15)" : "scale(1)",
+                    }}
+                  />
+                ))}
+              </div>
+              {bgColor ? (
+                <button
+                  type="button"
+                  onClick={() => setBgColor("")}
+                  className="text-xs text-red-400 hover:text-red-600 transition-colors"
+                >
+                  Remover
+                </button>
+              ) : (
+                <span className="text-xs text-gray-400 font-mono">padrão</span>
+              )}
             </div>
           </div>
         </CardContent>
@@ -397,7 +438,7 @@ export function ConfiguracoesView({ salon }: { salon: SalonData | null }) {
               <label className="text-sm font-medium text-gray-700 block mb-1">Chave PIX</label>
               <input
                 type="text"
-                placeholder="Sua chave PIX"
+                placeholder={PIX_TYPES.find((t) => t.value === pixKeyType)?.placeholder ?? "Sua chave PIX"}
                 value={pixKey}
                 onChange={(e) => setPixKey(e.target.value)}
                 className={inputCls}

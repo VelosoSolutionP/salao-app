@@ -97,7 +97,7 @@ export function RelatoriosView() {
                 <Card>
                   <CardHeader className="pb-2"><CardTitle className="text-base">Agendamentos por Dia</CardTitle></CardHeader>
                   <CardContent>
-                    <ResponsiveContainer width="100%" height={220}>
+                    <div style={{minWidth:0}}><ResponsiveContainer width="100%" height={220}>
                       <BarChart data={agendamentos?.porDia ?? []} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                         <XAxis dataKey="data" tick={{ fontSize: 10 }} interval={4} />
@@ -107,13 +107,13 @@ export function RelatoriosView() {
                         <Bar dataKey="concluidos" name="Concluídos" fill="#10b981" radius={[2, 2, 0, 0]} />
                         <Bar dataKey="cancelados" name="Cancelados" fill="#ef4444" radius={[2, 2, 0, 0]} />
                       </BarChart>
-                    </ResponsiveContainer>
+                    </ResponsiveContainer></div>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="pb-2"><CardTitle className="text-base">Status dos Agendamentos</CardTitle></CardHeader>
                   <CardContent className="flex justify-center">
-                    <ResponsiveContainer width="100%" height={220}>
+                    <div style={{minWidth:0}}><ResponsiveContainer width="100%" height={220}>
                       <PieChart>
                         <Pie data={statusData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value"
                           label={({ percent }) => `${((percent ?? 0) * 100).toFixed(0)}%`}>
@@ -121,7 +121,7 @@ export function RelatoriosView() {
                         </Pie>
                         <Legend /><Tooltip />
                       </PieChart>
-                    </ResponsiveContainer>
+                    </ResponsiveContainer></div>
                   </CardContent>
                 </Card>
               </div>
@@ -182,7 +182,7 @@ export function RelatoriosView() {
               <Card>
                 <CardHeader className="pb-2"><CardTitle className="text-base">Receita por Profissional</CardTitle></CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={220}>
+                  <div style={{minWidth:0}}><ResponsiveContainer width="100%" height={220}>
                     <BarChart data={produtividade?.ocupacao ?? []}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="nome" tick={{ fontSize: 11 }} />
@@ -193,7 +193,7 @@ export function RelatoriosView() {
                       <Bar yAxisId="left" dataKey="concluidos" name="Atendimentos" fill="#7c3aed" radius={[4, 4, 0, 0]} />
                       <Bar yAxisId="right" dataKey="receita" name="Receita" fill="#10b981" radius={[4, 4, 0, 0]} />
                     </BarChart>
-                  </ResponsiveContainer>
+                  </ResponsiveContainer></div>
                 </CardContent>
               </Card>
 

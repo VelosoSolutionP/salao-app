@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { formatBRL, minutesToHuman, getInitials } from "@/lib/utils";
 import {
   Check, Clock, Loader2, ChevronLeft, ChevronRight,
-  Scissors, Sparkles, Calendar, User, Star, LogIn,
+  Scissors, Sparkles, Calendar, User, Star, LogIn, AlertCircle, PartyPopper, CreditCard,
 } from "lucide-react";
 import {
   addMonths, subMonths, startOfMonth, endOfMonth,
@@ -36,18 +36,18 @@ const STEP_META = [
 
 function StepHeader({ title, subtitle, onBack }: { title: string; subtitle?: string; onBack?: () => void }) {
   return (
-    <div className="px-5 pt-5 pb-4 border-b border-gray-100 flex items-center gap-3">
+    <div className="px-5 pt-5 pb-4 flex items-center gap-3 border-b border-white/10">
       {onBack && (
         <button
           onClick={onBack}
-          className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center hover:bg-gray-200 transition-colors flex-shrink-0"
+          className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors flex-shrink-0"
         >
-          <ChevronLeft className="w-4 h-4 text-gray-600" />
+          <ChevronLeft className="w-4 h-4 text-white" />
         </button>
       )}
       <div>
-        <h2 className="text-base font-black text-gray-900">{title}</h2>
-        {subtitle && <p className="text-xs text-gray-400 mt-0.5">{subtitle}</p>}
+        <h2 className="text-base font-black text-white">{title}</h2>
+        {subtitle && <p className="text-xs text-white/60 mt-0.5">{subtitle}</p>}
       </div>
     </div>
   );
@@ -55,26 +55,27 @@ function StepHeader({ title, subtitle, onBack }: { title: string; subtitle?: str
 
 function BottomBar({ children }: { children: React.ReactNode }) {
   return (
-    <div className="px-5 pb-5 pt-3 border-t border-gray-50">
+    <div className="px-5 pb-5 pt-3 border-t border-white/10">
       {children}
     </div>
   );
 }
 
 function ContinueButton({
-  disabled, onClick, label = "Continuar",
-}: { disabled?: boolean; onClick: () => void; label?: string }) {
+  disabled, onClick, label = "Continuar", hintLabel,
+}: { disabled?: boolean; onClick: () => void; label?: string; hintLabel?: string }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className={`w-full h-12 rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all ${
         disabled
-          ? "bg-gray-100 text-gray-300 cursor-not-allowed"
-          : "bg-gradient-to-r from-violet-600 to-purple-600 text-white shadow-lg shadow-violet-500/25 hover:opacity-90 active:scale-[0.98]"
+          ? "cursor-not-allowed border-2 border-white/15 text-white/40"
+          : "bg-gradient-to-r from-pink-500 to-violet-600 text-white shadow-lg shadow-violet-500/30 hover:opacity-90 active:scale-[0.98]"
       }`}
+      style={disabled ? { background: "rgba(255,255,255,0.05)" } : {}}
     >
-      {label}
+      {disabled && hintLabel ? hintLabel : label}
       {!disabled && <ChevronRight className="w-4 h-4" />}
     </button>
   );
@@ -84,7 +85,7 @@ function ContinueButton({
 
 export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<string, unknown>[]; salonId?: string }) {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status: sessionStatus } = useSession();
 
   // Usa o primeiro salão ativo
   const salon = salons[0] as Record<string, unknown>;
@@ -100,6 +101,15 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
   const [slots,              setSlots]              = useState<Slot[]>([]);
   const [loadingSlots,       setLoadingSlots]       = useState(false);
   const [submitting,         setSubmitting]         = useState(false);
+  const [confirmError,       setConfirmError]       = useState<string | null>(null);
+  const [confirmSuccess,     setConfirmSuccess]     = useState(false);
+  const [agendamentoId,      setAgendamentoId]      = useState<string | null>(null);
+  const [pixLoading,         setPixLoading]         = useState(false);
+  const [pixData,            setPixData]            = useState<{ brCode: string; qrCodeImage: string; value: number } | null>(null);
+  const [pixCopied,          setPixCopied]          = useState(false);
+  const [cartaoLoading,      setCartaoLoading]      = useState(false);
+  const [cartaoLink,         setCartaoLink]         = useState<string | null>(null);
+  const submittingRef = useRef(false);
   const [calendarMonth,      setCalendarMonth]      = useState(new Date());
 
   // Restaura estado salvo (retorno após login de visitante)
@@ -187,10 +197,16 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
   }
 
   async function confirmar() {
+    if (submittingRef.current) return; // bloqueia double-submit antes do re-render
     if (!selectedColaborador || !selectedDate || !selectedSlot) return;
+    submittingRef.current = true;
     setSubmitting(true);
+    setConfirmError(null);
     try {
-      if (!salonId) { toast.error("Salão não identificado. Volte e tente novamente."); setSubmitting(false); return; }
+      if (!salonId) {
+        setConfirmError("Salão não identificado. Volte e tente novamente.");
+        return;
+      }
       const res = await fetch("/api/agendamentos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -202,16 +218,72 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
           hora:          selectedSlot,
         }),
       });
-      const json = await res.json();
-      if (!res.ok) { toast.error(json.error ?? "Erro ao agendar"); return; }
+      let json: Record<string, unknown> = {};
+      try { json = await res.json(); } catch { /* body empty */ }
+      if (!res.ok) {
+        const msg = (json.error as string) ?? `Erro ${res.status}`;
+        setConfirmError(msg);
+        toast.error(msg);
+        return;
+      }
+      setAgendamentoId((json.id as string) ?? null);
+      setConfirmSuccess(true);
       toast.success("Agendamento realizado!");
-      router.push("/agendar");
-      router.refresh();
     } catch {
-      toast.error("Erro de conexão. Tente novamente.");
+      const msg = "Erro de conexão. Tente novamente.";
+      setConfirmError(msg);
+      toast.error(msg);
     } finally {
+      submittingRef.current = false;
       setSubmitting(false);
     }
+  }
+
+  async function gerarPix() {
+    if (!agendamentoId || pixLoading) return;
+    setPixLoading(true);
+    try {
+      const res = await fetch("/api/pagamentos/pix", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agendamentoId }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error ?? "Erro ao gerar PIX"); return; }
+      setPixData({ brCode: json.brCode, qrCodeImage: json.qrCodeImage, value: json.value });
+    } catch {
+      toast.error("Erro de conexão ao gerar PIX");
+    } finally {
+      setPixLoading(false);
+    }
+  }
+
+  async function gerarCartao() {
+    if (!agendamentoId || cartaoLoading) return;
+    setCartaoLoading(true);
+    try {
+      const res = await fetch("/api/pagamentos/cartao", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ agendamentoId }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error ?? "Erro ao gerar pagamento"); return; }
+      setCartaoLink(json.link as string);
+      window.open(json.link as string, "_blank", "noopener");
+    } catch {
+      toast.error("Erro de conexão");
+    } finally {
+      setCartaoLoading(false);
+    }
+  }
+
+  function copiarPix() {
+    if (!pixData?.brCode) return;
+    navigator.clipboard.writeText(pixData.brCode).then(() => {
+      setPixCopied(true);
+      setTimeout(() => setPixCopied(false), 3000);
+    });
   }
 
   // ── Calendar helpers ───────────────────────────────────────────────────────
@@ -275,19 +347,23 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
       </div>
 
       {/* ── Card principal ── */}
-      <div className="bg-white rounded-3xl shadow-2xl overflow-hidden">
+      <div className="rounded-3xl overflow-hidden shadow-2xl shadow-black/40" style={{
+        background: "rgba(255,255,255,0.08)",
+        backdropFilter: "blur(24px)",
+        border: "1px solid rgba(255,255,255,0.15)",
+      }}>
 
         {/* ════════════ STEP 1: SERVIÇOS ════════════ */}
         {step === "servicos" && (
           <>
             <StepHeader title="Escolha os serviços" subtitle="Selecione um ou mais serviços" />
-            <div className="divide-y divide-gray-50 max-h-[400px] overflow-y-auto overscroll-contain">
+            <div className="divide-y divide-white/5 max-h-[400px] overflow-y-auto overscroll-contain scrollbar-thin">
               {categories.map((cat) => {
                 const catServicos = servicos.filter((s) => (s.categoria || "Outros") === cat);
                 return (
                   <div key={cat}>
-                    <div className="px-5 py-2 bg-gray-50/80 sticky top-0 z-10">
-                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{cat}</span>
+                    <div className="px-5 py-2 sticky top-0 z-10" style={{ background: "rgba(0,0,0,0.2)", backdropFilter: "blur(8px)" }}>
+                      <span className="text-[10px] font-black text-white/50 uppercase tracking-widest">{cat}</span>
                     </div>
                     {catServicos.map((s) => {
                       const sel = selectedServicos.includes(s.id as string);
@@ -295,25 +371,26 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
                         <button
                           key={s.id as string}
                           onClick={() => toggleServico(s.id as string)}
-                          className={`w-full flex items-center gap-3.5 px-5 py-3.5 text-left transition-all active:scale-[0.99] ${sel ? "bg-violet-50" : "hover:bg-gray-50"}`}
+                          className={`w-full flex items-center gap-3.5 px-5 py-3.5 text-left transition-all active:scale-[0.99] ${sel ? "bg-white/15" : "hover:bg-white/8"}`}
+                          style={sel ? { background: "rgba(255,255,255,0.12)" } : {}}
                         >
                           <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${
-                            sel ? "bg-violet-600 shadow-md shadow-violet-400/30" : "bg-gray-100"
-                          }`}>
-                            <Scissors className={`w-4 h-4 ${sel ? "text-white" : "text-gray-400"}`} />
+                            sel ? "shadow-lg" : ""
+                          }`} style={{ background: sel ? "linear-gradient(135deg,#f472b6,#a855f7)" : "rgba(255,255,255,0.1)" }}>
+                            <Scissors className="w-4 h-4 text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`font-bold text-sm ${sel ? "text-violet-700" : "text-gray-800"}`}>{s.nome as string}</p>
-                            <p className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
+                            <p className="font-bold text-sm text-white">{s.nome as string}</p>
+                            <p className="text-xs text-white/50 flex items-center gap-1 mt-0.5">
                               <Clock className="w-3 h-3" />{minutesToHuman(s.duracao as number)}
                             </p>
                           </div>
-                          <p className={`font-black text-sm flex-shrink-0 ${sel ? "text-violet-600" : "text-gray-700"}`}>
+                          <p className="font-black text-sm flex-shrink-0 text-pink-300">
                             {formatBRL(s.preco as number)}
                           </p>
                           <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
-                            sel ? "bg-violet-600 border-violet-600" : "border-gray-300"
-                          }`}>
+                            sel ? "border-pink-400" : "border-white/30"
+                          }`} style={sel ? { background: "linear-gradient(135deg,#f472b6,#a855f7)" } : {}}>
                             {sel && <Check className="w-3 h-3 text-white" />}
                           </div>
                         </button>
@@ -326,18 +403,18 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
 
             {/* Resumo flutuante */}
             {selectedServicos.length > 0 && (
-              <div className="mx-5 my-3 flex items-center justify-between px-4 py-2.5 bg-violet-50 rounded-2xl">
-                <div className="flex items-center gap-2 text-violet-700 text-sm">
+              <div className="mx-5 my-3 flex items-center justify-between px-4 py-2.5 rounded-2xl" style={{ background: "rgba(244,114,182,0.15)", border: "1px solid rgba(244,114,182,0.3)" }}>
+                <div className="flex items-center gap-2 text-pink-200 text-sm">
                   <Clock className="w-4 h-4" />
                   <span className="font-bold">{minutesToHuman(duracaoTotal)}</span>
-                  <span className="text-violet-300">·</span>
-                  <span className="text-xs text-violet-500">{selectedServicos.length} serviço{selectedServicos.length > 1 ? "s" : ""}</span>
+                  <span className="text-pink-400">·</span>
+                  <span className="text-xs text-pink-300">{selectedServicos.length} serviço{selectedServicos.length > 1 ? "s" : ""}</span>
                 </div>
-                <span className="font-black text-violet-700">{formatBRL(totalPrice)}</span>
+                <span className="font-black text-pink-200">{formatBRL(totalPrice)}</span>
               </div>
             )}
             <BottomBar>
-              <ContinueButton disabled={selectedServicos.length === 0} onClick={() => setStep("profissional")} />
+              <ContinueButton disabled={selectedServicos.length === 0} onClick={() => setStep("profissional")} hintLabel="Selecione ao menos um serviço" />
             </BottomBar>
           </>
         )}
@@ -347,11 +424,11 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
           <>
             <StepHeader title="Escolha o profissional" subtitle="Quem vai te atender?" onBack={() => setStep("servicos")} />
 
-            <div className="p-4 space-y-2.5 max-h-[420px] overflow-y-auto overscroll-contain">
+            <div className="p-4 space-y-2.5 max-h-[420px] overflow-y-auto overscroll-contain scrollbar-thin">
               {colaboradoresComFit.length === 0 ? (
                 <div className="text-center py-12">
-                  <User className="w-10 h-10 text-gray-200 mx-auto mb-3" />
-                  <p className="text-gray-400 text-sm">Nenhum profissional disponível</p>
+                  <User className="w-10 h-10 text-white/20 mx-auto mb-3" />
+                  <p className="text-white/40 text-sm">Nenhum profissional disponível</p>
                 </div>
               ) : (
                 colaboradoresComFit.map((c) => {
@@ -362,47 +439,47 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
                     <button
                       key={c.id as string}
                       onClick={() => selectColaborador(c.id as string)}
-                      className={`w-full flex items-center gap-3.5 p-4 rounded-2xl border-2 transition-all text-left active:scale-[0.99] ${
-                        sel
-                          ? "border-violet-400 bg-violet-50 shadow-md shadow-violet-100"
-                          : "border-gray-100 hover:border-violet-200 hover:bg-violet-50/30"
-                      }`}
+                      className="w-full flex items-center gap-3.5 p-4 rounded-2xl transition-all text-left active:scale-[0.99]"
+                      style={sel
+                        ? { background: "rgba(244,114,182,0.2)", border: "1.5px solid rgba(244,114,182,0.5)" }
+                        : { background: "rgba(255,255,255,0.06)", border: "1.5px solid rgba(255,255,255,0.1)" }
+                      }
                     >
                       <div className="relative flex-shrink-0">
-                        <Avatar className="w-13 h-13 ring-2 ring-white shadow-md" style={{ width: 52, height: 52 }}>
+                        <Avatar style={{ width: 52, height: 52 }}>
                           <AvatarImage src={user.image} />
-                          <AvatarFallback className={`font-black text-sm ${sel ? "bg-violet-600 text-white" : "bg-gradient-to-br from-violet-100 to-purple-200 text-violet-700"}`}>
+                          <AvatarFallback className="font-black text-sm text-white" style={{ background: "linear-gradient(135deg,#f472b6,#a855f7)" }}>
                             {getInitials(user.name)}
                           </AvatarFallback>
                         </Avatar>
                         {sel && (
-                          <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-violet-600 rounded-full flex items-center justify-center shadow-sm">
+                          <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center shadow-sm" style={{ background: "linear-gradient(135deg,#f472b6,#a855f7)" }}>
                             <Check className="w-3 h-3 text-white" />
                           </div>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className={`font-black text-sm ${sel ? "text-violet-700" : "text-gray-800"}`}>{user.name}</p>
+                          <p className="font-black text-sm text-white">{user.name}</p>
                           {match && (
-                            <Badge className="text-[9px] px-1.5 py-0 bg-emerald-100 text-emerald-700 font-bold">
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold bg-emerald-400/20 text-emerald-300">
                               Especialista
-                            </Badge>
+                            </span>
                           )}
                         </div>
                         {(c.specialties as string[])?.length > 0 ? (
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {(c.specialties as string[]).slice(0, 3).map((s) => (
-                              <span key={s} className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${sel ? "bg-violet-100 text-violet-600" : "bg-gray-100 text-gray-500"}`}>
+                              <span key={s} className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-white/10 text-white/60">
                                 {s}
                               </span>
                             ))}
                           </div>
                         ) : (
-                          <p className="text-xs text-gray-400 mt-0.5">Profissional</p>
+                          <p className="text-xs text-white/40 mt-0.5">Profissional</p>
                         )}
                       </div>
-                      <Sparkles className={`w-4 h-4 flex-shrink-0 ${sel ? "text-violet-400" : "text-gray-200"}`} />
+                      <Sparkles className={`w-4 h-4 flex-shrink-0 ${sel ? "text-pink-300" : "text-white/20"}`} />
                     </button>
                   );
                 })
@@ -410,7 +487,7 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
             </div>
 
             <BottomBar>
-              <ContinueButton disabled={!selectedColaborador} onClick={() => setStep("horario")} />
+              <ContinueButton disabled={!selectedColaborador} onClick={() => setStep("horario")} hintLabel="Selecione um profissional" />
             </BottomBar>
           </>
         )}
@@ -429,25 +506,25 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
               <div className="flex items-center justify-between mb-3 px-1">
                 <button
                   onClick={() => setCalendarMonth((m) => subMonths(m, 1))}
-                  className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                 >
-                  <ChevronLeft className="w-4 h-4 text-gray-500" />
+                  <ChevronLeft className="w-4 h-4 text-white/70" />
                 </button>
-                <span className="font-black text-gray-800 text-sm capitalize">
+                <span className="font-black text-white text-sm capitalize">
                   {format(calendarMonth, "MMMM yyyy", { locale: ptBR })}
                 </span>
                 <button
                   onClick={() => setCalendarMonth((m) => addMonths(m, 1))}
-                  className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center"
+                  className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
                 >
-                  <ChevronRight className="w-4 h-4 text-gray-500" />
+                  <ChevronRight className="w-4 h-4 text-white/70" />
                 </button>
               </div>
 
               {/* Dias da semana */}
               <div className="grid grid-cols-7 mb-1">
                 {["D","S","T","Q","Q","S","S"].map((d, i) => (
-                  <div key={i} className="text-center text-[10px] font-black text-gray-300 py-1">{d}</div>
+                  <div key={i} className="text-center text-[10px] font-black text-white/30 py-1">{d}</div>
                 ))}
               </div>
 
@@ -467,11 +544,12 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
                       className={`
                         mx-auto w-9 h-9 rounded-full text-sm font-bold transition-all flex items-center justify-center
                         ${!inMonth ? "opacity-0 pointer-events-none" : ""}
-                        ${isSel    ? "bg-violet-600 text-white shadow-lg shadow-violet-500/30 scale-110" : ""}
-                        ${isTod && !isSel && !disabled ? "bg-violet-100 text-violet-700 ring-2 ring-violet-300" : ""}
-                        ${!isSel && !isTod && !disabled ? "text-gray-700 hover:bg-violet-50 hover:text-violet-600" : ""}
-                        ${disabled && inMonth ? "text-gray-200 cursor-not-allowed" : ""}
+                        ${isSel    ? "text-white shadow-lg shadow-violet-500/40 scale-110" : ""}
+                        ${isTod && !isSel && !disabled ? "ring-2 ring-violet-400/60 text-violet-200" : ""}
+                        ${!isSel && !isTod && !disabled ? "text-white/80 hover:bg-white/15 hover:text-white" : ""}
+                        ${disabled && inMonth ? "text-white/15 cursor-not-allowed" : ""}
                       `}
+                      style={isSel ? { background: "linear-gradient(135deg,#7c3aed,#a855f7)" } : {}}
                     >
                       {format(day, "d")}
                     </button>
@@ -483,17 +561,17 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
             {/* Slots de horário */}
             <div className="px-4 pb-4 mt-4 min-h-[130px]">
               {!selectedDate ? (
-                <div className="flex flex-col items-center justify-center py-7 text-gray-300">
+                <div className="flex flex-col items-center justify-center py-7 text-white/25">
                   <Calendar className="w-9 h-9 mb-2" />
                   <p className="text-xs">Selecione uma data</p>
                 </div>
               ) : loadingSlots ? (
-                <div className="flex items-center justify-center py-7 gap-2 text-gray-400">
+                <div className="flex items-center justify-center py-7 gap-2 text-white/40">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span className="text-xs">Buscando horários...</span>
                 </div>
               ) : slots.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-7 text-gray-300">
+                <div className="flex flex-col items-center justify-center py-7 text-white/25">
                   <Clock className="w-9 h-9 mb-2" />
                   <p className="text-xs text-center">Sem horários disponíveis<br />neste dia</p>
                 </div>
@@ -507,7 +585,7 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
                     .filter((g) => g.items.length > 0)
                     .map((group) => (
                       <div key={group.label}>
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-1">
+                        <p className="text-[10px] font-black text-white/40 uppercase tracking-widest mb-2 flex items-center gap-1">
                           <span>{group.icon}</span> {group.label}
                         </p>
                         <div className="flex flex-wrap gap-1.5">
@@ -517,9 +595,10 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
                               onClick={() => setSelectedSlot(s.time)}
                               className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all border ${
                                 selectedSlot === s.time
-                                  ? "bg-violet-600 text-white border-violet-600 shadow-md shadow-violet-400/30 scale-105"
-                                  : "bg-white text-gray-600 border-gray-200 hover:border-violet-300 hover:text-violet-600 hover:bg-violet-50"
+                                  ? "border-violet-400/60 shadow-md shadow-violet-500/30 scale-105 text-white"
+                                  : "bg-white/8 text-white/70 border-white/15 hover:border-violet-400/50 hover:text-white hover:bg-white/15"
                               }`}
+                              style={selectedSlot === s.time ? { background: "linear-gradient(135deg,#7c3aed,#a855f7)" } : {}}
                             >
                               {s.time}
                             </button>
@@ -532,7 +611,7 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
             </div>
 
             <BottomBar>
-              <ContinueButton disabled={!selectedSlot} onClick={() => setStep("confirmacao")} />
+              <ContinueButton disabled={!selectedSlot} onClick={() => setStep("confirmacao")} hintLabel="Selecione data e horário" />
             </BottomBar>
           </>
         )}
@@ -540,85 +619,183 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
         {/* ════════════ STEP 4: CONFIRMAÇÃO ════════════ */}
         {step === "confirmacao" && (
           <>
-            <StepHeader title="Confirmar agendamento" subtitle="Revise antes de confirmar" onBack={() => setStep("horario")} />
+            {/* Tela de sucesso */}
+            {confirmSuccess ? (
+              <div className="flex flex-col items-center px-5 py-8 gap-4">
+                {/* Header sucesso */}
+                <div className="flex flex-col items-center text-center gap-2">
+                  <div className="w-14 h-14 rounded-full flex items-center justify-center shadow-xl" style={{ background: "linear-gradient(135deg,#34d399,#059669)" }}>
+                    <Check className="w-7 h-7 text-white" />
+                  </div>
+                  <p className="text-xl font-black text-white">Agendado!</p>
+                  <p className="text-sm text-white/50">
+                    {selectedDate && format(selectedDate, "dd/MM/yyyy", { locale: ptBR })} às {selectedSlot} · {formatBRL(totalPrice)}
+                  </p>
+                </div>
+
+                {/* PIX */}
+                {!pixData ? (
+                  <button
+                    onClick={gerarPix}
+                    disabled={pixLoading}
+                    className="w-full py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                    style={{ background: "linear-gradient(135deg,#34d399,#059669)", boxShadow: "0 4px 16px rgba(52,211,153,.35)", opacity: pixLoading ? 0.7 : 1 }}
+                  >
+                    {pixLoading ? <Loader2 className="w-4 h-4 animate-spin text-white" /> : <span className="text-white text-base font-black">PIX</span>}
+                    <span className="text-white">{pixLoading ? "Gerando QR Code…" : "Pagar com PIX"}</span>
+                  </button>
+                ) : (
+                  <div className="w-full space-y-3">
+                    {/* QR Code */}
+                    <div className="flex flex-col items-center gap-2 p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.95)" }}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={pixData.qrCodeImage} alt="QR Code PIX" className="w-44 h-44 rounded-xl" />
+                      <p className="text-gray-600 text-xs font-semibold">Escaneie com seu banco</p>
+                      <p className="text-emerald-600 text-sm font-black">{formatBRL(pixData.value)}</p>
+                    </div>
+
+                    {/* Copia e cola */}
+                    <button
+                      onClick={copiarPix}
+                      className="w-full py-3 rounded-2xl text-sm font-black flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                      style={{ background: pixCopied ? "rgba(52,211,153,0.2)" : "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)" }}
+                    >
+                      {pixCopied
+                        ? <><Check className="w-4 h-4 text-emerald-400" /><span className="text-emerald-300">Código copiado!</span></>
+                        : <><span className="text-white/80">Copiar código PIX</span></>
+                      }
+                    </button>
+                  </div>
+                )}
+
+                {/* Cartão */}
+                {!cartaoLink ? (
+                  <button
+                    onClick={gerarCartao}
+                    disabled={cartaoLoading}
+                    className="w-full py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                    style={{ background: "rgba(255,255,255,0.1)", border: "1.5px solid rgba(255,255,255,0.2)", opacity: cartaoLoading ? 0.7 : 1 }}
+                  >
+                    {cartaoLoading
+                      ? <><Loader2 className="w-4 h-4 animate-spin text-white/60" /><span className="text-white/70">Gerando link…</span></>
+                      : <><CreditCard className="w-4 h-4 text-white/70" /><span className="text-white/80">Pagar com Cartão</span></>
+                    }
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => window.open(cartaoLink, "_blank", "noopener")}
+                    className="w-full py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+                    style={{ background: "rgba(99,102,241,0.25)", border: "1.5px solid rgba(99,102,241,0.5)" }}
+                  >
+                    <CreditCard className="w-4 h-4 text-indigo-300" />
+                    <span className="text-indigo-200">Abrir página de pagamento</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={() => { router.push("/agendar"); router.refresh(); }}
+                  className="text-white/40 text-xs font-semibold hover:text-white/70 transition-colors"
+                >
+                  Fazer outro agendamento
+                </button>
+              </div>
+            ) : (
+            <>
+            <StepHeader title="Confirmar agendamento" subtitle="Revise antes de confirmar" onBack={() => { setConfirmError(null); setStep("horario"); }} />
 
             <div className="p-5 space-y-3.5">
               {/* Profissional */}
-              <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-violet-50 to-purple-50 rounded-2xl border border-violet-100">
-                <Avatar className="w-12 h-12 ring-2 ring-white shadow-md flex-shrink-0">
+              <div className="flex items-center gap-4 p-4 rounded-2xl" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)" }}>
+                <Avatar className="w-12 h-12 ring-2 ring-white/20 shadow-md flex-shrink-0">
                   <AvatarImage src={(colaboradorData?.user as Record<string,string>)?.image} />
-                  <AvatarFallback className="bg-gradient-to-br from-violet-500 to-purple-600 text-white font-black">
+                  <AvatarFallback className="font-black text-white text-sm" style={{ background: "linear-gradient(135deg,#f472b6,#a855f7)" }}>
                     {getInitials((colaboradorData?.user as Record<string,string>)?.name ?? "")}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-black text-gray-900 text-sm">{(colaboradorData?.user as Record<string,string>)?.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{(salon as Record<string, string>)?.name}</p>
+                  <p className="font-black text-white text-sm">{(colaboradorData?.user as Record<string,string>)?.name}</p>
+                  <p className="text-xs text-white/40 mt-0.5">{(salon as Record<string, string>)?.name}</p>
                 </div>
-                <Star className="w-4 h-4 text-violet-300 ml-auto" />
+                <Star className="w-4 h-4 text-pink-300 ml-auto" />
               </div>
 
               {/* Serviços */}
               <div className="space-y-1.5">
                 {selectedServicosData.map((s) => (
-                  <div key={s.id as string} className="flex items-center justify-between py-2.5 px-4 bg-gray-50 rounded-xl">
+                  <div key={s.id as string} className="flex items-center justify-between py-2.5 px-4 rounded-xl" style={{ background: "rgba(255,255,255,0.06)" }}>
                     <div className="flex items-center gap-2.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-violet-400" />
-                      <span className="text-sm text-gray-700 font-medium">{s.nome as string}</span>
+                      <div className="w-1.5 h-1.5 rounded-full bg-pink-400" />
+                      <span className="text-sm text-white/80 font-medium">{s.nome as string}</span>
                     </div>
-                    <span className="text-sm font-black text-gray-800">{formatBRL(s.preco as number)}</span>
+                    <span className="text-sm font-black text-pink-300">{formatBRL(s.preco as number)}</span>
                   </div>
                 ))}
               </div>
 
               {/* Data e Hora */}
               <div className="grid grid-cols-2 gap-2.5">
-                <div className="bg-gray-50 rounded-2xl p-3.5 text-center">
-                  <Calendar className="w-5 h-5 text-violet-400 mx-auto mb-1" />
-                  <p className="text-[10px] text-gray-400 mb-0.5">Data</p>
-                  <p className="font-black text-gray-800 text-sm">
+                <div className="rounded-2xl p-3.5 text-center" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  <Calendar className="w-5 h-5 text-violet-300 mx-auto mb-1" />
+                  <p className="text-[10px] text-white/40 mb-0.5">Data</p>
+                  <p className="font-black text-white text-sm">
                     {selectedDate && format(selectedDate, "dd 'de' MMM", { locale: ptBR })}
                   </p>
-                  <p className="text-[10px] text-gray-400 capitalize mt-0.5">
+                  <p className="text-[10px] text-white/40 capitalize mt-0.5">
                     {selectedDate && format(selectedDate, "EEEE", { locale: ptBR })}
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-2xl p-3.5 text-center">
-                  <Clock className="w-5 h-5 text-violet-400 mx-auto mb-1" />
-                  <p className="text-[10px] text-gray-400 mb-0.5">Horário</p>
-                  <p className="font-black text-gray-800 text-sm">{selectedSlot}</p>
-                  <p className="text-[10px] text-gray-400 mt-0.5">{minutesToHuman(duracaoTotal)}</p>
+                <div className="rounded-2xl p-3.5 text-center" style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.12)" }}>
+                  <Clock className="w-5 h-5 text-violet-300 mx-auto mb-1" />
+                  <p className="text-[10px] text-white/40 mb-0.5">Horário</p>
+                  <p className="font-black text-white text-sm">{selectedSlot}</p>
+                  <p className="text-[10px] text-white/40 mt-0.5">{minutesToHuman(duracaoTotal)}</p>
                 </div>
               </div>
 
               {/* Total */}
               <div className="flex items-center justify-between px-5 py-4 rounded-2xl text-white"
-                style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)", boxShadow: "0 4px 20px rgba(109,40,217,.3)" }}>
+                style={{ background: "linear-gradient(135deg,#f472b6,#a855f7,#7c3aed)", boxShadow: "0 4px 20px rgba(168,85,247,.35)" }}>
                 <span className="font-semibold text-sm opacity-90">Total</span>
                 <span className="text-2xl font-black">{formatBRL(totalPrice)}</span>
               </div>
 
               {/* PIX */}
               {(salon as Record<string,string>)?.pixKey && (
-                <div className="flex items-center gap-3 p-3.5 bg-emerald-50 border border-emerald-100 rounded-2xl">
+                <div className="flex items-center gap-3 p-3.5 rounded-2xl" style={{ background: "rgba(52,211,153,0.12)", border: "1px solid rgba(52,211,153,0.25)" }}>
                   <div className="w-9 h-9 bg-emerald-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-sm">
                     <span className="text-white text-[10px] font-black">PIX</span>
                   </div>
                   <div>
-                    <p className="text-xs font-black text-emerald-700">Pagamento via PIX disponível</p>
-                    <p className="text-xs text-emerald-600 mt-0.5 font-mono">{(salon as Record<string,string>).pixKey}</p>
+                    <p className="text-xs font-black text-emerald-300">Pagamento via PIX disponível</p>
+                    <p className="text-xs text-emerald-400/70 mt-0.5 font-mono">{(salon as Record<string,string>).pixKey}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Erro inline */}
+              {confirmError && (
+                <div className="flex items-start gap-3 p-4 rounded-2xl" style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.35)" }}>
+                  <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-black text-red-300">Não foi possível agendar</p>
+                    <p className="text-xs text-red-400/80 mt-0.5">{confirmError}</p>
                   </div>
                 </div>
               )}
 
               {/* Visitante: salva estado e pede login */}
-              {!session?.user ? (
+              {sessionStatus === "loading" ? (
+                <div className="flex items-center justify-center py-4 gap-2 text-white/50">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span className="text-sm">Verificando sessão...</span>
+                </div>
+              ) : !session?.user ? (
                 <div className="space-y-2.5">
-                  <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl">
-                    <LogIn className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-3 p-4 rounded-2xl" style={{ background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.25)" }}>
+                    <LogIn className="w-5 h-5 text-amber-300 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-black text-amber-800">Faça login para confirmar</p>
-                      <p className="text-xs text-amber-600 mt-0.5">Crie uma conta gratuita ou entre — seu agendamento será mantido.</p>
+                      <p className="text-sm font-black text-amber-200">Faça login para confirmar</p>
+                      <p className="text-xs text-amber-300/70 mt-0.5">Crie uma conta gratuita ou entre — seu agendamento será mantido.</p>
                     </div>
                   </div>
                   <button
@@ -665,6 +842,8 @@ export function AgendarView({ salons, salonId: salonIdProp }: { salons: Record<s
                 </button>
               )}
             </div>
+            </>
+            )}
           </>
         )}
       </div>

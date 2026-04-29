@@ -1,5 +1,3 @@
-import { BrandLogo, HeraIcon } from "./BrandLogo";
-
 // ─── BrandPanel ───────────────────────────────────────────────────────────────
 // Painel esquerdo de splash para as páginas de autenticação.
 // mode="login"    → estatísticas + depoimento
@@ -16,13 +14,9 @@ export function BrandPanel({ mode }: { mode: "login" | "registro" }) {
         style={{ background: "radial-gradient(circle,rgba(124,58,237,.22) 0%,transparent 70%)" }} />
       <div className="absolute -bottom-40 right-0 w-[400px] h-[400px] rounded-full blur-3xl pointer-events-none"
         style={{ background: "radial-gradient(circle,rgba(79,70,229,.18) 0%,transparent 70%)" }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full pointer-events-none"
-        style={{ background: "radial-gradient(circle,rgba(109,40,217,.05) 0%,transparent 70%)" }} />
-
-      {/* ── Decorative giant icon (watermark) ───────────── */}
-      <div className="absolute -right-16 top-1/2 -translate-y-1/2 pointer-events-none select-none opacity-[0.04]">
-        <HeraIcon size={480} className="text-violet-300" />
-      </div>
+      {/* Gold glow matching logo accent */}
+      <div className="absolute top-1/4 -left-12 w-[360px] h-[360px] rounded-full blur-3xl pointer-events-none"
+        style={{ background: "radial-gradient(circle,rgba(196,163,90,.07) 0%,transparent 70%)" }} />
 
       {/* ── Precision grid lines ─────────────────────────── */}
       <svg
@@ -37,15 +31,35 @@ export function BrandPanel({ mode }: { mode: "login" | "registro" }) {
         <rect width="100%" height="100%" fill="url(#grid)" />
       </svg>
 
-      {/* ── Logo ─────────────────────────────────────────── */}
-      <BrandLogo size="md" theme="dark" className="relative z-10" />
+      {/* ── Decorative watermark ────────────────────────── */}
+      <div className="absolute -right-32 top-1/2 -translate-y-1/2 pointer-events-none select-none"
+        style={{ opacity: 0.045 }}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo.jpeg" alt="" className="w-[540px] h-[540px]" />
+      </div>
+
+      {/* ── Logo hero ─────────────────────────────────────── */}
+      <div className="relative z-10">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src="/logo.jpeg"
+          alt="Bellefy"
+          className="w-48 h-48"
+          style={{
+            filter:
+              "drop-shadow(0 0 56px rgba(196,163,90,.40)) drop-shadow(0 0 20px rgba(196,163,90,.25))",
+            borderRadius: "2px",
+          }}
+        />
+      </div>
 
       {/* ── Main content ─────────────────────────────────── */}
       <div className="relative z-10 space-y-8">
 
         {/* Headline */}
         <div>
-          <p className="text-[10px] font-black uppercase tracking-[.2em] text-violet-500 mb-5">
+          <p className="text-[10px] font-black uppercase tracking-[.2em] mb-5"
+            style={{ color: "#c4a35a" }}>
             {mode === "login" ? "Painel de gestão" : "Comece agora — grátis"}
           </p>
           <h1 className="leading-[1.04] tracking-tight">
@@ -55,7 +69,7 @@ export function BrandPanel({ mode }: { mode: "login" | "registro" }) {
                 <span
                   className="block text-[3.2rem] font-black"
                   style={{
-                    background: "linear-gradient(90deg,#a78bfa 0%,#818cf8 40%,#c4b5fd 100%)",
+                    background: "linear-gradient(90deg,#c4a35a 0%,#e8d08a 40%,#c4a35a 100%)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                   }}
@@ -70,7 +84,7 @@ export function BrandPanel({ mode }: { mode: "login" | "registro" }) {
                 <span
                   className="block text-[3.2rem] font-black"
                   style={{
-                    background: "linear-gradient(90deg,#a78bfa 0%,#818cf8 40%,#c4b5fd 100%)",
+                    background: "linear-gradient(90deg,#c4a35a 0%,#e8d08a 40%,#c4a35a 100%)",
                     WebkitBackgroundClip: "text",
                     WebkitTextFillColor: "transparent",
                   }}
@@ -116,7 +130,7 @@ export function BrandPanel({ mode }: { mode: "login" | "registro" }) {
               <div key={s.n} className="flex items-start gap-3.5">
                 <div
                   className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 text-xs font-black text-white mt-0.5 tabular-nums"
-                  style={{ background: "rgba(124,58,237,.25)", border: "1px solid rgba(124,58,237,.4)" }}
+                  style={{ background: "rgba(196,163,90,.2)", border: "1px solid rgba(196,163,90,.4)" }}
                 >
                   {s.n}
                 </div>
@@ -146,12 +160,12 @@ export function BrandPanel({ mode }: { mode: "login" | "registro" }) {
       {/* ── Testimonial ──────────────────────────────────── */}
       <div
         className="relative z-10 rounded-2xl p-5"
-        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)" }}
+        style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(196,163,90,0.12)" }}
       >
         {/* Stars */}
         <div className="flex gap-1 mb-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <svg key={i} className="w-3.5 h-3.5 text-amber-400 fill-current" viewBox="0 0 20 20">
+            <svg key={i} className="w-3.5 h-3.5 fill-current" style={{ color: "#c4a35a" }} viewBox="0 0 20 20">
               <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
             </svg>
           ))}
@@ -166,7 +180,7 @@ export function BrandPanel({ mode }: { mode: "login" | "registro" }) {
         <div className="flex items-center gap-3 mt-4">
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center text-white font-black text-sm flex-shrink-0"
-            style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
+            style={{ background: "linear-gradient(135deg,#c4a35a,#a07830)" }}
           >
             {mode === "login" ? "J" : "A"}
           </div>

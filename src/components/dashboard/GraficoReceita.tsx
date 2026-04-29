@@ -23,6 +23,7 @@ export function GraficoReceita({ data }: Props) {
         <CardTitle className="text-base font-semibold">Receita — últimos 7 dias</CardTitle>
       </CardHeader>
       <CardContent>
+        <div style={{ minWidth: 0 }}>
         <ResponsiveContainer width="100%" height={200}>
           <AreaChart data={data} margin={{ top: 5, right: 10, bottom: 0, left: 0 }}>
             <defs>
@@ -61,6 +62,7 @@ export function GraficoReceita({ data }: Props) {
             />
           </AreaChart>
         </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   );

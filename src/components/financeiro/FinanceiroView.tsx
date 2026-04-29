@@ -225,7 +225,7 @@ export function FinanceiroView() {
             <CardTitle className="text-base">Receita por Serviço</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
+            <div style={{minWidth:0}}><ResponsiveContainer width="100%" height={220}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis dataKey="name" tick={{ fontSize: 11 }} />
@@ -234,7 +234,7 @@ export function FinanceiroView() {
                 <Legend />
                 <Bar dataKey="total" name="Receita" fill="#7c3aed" radius={[4, 4, 0, 0]} />
               </BarChart>
-            </ResponsiveContainer>
+            </ResponsiveContainer></div>
           </CardContent>
         </Card>
       )}

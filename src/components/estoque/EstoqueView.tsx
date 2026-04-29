@@ -1,4 +1,5 @@
 "use client";
+import { errMsg } from "@/lib/api-error";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -131,7 +132,7 @@ export function EstoqueView() {
         }),
       });
       const data = await res.json();
-      if (!res.ok || data.error) { toast.error(data.error ?? "Erro ao salvar"); return; }
+      if (!res.ok || data.error) { toast.error(errMsg(data.error, "Erro ao salvar")); return; }
       toast.success(editingId ? "Produto atualizado!" : "Produto criado!");
       qc.invalidateQueries({ queryKey: ["estoque"] });
       setModalOpen(false);
@@ -158,7 +159,7 @@ export function EstoqueView() {
         body: JSON.stringify({ movimento: { tipo: movTipo, quantidade: qtd, observacao: movObs || undefined } }),
       });
       const data = await res.json();
-      if (!res.ok || data.error) { toast.error(data.error ?? "Erro ao movimentar"); return; }
+      if (!res.ok || data.error) { toast.error(errMsg(data.error, "Erro ao movimentar")); return; }
       toast.success("Estoque atualizado!");
       qc.invalidateQueries({ queryKey: ["estoque"] });
       setMovModal(null);

@@ -42,9 +42,11 @@ export default async function AgendarPage() {
     colaboradores: s.colaboradores.map((c) => ({
       ...c,
       comissao: Number(c.comissao),
+      comissaoSalaoProduto: Number(c.comissaoSalaoProduto),
+      comissaoProprioProduto: Number(c.comissaoProprioProduto),
       createdAt: c.createdAt.toISOString(),
       updatedAt: c.updatedAt.toISOString(),
-      horarios: c.horarios, // HorarioColaborador has no timestamps
+      horarios: c.horarios,
     })),
     horarios: s.horarios, // HorarioSalon has no timestamps
     createdAt: s.createdAt.toISOString(),
@@ -77,16 +79,23 @@ export default async function AgendarPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-700 via-violet-600 to-purple-700">
-      {/* Decorative background */}
+    <div className="min-h-screen relative overflow-hidden" style={{
+      background: "linear-gradient(135deg, #1e1b4b 0%, #4c1d95 30%, #6d28d9 60%, #be185d 100%)"
+    }}>
+      {/* Decorative blobs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-32 -right-32 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-        <div className="absolute top-1/3 -left-20 w-64 h-64 bg-purple-500/20 rounded-full blur-2xl" />
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle, #f472b6, transparent)" }} />
+        <div className="absolute top-1/2 -left-32 w-80 h-80 rounded-full opacity-20 blur-3xl" style={{ background: "radial-gradient(circle, #818cf8, transparent)" }} />
+        <div className="absolute bottom-0 right-0 w-64 h-64 rounded-full opacity-15 blur-3xl" style={{ background: "radial-gradient(circle, #34d399, transparent)" }} />
+        {/* Mesh overlay */}
+        <div className="absolute inset-0 opacity-[0.03]" style={{
+          backgroundImage: "radial-gradient(circle at 1px 1px, white 1px, transparent 0)",
+          backgroundSize: "32px 32px"
+        }} />
       </div>
 
       <div className="relative max-w-md mx-auto px-4 pt-10 pb-32">
         <ClienteNav name={firstName} isGuest={!session?.user} />
-
         <SalonPicker salons={serialized} totalMultaPendente={totalMultaPendente} />
       </div>
     </div>

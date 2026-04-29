@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark" | "baiano";
+type Theme = "light" | "dark" | "baiano"; // baiano mantido para compatibilidade com localStorage legado
 
 interface ThemeCtx {
   theme: Theme;
@@ -20,7 +20,10 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("dark");
 
   useEffect(() => {
-    const stored = (localStorage.getItem("theme") as Theme) ?? "dark";
+    const raw = localStorage.getItem("theme") ?? "dark";
+    // migrar tema legado "baiano" para "dark"
+    const stored = (raw === "baiano" ? "dark" : raw) as Theme;
+    if (raw === "baiano") localStorage.setItem("theme", "dark");
     applyTheme(stored);
     setThemeState(stored);
   }, []);

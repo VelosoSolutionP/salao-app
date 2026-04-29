@@ -100,6 +100,7 @@ model Salon {
   logoUrl    String?
   coverUrl   String?
   brandColor String?  @default("#7c3aed")
+  bgColor    String?
   timezone   String     @default("America/Sao_Paulo")
   currency   String     @default("BRL")
   pixKey     String?
@@ -355,6 +356,7 @@ enum PlanoTipo {
   BASICO
   PRATA
   OURO
+  PLATINA
 }
 
 model HorarioSalon {
@@ -846,4 +848,16 @@ model Rede {
   salons Salon[]
 
   @@map("redes")
+}
+
+// ─────────────────────────────────────────
+// CONFIGURAÇÃO DE PREÇOS DOS PLANOS (editável pelo MASTER)
+// ─────────────────────────────────────────
+
+model PlanoPreco {
+  tipo      String   @id // BASICO | PRATA | OURO | PLATINA
+  preco     Decimal  @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@map("plano_precos")
 }

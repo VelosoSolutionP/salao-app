@@ -11,6 +11,10 @@ import { formatBRL, minutesToHuman } from "@/lib/utils";
 interface Props {
   open: boolean;
   initialSlot?: { date: string; time: string } | null;
+  initialClienteId?: string;
+  initialColaboradorId?: string;
+  initialServicoIds?: string[];
+  taxaRemarcacao?: number;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -51,15 +55,19 @@ function getDefaultDate(override?: string | null): string {
 export function NovoAgendamentoModal({
   open,
   initialSlot,
+  initialClienteId,
+  initialColaboradorId,
+  initialServicoIds,
+  taxaRemarcacao,
   onClose,
   onSuccess,
 }: Props) {
   /* ── picker state (all useState — no RHF in portal) ── */
-  const [colaboradorId, setColaboradorId] = useState("");
-  const [servicoIds, setServicoIds] = useState<string[]>([]);
+  const [colaboradorId, setColaboradorId] = useState(initialColaboradorId ?? "");
+  const [servicoIds, setServicoIds] = useState<string[]>(initialServicoIds ?? []);
   const [data, setData] = useState(() => getDefaultDate(initialSlot?.date));
   const [hora, setHora] = useState(initialSlot?.time ?? "");
-  const [clienteId, setClienteId] = useState("");
+  const [clienteId, setClienteId] = useState(initialClienteId ?? "");
   const [clienteNome, setClienteNome] = useState("");
   const [observacoes, setObservacoes] = useState("");
 
@@ -125,9 +133,10 @@ export function NovoAgendamentoModal({
     .filter((s: any) => servicoIds.includes(s.id))
     .reduce((acc: number, s: any) => acc + Number(s.duracao), 0);
 
-  const totalPrice = displayedServicos
+  const totalServicos = displayedServicos
     .filter((s: any) => servicoIds.includes(s.id))
     .reduce((acc: number, s: any) => acc + Number(s.preco), 0);
+  const totalPrice = totalServicos + (taxaRemarcacao ?? 0);
 
   const filteredClientes = (clientesData?.clientes ?? []).filter((c: any) => {
     if (!clienteSearch) return true;
@@ -245,6 +254,7 @@ export function NovoAgendamentoModal({
           clienteId: clienteId || undefined,
           clienteNome: clienteNome || undefined,
           observacoes: observacoes || undefined,
+          taxaRemarcacao: taxaRemarcacao ?? undefined,
         }),
       });
       const json = await res.json();
@@ -643,14 +653,22 @@ export function NovoAgendamentoModal({
 
           {/* Resumo duração + valor */}
           {duracaoTotal > 0 && (
-            <div className="flex items-center justify-between bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 rounded-xl border border-violet-100">
-              <span className="flex items-center gap-1.5 text-violet-700 text-sm font-medium">
-                <Clock className="w-4 h-4" />
-                {minutesToHuman(duracaoTotal)}
-              </span>
-              <span className="text-lg font-bold text-violet-700">
-                {formatBRL(totalPrice)}
-              </span>
+            <div className="bg-gradient-to-r from-violet-50 to-indigo-50 px-4 py-3 rounded-xl border border-violet-100 space-y-1">
+              <div className="flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-violet-700 text-sm font-medium">
+                  <Clock className="w-4 h-4" />
+                  {minutesToHuman(duracaoTotal)}
+                </span>
+                <span className="text-lg font-bold text-violet-700">
+                  {formatBRL(totalPrice)}
+                </span>
+              </div>
+              {(taxaRemarcacao ?? 0) > 0 && (
+                <div className="flex items-center justify-between text-xs text-amber-700 bg-amber-50 rounded-lg px-2 py-1">
+                  <span>Taxa de remarcação</span>
+                  <span className="font-bold">+ {formatBRL(taxaRemarcacao!)}</span>
+                </div>
+              )}
             </div>
           )}
 

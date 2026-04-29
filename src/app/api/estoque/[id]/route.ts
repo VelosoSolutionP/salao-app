@@ -1,3 +1,4 @@
+import { zodMsg } from "@/lib/api-error";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -35,7 +36,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   // Handle stock movement
   if (body.movimento) {
     const parsed = movimentoSchema.safeParse(body.movimento);
-    if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    if (!parsed.success) return NextResponse.json({ error: zodMsg(parsed.error) }, { status: 400 });
 
     const produto = await prisma.produto.findFirst({ where: { id, salonId } });
     if (!produto) return NextResponse.json({ error: "Produto não encontrado" }, { status: 404 });
@@ -56,7 +57,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   }
 
   const parsed = updateSchema.safeParse(body);
-  if (!parsed.success) return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success) return NextResponse.json({ error: zodMsg(parsed.error) }, { status: 400 });
 
   const updated = await prisma.produto.update({ where: { id }, data: parsed.data });
   return NextResponse.json({ ...updated, precoCompra: updated.precoCompra ? Number(updated.precoCompra) : null, precoVenda: updated.precoVenda ? Number(updated.precoVenda) : null });

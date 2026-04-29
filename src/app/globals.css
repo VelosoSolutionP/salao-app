@@ -110,7 +110,7 @@
   --chart-5: oklch(0.269 0 0);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary: oklch(0.75 0.12 80);
   --sidebar-primary-foreground: oklch(0.985 0 0);
   --sidebar-accent: oklch(0.269 0 0);
   --sidebar-accent-foreground: oklch(0.985 0 0);
@@ -205,3 +205,114 @@
   color: oklch(0.5 0 0) !important;
   opacity: 1 !important;
 }
+
+/* ── Thin scrollbar ───────────────────────────────────────────────────────── */
+.scrollbar-thin { scrollbar-width: thin; scrollbar-color: #e2e8f0 transparent; }
+.scrollbar-thin::-webkit-scrollbar { width: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 99px; }
+.scrollbar-thin::-webkit-scrollbar-thumb:hover { background: #cbd5e1; }
+
+/* ── FullCalendar — Google Calendar Premium Style ─────────────────────────── */
+.fc-premium {
+  font-family: "Google Sans", "Inter", sans-serif;
+}
+
+/* Remove default borders / shadows */
+.fc-premium .fc-scrollgrid { border: none !important; }
+.fc-premium .fc-scrollgrid td,
+.fc-premium .fc-scrollgrid th { border-color: #f1f3f4 !important; }
+
+/* Header toolbar */
+.fc-premium .fc-toolbar { padding: 12px 16px 8px !important; }
+.fc-premium .fc-toolbar-title {
+  font-size: 1.125rem !important;
+  font-weight: 700 !important;
+  color: #3c4043 !important;
+  letter-spacing: -0.01em !important;
+}
+.fc-premium .fc-button {
+  background: transparent !important;
+  border: 1px solid #dadce0 !important;
+  color: #3c4043 !important;
+  border-radius: 20px !important;
+  padding: 4px 14px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+  transition: background 0.15s !important;
+}
+.fc-premium .fc-button:hover { background: #f1f3f4 !important; }
+.fc-premium .fc-button-active,
+.fc-premium .fc-button-primary:not(:disabled).fc-button-active {
+  background: #e8f0fe !important;
+  color: #1a73e8 !important;
+  border-color: #c5d4f7 !important;
+}
+.fc-premium .fc-today-button {
+  background: white !important;
+  border-color: #dadce0 !important;
+  color: #1a73e8 !important;
+  font-weight: 600 !important;
+}
+
+/* Column headers (Mon, Tue…) */
+.fc-premium .fc-col-header-cell {
+  background: #fff !important;
+  padding: 8px 0 !important;
+  border-bottom: 2px solid #e2e8f0 !important;
+}
+.fc-premium .fc-col-header-cell-cushion {
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  color: #70757a !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  text-decoration: none !important;
+}
+.fc-premium .fc-day-today .fc-col-header-cell-cushion {
+  color: #1a73e8 !important;
+}
+
+/* Today highlight */
+.fc-premium .fc-day-today { background: #f8f9ff !important; }
+.fc-premium .fc-timegrid-col.fc-day-today { background: #f0f4ff !important; }
+
+/* Time labels */
+.fc-premium .fc-timegrid-slot-label-cushion {
+  font-size: 10px !important;
+  color: #70757a !important;
+  font-weight: 500 !important;
+  padding-right: 8px !important;
+}
+
+/* Slot lines */
+.fc-premium .fc-timegrid-slot { border-color: #f1f3f4 !important; }
+.fc-premium .fc-timegrid-slot-minor { border-top-style: dashed !important; border-color: #f8f9fa !important; }
+
+/* Now indicator */
+.fc-premium .fc-timegrid-now-indicator-line {
+  border-color: #1a73e8 !important;
+  border-width: 2px !important;
+}
+.fc-premium .fc-timegrid-now-indicator-arrow {
+  border-top-color: #1a73e8 !important;
+  border-bottom-color: #1a73e8 !important;
+}
+
+/* Events */
+.fc-premium .fc-event {
+  border: none !important;
+  border-radius: 6px !important;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important;
+  cursor: pointer !important;
+}
+.fc-premium .fc-event:hover {
+  filter: brightness(0.92) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18) !important;
+}
+.fc-premium .fc-daygrid-event { border-radius: 4px !important; }
+
+/* List view */
+.fc-premium .fc-list-day-cushion { background: #f8f9fa !important; }
+.fc-premium .fc-list-event:hover td { background: #f1f3f4 !important; }

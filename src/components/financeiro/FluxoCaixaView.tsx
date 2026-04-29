@@ -126,7 +126,7 @@ export function FluxoCaixaView() {
               <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
             </div>
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
+            <div style={{minWidth:0}}><ResponsiveContainer width="100%" height={280}>
               <ComposedChart data={fluxo} margin={{ top: 5, right: 10, bottom: 5, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
@@ -173,7 +173,7 @@ export function FluxoCaixaView() {
                   dot={false}
                 />
               </ComposedChart>
-            </ResponsiveContainer>
+            </ResponsiveContainer></div>
           )}
         </CardContent>
       </Card>

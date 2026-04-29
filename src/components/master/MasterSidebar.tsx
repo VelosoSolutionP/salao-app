@@ -14,7 +14,6 @@ import {
   MapPin,
   Gem,
 } from "lucide-react";
-import { BellefyIcon } from "@/components/brand/BrandLogo";
 
 const NAV = [
   { href: "/master",                  label: "Dashboard",       icon: LayoutDashboard, exact: true },
@@ -39,14 +38,16 @@ export function MasterSidebar({ onClose }: { onClose?: () => void }) {
       <div className="px-5 py-5 border-b border-white/5">
         <div className="flex items-center gap-2.5">
           <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
-          >
-            <BellefyIcon size={16} className="text-white" />
-          </div>
+            className="rounded-xl overflow-hidden flex-shrink-0"
+            style={{
+              width: 40, height: 40,
+              background: "#000 url('/logo.jpeg') no-repeat center top",
+              backgroundSize: "62px auto",
+            }}
+          />
           <div>
             <p className="text-white font-black text-sm leading-tight">Bellefy</p>
-            <p className="text-[10px] text-violet-400 font-semibold uppercase tracking-wider">Painel Master</p>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: "#c4a35a" }}>Painel Master</p>
           </div>
         </div>
       </div>
@@ -63,7 +64,7 @@ export function MasterSidebar({ onClose }: { onClose?: () => void }) {
               className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all"
               style={
                 active
-                  ? { background: "rgba(124,58,237,0.2)", color: "#c4b5fd" }
+                  ? { background: "rgba(196,163,90,0.15)", color: "#c4a35a" }
                   : { color: "#71717a" }
               }
             >

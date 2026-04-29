@@ -1,4 +1,5 @@
 "use client";
+import { errMsg } from "@/lib/api-error";
 
 import { useState } from "react";
 import { createPortal } from "react-dom";
@@ -7,7 +8,7 @@ import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Plus, UserCheck, Loader2, Trash2, Clock, X, Pencil } from "lucide-react";
+import { Plus, UserCheck, Loader2, Trash2, Clock, X, Pencil, UserX, RotateCcw, ChevronDown } from "lucide-react";
 import { getInitials } from "@/lib/utils";
 
 const DIAS = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
@@ -54,6 +55,7 @@ export function EquipeView() {
   const [modalOpen, setModalOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [horariosModalOpen, setHorariosModalOpen] = useState(false);
+  const [showInativos, setShowInativos] = useState(false);
   const [editModal, setEditModal] = useState<{ id: string; nome: string; comissaoSalaoProduto: string; comissaoProprioProduto: string; bio: string } | null>(null);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const [horarios, setHorarios] = useState<
@@ -113,7 +115,7 @@ export function EquipeView() {
       });
       const data = await res.json();
       if (!res.ok || data.error) {
-        toast.error(data.error ?? "Erro ao adicionar");
+        toast.error(errMsg(data.error, "Erro ao adicionar"));
         return;
       }
       toast.success("Profissional adicionado!");
@@ -146,7 +148,7 @@ export function EquipeView() {
         }),
       });
       const data = await res.json();
-      if (!res.ok || data.error) { toast.error(data.error ?? "Erro ao atualizar"); return; }
+      if (!res.ok || data.error) { toast.error(errMsg(data.error, "Erro ao atualizar")); return; }
       toast.success("Profissional atualizado!");
       queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
       setEditModal(null);
@@ -157,13 +159,33 @@ export function EquipeView() {
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) =>
-      fetch(`/api/colaboradores/${id}`, { method: "DELETE" }).then((r) =>
-        r.json()
-      ),
+      fetch(`/api/colaboradores/${id}`, { method: "DELETE" }).then((r) => r.json()),
     onSuccess: () => {
       toast.success("Profissional desativado");
       queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
+      queryClient.invalidateQueries({ queryKey: ["colaboradores-inativos"] });
     },
+  });
+
+  const { data: inativos = [] } = useQuery<any[]>({
+    queryKey: ["colaboradores-inativos"],
+    queryFn: () => fetch("/api/colaboradores?inactive=true").then((r) => r.json()),
+    enabled: showInativos,
+  });
+
+  const reativarMutation = useMutation({
+    mutationFn: (id: string) =>
+      fetch(`/api/colaboradores/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ active: true }),
+      }).then((r) => r.json()),
+    onSuccess: () => {
+      toast.success("Profissional reativado!");
+      queryClient.invalidateQueries({ queryKey: ["colaboradores"] });
+      queryClient.invalidateQueries({ queryKey: ["colaboradores-inativos"] });
+    },
+    onError: () => toast.error("Erro ao reativar"),
   });
 
   const horariosMutation = useMutation({
@@ -316,6 +338,48 @@ export function EquipeView() {
           ))}
         </div>
       )}
+
+      {/* ── Seção Inativos ── */}
+      <div className="border-t border-gray-100 pt-4">
+        <button
+          type="button"
+          onClick={() => setShowInativos((v) => !v)}
+          className="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          <UserX className="w-4 h-4" />
+          Profissionais desativados
+          <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showInativos ? "rotate-180" : ""}`} />
+        </button>
+
+        {showInativos && (
+          <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {inativos.length === 0 ? (
+              <p className="text-sm text-gray-400 col-span-full py-4 text-center">Nenhum profissional desativado</p>
+            ) : inativos.map((c: any) => (
+              <div key={c.id} className="flex items-center gap-3 bg-gray-50 border border-gray-100 rounded-xl p-3 opacity-70">
+                <div className="w-9 h-9 rounded-lg bg-gray-200 flex items-center justify-center text-gray-500 font-bold text-sm flex-shrink-0">
+                  {getInitials(c.user.name)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold text-gray-600 truncate">{c.user.name}</p>
+                  <p className="text-xs text-gray-400 truncate">{c.user.email}</p>
+                </div>
+                <button
+                  type="button"
+                  title="Reativar"
+                  onClick={() => reativarMutation.mutate(c.id)}
+                  disabled={reativarMutation.isPending}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg bg-emerald-50 hover:bg-emerald-100 transition-colors flex-shrink-0 disabled:opacity-50"
+                >
+                  {reativarMutation.isPending
+                    ? <Loader2 className="w-3.5 h-3.5 animate-spin text-emerald-600" />
+                    : <RotateCcw className="w-3.5 h-3.5 text-emerald-600" />}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* ── Modal: Novo Profissional ── */}
       {modalOpen && (

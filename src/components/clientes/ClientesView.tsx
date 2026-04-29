@@ -624,6 +624,7 @@ export function ClientesView() {
         </div>
       ) : (
         <>
+          <div className="overflow-y-auto pr-1 scrollbar-thin" style={{ maxHeight: "calc(100vh - 220px)" }}>
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
             {(data?.clientes ?? []).map((c: Record<string, unknown>) => {
               const user = c.user as Record<string, string>;
@@ -685,6 +686,7 @@ export function ClientesView() {
                 </div>
               );
             })}
+          </div>
           </div>
 
           {/* Paginação */}

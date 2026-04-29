@@ -1,4 +1,5 @@
 "use client";
+import { errMsg } from "@/lib/api-error";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -95,7 +96,7 @@ export function MarketingView() {
         }),
       }).then((r) => r.json()),
     onSuccess: (data) => {
-      if (data.error) { toast.error(data.error); return; }
+      if (data.error) { toast.error(errMsg(data.error)); return; }
       toast.success("Campanha criada!");
       queryClient.invalidateQueries({ queryKey: ["campanhas"] });
       closeModal();
@@ -114,7 +115,7 @@ export function MarketingView() {
         }),
       }).then((r) => r.json()),
     onSuccess: (data) => {
-      if (data.error) { toast.error(data.error); return; }
+      if (data.error) { toast.error(errMsg(data.error)); return; }
       toast.success("Campanha atualizada!");
       queryClient.invalidateQueries({ queryKey: ["campanhas"] });
       closeModal();

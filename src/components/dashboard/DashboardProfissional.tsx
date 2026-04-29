@@ -628,6 +628,7 @@ export function DashboardProfissional({
               <p className="text-sm text-gray-300 font-medium">Os dados aparecerão aqui após as primeiras transações</p>
             </div>
           ) : (
+            <div style={{ minWidth: 0 }}>
             <ResponsiveContainer width="100%" height={130}>
               <BarChart data={receitaDiaria} margin={{ top: 2, right: 4, bottom: 0, left: -10 }} barCategoryGap="28%">
                 <CartesianGrid strokeDasharray="3 3" stroke="#f4f4f5" vertical={false}/>
@@ -642,6 +643,7 @@ export function DashboardProfissional({
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            </div>
           )}
         </div>
       </div>

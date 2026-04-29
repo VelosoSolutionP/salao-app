@@ -29,11 +29,10 @@ import {
   ShoppingBag,
 } from "lucide-react";
 import { SalonSwitcher } from "@/components/shared/SalonSwitcher";
-import { BellefyIcon } from "@/components/brand/BrandLogo";
 import { PLANOS } from "@/lib/planos";
 
 const UPGRADE_LABEL: Record<string, string> = Object.fromEntries(
-  (["BASICO", "PRATA", "OURO"] as const).flatMap((t) =>
+  (["BASICO", "PRATA", "OURO", "PLATINA"] as const).flatMap((t) =>
     PLANOS[t].routes.map((r) => [r, `Disponível no plano ${PLANOS[t].nome}`])
   )
 );
@@ -133,22 +132,18 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
         <div className="flex items-center gap-3">
           {/* Logo */}
           <div className="relative flex-shrink-0">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center overflow-hidden"
-              style={
-                salonLogo
-                  ? {}
-                  : { background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }
-              }
-            >
+            <div className="w-9 h-9 rounded-xl overflow-hidden flex-shrink-0">
               {salonLogo ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={salonLogo} alt={salonName} className="w-full h-full object-cover" />
               ) : (
-                <BellefyIcon size={16} className="text-white" />
+                <div className="w-full h-full" style={{
+                  background: `#000 url('/logo.jpeg') no-repeat center top`,
+                  backgroundSize: "56px auto",
+                }} />
               )}
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-[#07050f]" />
+            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 rounded-full ring-2 ring-sidebar" />
           </div>
 
           {/* Name / switcher */}
@@ -170,7 +165,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                 </span>
               )}
               {role === "MASTER" && (
-                <span className="text-[9px] font-black px-1.5 py-0.5 rounded bg-violet-500/20 text-violet-400">
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded" style={{ background: "rgba(196,163,90,.18)", color: "#c4a35a" }}>
                   Master
                 </span>
               )}
@@ -180,20 +175,14 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
       </div>
 
       {/* ── Nav ─────────────────────────────────────────── */}
-      <nav className="flex-1 px-2 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+      <nav className="flex-1 px-2 overflow-y-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
         {navGroups.map((group, gi) => {
           const visible = group.items.filter((i) => i.roles.includes(role));
           if (visible.length === 0) return null;
 
           return (
-            <div key={gi} className={gi > 0 ? "mt-4" : ""}>
-              {group.label && (
-                <p className="px-3 mb-1 text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40">
-                  {group.label}
-                </p>
-              )}
-
-              <div className="space-y-px">
+            <div key={gi} className={gi > 0 ? "mt-1 pt-1 border-t border-white/[0.06]" : ""}>
+              <div className="space-y-0.5 py-1">
                 {visible.map((item) => {
                   const locked = planoRoutes !== null && !planoRoutes.includes(item.href);
 
@@ -204,9 +193,9 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                         className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-not-allowed"
                         title={UPGRADE_LABEL[item.href] ?? "Plano superior"}
                       >
-                        <item.icon className="w-4 h-4 flex-shrink-0 text-sidebar-foreground/20" />
-                        <span className="flex-1 text-sm font-medium text-sidebar-foreground/20 truncate">{item.label}</span>
-                        <Lock className="w-3 h-3 text-sidebar-foreground/20 flex-shrink-0" />
+                        <item.icon className="w-4 h-4 flex-shrink-0 text-white/15" />
+                        <span className="flex-1 text-sm font-medium text-white/15 truncate">{item.label}</span>
+                        <Lock className="w-3 h-3 text-white/15 flex-shrink-0" />
                       </div>
                     );
                   }
@@ -221,14 +210,14 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                       className={cn(
                         "group flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-100",
                         active
-                          ? "bg-sidebar-primary/10 text-sidebar-foreground"
-                          : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                          ? "bg-white/10 text-white"
+                          : "text-white/45 hover:text-white/80 hover:bg-white/[0.06]"
                       )}
                     >
                       <item.icon
                         className={cn(
                           "w-4 h-4 flex-shrink-0 transition-colors",
-                          active ? "text-sidebar-primary" : "text-sidebar-foreground/40 group-hover:text-sidebar-foreground/70"
+                          active ? "text-white" : "text-white/35 group-hover:text-white/60"
                         )}
                       />
                       <span className="flex-1 truncate">{item.label}</span>
@@ -236,9 +225,6 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
                         <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
                           {item.badge}
                         </span>
-                      )}
-                      {active && !item.badge && (
-                        <span className="w-1 h-1 rounded-full bg-violet-400 flex-shrink-0" />
                       )}
                     </Link>
                   );
@@ -256,7 +242,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
             <AvatarImage src={session?.user?.image ?? ""} />
             <AvatarFallback
               className="text-[10px] font-bold"
-              style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)", color: "#fff" }}
+              style={{ background: "#1e1e2a", color: "#fff" }}
             >
               {getInitials(session?.user?.name ?? "U")}
             </AvatarFallback>
@@ -272,7 +258,7 @@ export function Sidebar({ onClose }: { onClose?: () => void }) {
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             title="Sair"
-            className="opacity-0 group-hover:opacity-100 p-1 rounded-md text-sidebar-foreground/30 hover:text-rose-400 transition-all flex-shrink-0"
+            className="p-1 rounded-md text-sidebar-foreground/30 hover:text-rose-400 active:text-rose-400 transition-all flex-shrink-0"
           >
             <LogOut className="w-3.5 h-3.5" />
           </button>

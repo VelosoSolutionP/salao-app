@@ -1,4 +1,5 @@
 "use client";
+import { errMsg } from "@/lib/api-error";
 
 import { useState, useCallback, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
@@ -57,12 +58,19 @@ function usePolling(txid: string | null, onPago: () => void) {
 
 /* ─── Constantes ───────────────────────────────────────────────────────────── */
 
-const METODOS: { id: Metodo; label: string; icon: React.ReactNode; cor: string }[] = [
-  { id: "PIX",           label: "PIX",    icon: <Smartphone className="w-4 h-4" />,  cor: "violet" },
-  { id: "DINHEIRO",      label: "Dinheiro", icon: <Banknote className="w-4 h-4" />,   cor: "emerald" },
-  { id: "CARTAO_DEBITO", label: "Débito", icon: <CreditCard className="w-4 h-4" />,  cor: "blue" },
-  { id: "CARTAO_CREDITO",label: "Crédito",icon: <CreditCard className="w-4 h-4" />,  cor: "amber" },
+const METODOS: { id: Metodo; label: string; icon: React.ReactNode; cor: string; gradient: string }[] = [
+  { id: "PIX",           label: "PIX",     icon: <Smartphone className="w-4 h-4" />,  cor: "violet",  gradient: "linear-gradient(135deg,#7c3aed,#4f46e5)" },
+  { id: "DINHEIRO",      label: "Dinheiro",icon: <Banknote className="w-4 h-4" />,    cor: "emerald", gradient: "linear-gradient(135deg,#059669,#10b981)" },
+  { id: "CARTAO_DEBITO", label: "Débito",  icon: <CreditCard className="w-4 h-4" />,  cor: "blue",    gradient: "linear-gradient(135deg,#1d4ed8,#3b82f6)" },
+  { id: "CARTAO_CREDITO",label: "Crédito", icon: <CreditCard className="w-4 h-4" />,  cor: "amber",   gradient: "linear-gradient(135deg,#d97706,#f59e0b)" },
 ];
+
+const COBRAR_LABEL: Record<Metodo, string> = {
+  PIX:            "Gerar QR Code PIX",
+  DINHEIRO:       "Registrar Venda",
+  CARTAO_DEBITO:  "Registrar Venda",
+  CARTAO_CREDITO: "Registrar Venda",
+};
 
 const COR_METODO: Record<string, string> = {
   violet:  "bg-violet-500/10 text-violet-300 border-violet-500/40",
@@ -80,6 +88,7 @@ export function PDVView() {
   const [categoria, setCategoria] = useState<string>("Todos");
   const [cart, setCart] = useState<CartItem[]>([]);
   const [metodo, setMetodo] = useState<Metodo>("PIX");
+  const [valorRecebido, setValorRecebido] = useState("");
   const [processando, setProcessando] = useState(false);
   const [venda, setVenda] = useState<VendaResult | null>(null);
   const [copiado, setCopiado] = useState(false);
@@ -108,8 +117,14 @@ export function PDVView() {
     return ["Todos", ...Array.from(new Set(src))];
   }, [aba, produtos, servicos]);
 
+  const troco = metodo === "DINHEIRO" && valorRecebido
+    ? Math.max(0, parseFloat(valorRecebido.replace(",", ".")) - total)
+    : null;
+
   /* reset categoria quando muda aba */
   const switchAba = (a: "produto" | "servico") => { setAba(a); setCategoria("Todos"); setBusca(""); };
+
+  const selecionarMetodo = (m: Metodo) => { setMetodo(m); setValorRecebido(""); };
 
   /* itens filtrados */
   const itensFiltrados = useMemo(() => {
@@ -161,7 +176,7 @@ export function PDVView() {
         body: JSON.stringify({ itens: cart, metodo }),
       });
       const data = await res.json() as VendaResult & { error?: string };
-      if (!res.ok) { toast.error(data.error ?? "Erro ao processar venda"); return; }
+      if (!res.ok) { toast.error(errMsg(data.error, "Erro ao processar venda")); return; }
       setVenda(data);
       if (data.pago) toast.success(`Venda de ${formatBRL(data.total)} confirmada!`);
       if (data.mockMode) toast.info("Modo simulação — PIX não será cobrado de verdade");
@@ -172,7 +187,7 @@ export function PDVView() {
     }
   }
 
-  function novaVenda() { setCart([]); setVenda(null); setCopiado(false); }
+  function novaVenda() { setCart([]); setVenda(null); setCopiado(false); setValorRecebido(""); }
 
   function copiar() {
     if (!venda?.brCode) return;
@@ -390,7 +405,7 @@ export function PDVView() {
               {METODOS.map((m) => (
                 <button
                   key={m.id}
-                  onClick={() => setMetodo(m.id)}
+                  onClick={() => selecionarMetodo(m.id)}
                   className={`flex items-center gap-1.5 px-2.5 py-2 rounded-xl border text-xs font-semibold transition-all duration-150 ${metodo === m.id ? COR_METODO[m.cor] : COR_METODO_INACTIVE}`}
                 >
                   {m.icon} {m.label}
@@ -399,21 +414,49 @@ export function PDVView() {
             </div>
           </div>
 
+          {/* Troco — só para Dinheiro */}
+          {metodo === "DINHEIRO" && cart.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-[10px] uppercase tracking-widest text-zinc-600 font-semibold">Valor recebido</p>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-zinc-500 font-semibold">R$</span>
+                <input
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={valorRecebido}
+                  onChange={(e) => setValorRecebido(e.target.value)}
+                  placeholder={total.toFixed(2)}
+                  className="w-full pl-8 pr-3 py-2 text-sm bg-white/[0.04] border border-white/[0.08] rounded-xl text-zinc-200 placeholder-zinc-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500/30 transition-all"
+                />
+              </div>
+              {troco !== null && troco >= 0 && (
+                <div className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold ${troco > 0 ? "bg-emerald-500/10 text-emerald-300" : "bg-zinc-800/50 text-zinc-500"}`}>
+                  <span>Troco</span>
+                  <span>{formatBRL(troco)}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Botão cobrar */}
-          <button
-            onClick={cobrar}
-            disabled={!cart.length || processando}
-            className="w-full py-3.5 rounded-xl text-sm font-black text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
-            style={cart.length ? {
-              background: "linear-gradient(135deg,#7c3aed,#4f46e5)",
-              boxShadow: "0 8px 32px -6px rgba(124,58,237,0.55)",
-            } : undefined}
-          >
-            {processando
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando...</>
-              : <><QrCode className="w-4 h-4" /> Cobrar {cart.length > 0 ? formatBRL(total) : ""}</>
-            }
-          </button>
+          {(() => {
+            const m = METODOS.find((x) => x.id === metodo)!;
+            const Icon = metodo === "PIX" ? QrCode : m.id === "DINHEIRO" ? Banknote : CreditCard;
+            return (
+              <button
+                onClick={cobrar}
+                disabled={!cart.length || processando}
+                className="w-full py-3.5 rounded-xl text-sm font-black text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
+                style={cart.length ? { background: m.gradient, boxShadow: "0 8px 32px -8px rgba(0,0,0,0.4)" } : undefined}
+              >
+                {processando
+                  ? <><Loader2 className="w-4 h-4 animate-spin" /> Processando...</>
+                  : <><Icon className="w-4 h-4" /> {COBRAR_LABEL[metodo]} {cart.length > 0 ? formatBRL(total) : ""}</>
+                }
+              </button>
+            );
+          })()}
         </div>
       </div>
 

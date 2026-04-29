@@ -1,3 +1,4 @@
+import { zodMsg } from "@/lib/api-error";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -60,7 +61,7 @@ export async function PATCH(
   const body = await req.json();
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: zodMsg(parsed.error) }, { status: 400 });
   }
 
   const existing = await prisma.agendamento.findFirst({
@@ -179,10 +180,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Não encontrado" }, { status: 404 });
   }
 
-  await prisma.agendamento.update({
-    where: { id },
-    data: { status: "CANCELADO" },
-  });
+  await prisma.agendamento.delete({ where: { id } });
 
   const dateStr = format(existing.inicio, "yyyy-MM-dd");
   await invalidateCache(CK.SLOTS(existing.colaboradorId, dateStr));
@@ -192,6 +190,6 @@ export async function DELETE(
     data: { id },
   });
 
-  return NextResponse.json({ message: "Agendamento cancelado" });
+  return NextResponse.json({ message: "Agendamento excluído" });
 }
 

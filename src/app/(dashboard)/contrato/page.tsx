@@ -5,7 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { PlanosSistemaView } from "@/components/planos/PlanosSistemaView";
+import { ContratoPlanos } from "@/components/planos/ContratoPlanos";
+import { emPeriodoTrial, deveBloquear } from "@/lib/planos";
 import {
   FileText,
   CheckCircle2,
@@ -29,6 +30,7 @@ export default async function ContratoPage() {
     where: { id: salonId },
     select: {
       name: true,
+      createdAt: true,
       termoAceito: true,
       termoAceitoEm: true,
       termoAceitoIp: true,
@@ -36,12 +38,23 @@ export default async function ContratoPage() {
         where: { ativo: true },
         orderBy: { createdAt: "desc" },
         take: 1,
-        select: { valorMensal: true, diaVencimento: true, observacao: true, createdAt: true, plano: true },
+        select: {
+          valorMensal: true, diaVencimento: true, observacao: true, createdAt: true, plano: true,
+          pagamentos: { orderBy: { vencimento: "desc" }, take: 1, select: { pago: true, vencimento: true } },
+        },
       },
     },
   });
 
   const contrato = salon?.contratos[0];
+  const ultimoPagamento = contrato?.pagamentos?.[0] ?? null;
+  const trial = salon ? emPeriodoTrial(salon.createdAt) : true;
+  const diasTrial = salon ? Math.max(0, 30 - Math.floor((Date.now() - salon.createdAt.getTime()) / (1000 * 60 * 60 * 24))) : 30;
+  const bloqueado = salon ? deveBloquear({
+    contratoAtivo: !!contrato,
+    ultimoVencimento: ultimoPagamento?.vencimento ?? null,
+    pago: ultimoPagamento?.pago ?? false,
+  }) : false;
 
   const aceitoDe = salon?.termoAceitoEm
     ? new Date(salon.termoAceitoEm).toLocaleString("pt-BR", {
@@ -63,8 +76,32 @@ export default async function ContratoPage() {
         </p>
       </div>
 
+      {/* Trial / block banner */}
+      {trial && !bloqueado && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-center gap-3">
+          <Clock className="w-5 h-5 text-amber-500 flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-amber-800 text-sm">Período de teste gratuito</p>
+            <p className="text-xs text-amber-600 mt-0.5">
+              Você tem <strong>{diasTrial} dias restantes</strong> de acesso gratuito. Assine um plano para continuar após o período.
+            </p>
+          </div>
+        </div>
+      )}
+      {bloqueado && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3">
+          <ShieldCheck className="w-5 h-5 text-red-500 flex-shrink-0" />
+          <div>
+            <p className="font-semibold text-red-800 text-sm">Acesso suspenso</p>
+            <p className="text-xs text-red-600 mt-0.5">
+              Seu período de teste expirou ou há pagamento em atraso. Regularize para recuperar o acesso completo.
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Plans by modules — premium art */}
-      <PlanosSistemaView planoAtual={contrato?.plano ?? null} />
+      <ContratoPlanos planoAtual={contrato?.plano ?? null} />
 
       {/* Status card */}
       <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">

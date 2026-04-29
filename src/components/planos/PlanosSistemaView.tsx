@@ -1,24 +1,27 @@
 "use client";
 
+import { useState } from "react";
 import {
   LayoutDashboard, CalendarDays, Users, Scissors, UserCheck,
   Package, DollarSign, BarChart3, Megaphone, Sparkles, Star, Building2,
-  Check, X as XIcon, Zap, Crown, Gem,
+  Check, X as XIcon, Zap, Crown, Gem, Diamond, ShoppingBag,
 } from "lucide-react";
+import { toast } from "sonner";
 
 const MODULES = [
-  { icon: LayoutDashboard, label: "Dashboard",         plans: ["BASICO", "PRATA", "OURO"] },
-  { icon: CalendarDays,    label: "Agenda",             plans: ["BASICO", "PRATA", "OURO"] },
-  { icon: Users,           label: "Clientes",           plans: ["BASICO", "PRATA", "OURO"] },
-  { icon: Scissors,        label: "Serviços",           plans: ["BASICO", "PRATA", "OURO"] },
-  { icon: UserCheck,       label: "Equipe",             plans: ["BASICO", "PRATA", "OURO"] },
-  { icon: Package,         label: "Estoque",            plans: ["PRATA", "OURO"] },
-  { icon: DollarSign,      label: "Financeiro",         plans: ["PRATA", "OURO"] },
-  { icon: BarChart3,       label: "Relatórios",         plans: ["OURO"] },
-  { icon: Megaphone,       label: "Marketing",          plans: ["OURO"] },
-  { icon: Sparkles,        label: "Transformações",     plans: ["OURO"] },
-  { icon: Star,            label: "Planos Fidelidade",  plans: ["OURO"] },
-  { icon: Building2,       label: "Multi-Unidades",     plans: ["OURO"] },
+  { icon: LayoutDashboard, label: "Dashboard",         plans: ["BASICO", "PRATA", "OURO", "PLATINA"] },
+  { icon: CalendarDays,    label: "Agenda",             plans: ["BASICO", "PRATA", "OURO", "PLATINA"] },
+  { icon: Users,           label: "Clientes",           plans: ["BASICO", "PRATA", "OURO", "PLATINA"] },
+  { icon: Scissors,        label: "Serviços",           plans: ["BASICO", "PRATA", "OURO", "PLATINA"] },
+  { icon: UserCheck,       label: "Equipe",             plans: ["BASICO", "PRATA", "OURO", "PLATINA"] },
+  { icon: Package,         label: "Estoque",            plans: ["PRATA", "OURO", "PLATINA"] },
+  { icon: ShoppingBag,     label: "PDV",                plans: ["PRATA", "OURO", "PLATINA"] },
+  { icon: Star,            label: "Planos Fidelidade",  plans: ["PRATA", "OURO", "PLATINA"] },
+  { icon: DollarSign,      label: "Financeiro",         plans: ["OURO", "PLATINA"] },
+  { icon: Sparkles,        label: "Transformações",     plans: ["OURO", "PLATINA"] },
+  { icon: BarChart3,       label: "Relatórios",         plans: ["PLATINA"] },
+  { icon: Megaphone,       label: "Marketing",          plans: ["PLATINA"] },
+  { icon: Building2,       label: "Multi-Unidades",     plans: ["PLATINA"] },
 ];
 
 const PLANS = [
@@ -31,45 +34,64 @@ const PLANS = [
     glowColor: "shadow-indigo-100",
     borderColor: "border-indigo-200",
     icon: Zap,
-    maxFunc: 1,
-    maxUnidades: 1,
+    maxFunc: "5",
+    maxClientes: "100",
     desc: "Para começar seu negócio",
   },
   {
     tipo: "PRATA",
     nome: "Prata",
-    preco: 90,
+    preco: 150,
     cor: "#64748b",
     gradient: "from-slate-600 via-slate-500 to-slate-700",
     glowColor: "shadow-slate-100",
     borderColor: "border-slate-300",
     icon: Crown,
-    maxFunc: 5,
-    maxUnidades: 2,
+    maxFunc: "5",
+    maxClientes: "100",
     desc: "Para salões em crescimento",
     destaque: true,
   },
   {
     tipo: "OURO",
-    nome: "Ouro",
+    nome: "Gold",
     preco: 250,
     cor: "#d97706",
     gradient: "from-yellow-500 via-amber-500 to-orange-500",
     glowColor: "shadow-amber-100",
     borderColor: "border-amber-300",
     icon: Gem,
-    maxFunc: 10,
-    maxUnidades: 5,
+    maxFunc: "10",
+    maxClientes: "200",
     desc: "Todos os recursos premium",
+  },
+  {
+    tipo: "PLATINA",
+    nome: "Platina",
+    preco: null,
+    cor: "#8b5cf6",
+    gradient: "from-violet-900 via-purple-800 to-violet-700",
+    glowColor: "shadow-violet-100",
+    borderColor: "border-violet-400",
+    icon: Diamond,
+    maxFunc: "∞",
+    maxClientes: "∞",
+    desc: "Infraestrutura própria · Ilimitado",
   },
 ];
 
-export function PlanosSistemaView({ planoAtual }: { planoAtual?: string | null }) {
+export function PlanosSistemaView({
+  planoAtual,
+  onPagar,
+}: {
+  planoAtual?: string | null;
+  onPagar?: (tipo: string, preco: number) => void;
+}) {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-black text-gray-900">Planos & Módulos</h2>
+          <h2 className="text-lg font-black text-gray-900 dark:text-gray-100">Planos & Módulos</h2>
           <p className="text-sm text-gray-500 mt-0.5">
             Compare os planos e veja os módulos incluídos em cada tier
           </p>
@@ -88,7 +110,7 @@ export function PlanosSistemaView({ planoAtual }: { planoAtual?: string | null }
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {PLANS.map((plan) => {
           const isAtual = planoAtual === plan.tipo;
           const Icon = plan.icon;
@@ -103,25 +125,18 @@ export function PlanosSistemaView({ planoAtual }: { planoAtual?: string | null }
               }`}
             >
               {/* Header gradient */}
-              <div
-                className={`bg-gradient-to-br ${plan.gradient} px-5 pt-5 pb-6 text-white relative overflow-hidden`}
-              >
-                {/* Decorative circles */}
+              <div className={`bg-gradient-to-br ${plan.gradient} px-5 pt-5 pb-6 text-white relative overflow-hidden`}>
                 <div className="absolute -top-8 -right-8 w-28 h-28 bg-white/10 rounded-full" />
                 <div className="absolute -bottom-6 -left-6 w-20 h-20 bg-black/10 rounded-full" />
 
                 <div className="relative">
-                  {/* Top row: icon + badges */}
                   <div className="flex items-start justify-between mb-4">
                     <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center ring-1 ring-white/30">
                       <Icon className="w-5 h-5 text-white" />
                     </div>
                     <div className="flex flex-col items-end gap-1.5">
                       {isAtual && (
-                        <span
-                          className="text-[10px] font-black px-2.5 py-1 rounded-full bg-white"
-                          style={{ color: plan.cor }}
-                        >
+                        <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-white" style={{ color: plan.cor }}>
                           Seu plano
                         </span>
                       )}
@@ -133,32 +148,32 @@ export function PlanosSistemaView({ planoAtual }: { planoAtual?: string | null }
                     </div>
                   </div>
 
-                  {/* Name + desc */}
                   <p className="font-black text-2xl leading-none tracking-tight">{plan.nome}</p>
                   <p className="text-white/65 text-xs mt-1">{plan.desc}</p>
 
-                  {/* Price */}
                   <div className="flex items-end gap-1 mt-4">
-                    <span className="text-white/70 text-sm font-semibold self-start mt-1">R$</span>
-                    <span className="text-4xl font-black leading-none">{plan.preco}</span>
-                    <span className="text-white/70 text-sm mb-0.5">/mês</span>
+                    {plan.preco !== null ? (
+                      <>
+                        <span className="text-white/70 text-sm font-semibold self-start mt-1">R$</span>
+                        <span className="text-4xl font-black leading-none">{plan.preco}</span>
+                        <span className="text-white/70 text-sm mb-0.5">/mês</span>
+                      </>
+                    ) : (
+                      <span className="text-2xl font-black leading-none">Personalizado</span>
+                    )}
                   </div>
                 </div>
               </div>
 
               {/* Stats bar */}
-              <div className="bg-gray-50 border-b border-gray-100 px-5 py-3 flex items-center gap-0 divide-x divide-gray-200">
+              <div className="bg-gray-50 border-b border-gray-100 px-5 py-3 flex items-center divide-x divide-gray-200">
                 <div className="flex-1 text-center pr-3">
                   <p className="text-xl font-black text-gray-900">{plan.maxFunc}</p>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
-                    {plan.maxFunc === 1 ? "Profissional" : "Profissionais"}
-                  </p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Profissionais</p>
                 </div>
                 <div className="flex-1 text-center pl-3">
-                  <p className="text-xl font-black text-gray-900">{plan.maxUnidades}</p>
-                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">
-                    {plan.maxUnidades === 1 ? "Unidade" : "Unidades"}
-                  </p>
+                  <p className="text-xl font-black text-gray-900">{plan.maxClientes}</p>
+                  <p className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Clientes</p>
                 </div>
               </div>
 
@@ -170,35 +185,49 @@ export function PlanosSistemaView({ planoAtual }: { planoAtual?: string | null }
                   return (
                     <div
                       key={mod.label}
-                      className={`flex items-center gap-2.5 py-1 rounded-lg px-1 transition-colors ${
-                        has ? "" : "opacity-30"
-                      }`}
+                      className={`flex items-center gap-2.5 py-1 rounded-lg px-1 transition-colors ${has ? "" : "opacity-30"}`}
                     >
-                      <div
-                        className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 ${
-                          has ? "bg-emerald-100" : "bg-gray-100"
-                        }`}
-                      >
+                      <div className={`w-5 h-5 rounded-md flex items-center justify-center flex-shrink-0 ${has ? "bg-emerald-100" : "bg-gray-100"}`}>
                         {has ? (
                           <Check className="w-3 h-3 text-emerald-600" strokeWidth={2.5} />
                         ) : (
                           <XIcon className="w-3 h-3 text-gray-400" strokeWidth={2.5} />
                         )}
                       </div>
-                      <ModIcon
-                        className={`w-3.5 h-3.5 flex-shrink-0 ${has ? "text-gray-500" : "text-gray-300"}`}
-                      />
-                      <span
-                        className={`text-sm leading-none ${
-                          has ? "font-medium text-gray-800" : "text-gray-400"
-                        }`}
-                      >
+                      <ModIcon className={`w-3.5 h-3.5 flex-shrink-0 ${has ? "text-gray-500" : "text-gray-300"}`} />
+                      <span className={`text-sm leading-none ${has ? "font-medium text-gray-800" : "text-gray-400"}`}>
                         {mod.label}
                       </span>
                     </div>
                   );
                 })}
               </div>
+
+              {/* CTA */}
+              {onPagar && plan.preco !== null && !isAtual && (
+                <div className="bg-white px-4 pb-4">
+                  <button
+                    onClick={() => onPagar(plan.tipo, plan.preco!)}
+                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white transition-all"
+                    style={{ background: `linear-gradient(135deg, ${plan.cor}, ${plan.cor}cc)` }}
+                  >
+                    Assinar {plan.nome} via PIX
+                  </button>
+                </div>
+              )}
+              {onPagar && plan.preco === null && !isAtual && (
+                <div className="bg-white px-4 pb-4">
+                  <a
+                    href="https://wa.me/5511999999999"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block w-full py-2.5 rounded-xl text-sm font-bold text-white text-center transition-all"
+                    style={{ background: `linear-gradient(135deg, #8b5cf6, #6d28d9)` }}
+                  >
+                    Falar com consultor
+                  </a>
+                </div>
+              )}
             </div>
           );
         })}

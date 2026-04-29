@@ -1,3 +1,4 @@
+import { zodMsg } from "@/lib/api-error";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   if (!parsed.success) {
     return NextResponse.json(
-      { error: "Dados inválidos", details: parsed.error.flatten() },
+      { error: "Dados inválidos", details: zodMsg(parsed.error) },
       { status: 400 }
     );
   }

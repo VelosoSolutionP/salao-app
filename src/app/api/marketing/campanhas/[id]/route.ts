@@ -1,3 +1,4 @@
+import { zodMsg } from "@/lib/api-error";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -30,7 +31,7 @@ export async function PATCH(
   const body = await req.json();
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: zodMsg(parsed.error) }, { status: 400 });
   }
 
   await prisma.campanha.updateMany({

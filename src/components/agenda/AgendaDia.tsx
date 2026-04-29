@@ -20,13 +20,13 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-const STATUS_STYLE: Record<string, { dot: string; label: string; text: string; bg: string }> = {
-  PENDENTE:       { dot: "bg-amber-400",  label: "Pendente",       text: "text-amber-600",  bg: "bg-amber-50" },
-  CONFIRMADO:     { dot: "bg-blue-400",   label: "Confirmado",     text: "text-blue-600",   bg: "bg-blue-50" },
-  EM_ANDAMENTO:   { dot: "bg-violet-500 animate-pulse", label: "Em andamento", text: "text-violet-600", bg: "bg-violet-50" },
-  CONCLUIDO:      { dot: "bg-emerald-400",label: "Concluído",      text: "text-emerald-600",bg: "bg-emerald-50" },
-  CANCELADO:      { dot: "bg-red-400",    label: "Cancelado",      text: "text-red-500",    bg: "bg-red-50" },
-  NAO_COMPARECEU: { dot: "bg-gray-300",   label: "Não compareceu", text: "text-gray-400",   bg: "bg-gray-50" },
+const STATUS_STYLE: Record<string, { dot: string; label: string; text: string; bg: string; stripe: string }> = {
+  PENDENTE:       { dot: "bg-amber-400",  label: "Pendente",       text: "text-amber-600",  bg: "bg-amber-50",  stripe: "bg-amber-300" },
+  CONFIRMADO:     { dot: "bg-blue-400",   label: "Confirmado",     text: "text-blue-600",   bg: "bg-blue-50",   stripe: "bg-blue-300" },
+  EM_ANDAMENTO:   { dot: "bg-violet-500 animate-pulse", label: "Em andamento", text: "text-violet-600", bg: "bg-violet-50", stripe: "bg-violet-400" },
+  CONCLUIDO:      { dot: "bg-emerald-400",label: "Concluído",      text: "text-emerald-600",bg: "bg-emerald-50",stripe: "bg-emerald-400" },
+  CANCELADO:      { dot: "bg-red-400",    label: "Cancelado",      text: "text-red-500",    bg: "bg-red-50",    stripe: "bg-red-300" },
+  NAO_COMPARECEU: { dot: "bg-green-300",  label: "Não compareceu", text: "text-green-600",  bg: "bg-green-50",  stripe: "bg-green-300" },
 };
 
 const COLLAB_COLORS = [
@@ -331,12 +331,12 @@ export function AgendaDia() {
                     <button
                       key={a.id}
                       onClick={() => setSelectedId(a.id)}
-                      className="w-full flex items-start gap-3 px-5 py-3.5 hover:bg-gray-50/60 transition-colors text-left opacity-50 group"
+                      className={`w-full flex items-start gap-3 px-5 py-3.5 transition-colors text-left opacity-60 group ${a.status === "NAO_COMPARECEU" ? "hover:bg-green-50/60" : "hover:bg-gray-50/60"}`}
                     >
                       <div className="min-w-[52px] text-center pt-0.5 flex-shrink-0">
                         <p className="text-sm font-black text-gray-400 tabular-nums line-through">{formatTime(new Date(a.inicio))}</p>
                       </div>
-                      <div className="w-1 self-stretch rounded-full flex-shrink-0 bg-gray-200" />
+                      <div className={`w-1 self-stretch rounded-full flex-shrink-0 ${s.stripe}`} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold text-gray-500 truncate">{clientName(a)}</p>
                         <p className="text-xs text-gray-400 truncate mt-0.5">

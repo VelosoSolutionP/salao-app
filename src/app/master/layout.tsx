@@ -4,7 +4,6 @@ import { useState } from "react";
 import { MasterSidebar } from "@/components/master/MasterSidebar";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
-import { BellefyIcon } from "@/components/brand/BrandLogo";
 
 export default function MasterLayout({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -41,15 +40,14 @@ export default function MasterLayout({ children }: { children: React.ReactNode }
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center gap-2">
-            <div
-              className="w-7 h-7 rounded-lg flex items-center justify-center"
-              style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
-            >
-              <BellefyIcon size={14} className="text-white" />
-            </div>
+            <div className="rounded-lg overflow-hidden flex-shrink-0" style={{
+              width: 28, height: 28,
+              background: "#000 url('/logo.jpeg') no-repeat center top",
+              backgroundSize: "44px auto",
+            }} />
             <div>
               <span className="font-black text-white text-sm tracking-tight">Bellefy</span>
-              <span className="text-[10px] text-violet-400 font-semibold ml-2">Master</span>
+              <span className="text-[10px] font-semibold ml-2" style={{ color: "#c4a35a" }}>Master</span>
             </div>
           </div>
         </header>

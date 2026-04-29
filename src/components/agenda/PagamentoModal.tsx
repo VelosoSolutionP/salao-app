@@ -1,4 +1,5 @@
 "use client";
+import { errMsg } from "@/lib/api-error";
 
 /**
  * PagamentoModal
@@ -189,7 +190,7 @@ export function PagamentoModal({
     });
     const data = await res.json();
     setManualLoading(false);
-    if (data.error) { toast.error(data.error); return; }
+    if (data.error) { toast.error(errMsg(data.error)); return; }
     setDone(true);
     setTimeout(onSuccess, 1200);
   }, [metodo, agendamentoId, usouProprioProduto, onSuccess]);

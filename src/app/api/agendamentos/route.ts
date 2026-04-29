@@ -1,3 +1,4 @@
+import { zodMsg } from "@/lib/api-error";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -19,6 +20,7 @@ const createSchema = z.object({
   clienteId: z.string().optional(),
   clienteNome: z.string().optional(), // walk-in name when no registered client
   salonId: z.string().optional(),     // sent by client-facing booking flow
+  taxaRemarcacao: z.number().min(0).optional(), // fee applied on reschedule
 });
 
 const useRatelimit = !!process.env.UPSTASH_REDIS_REST_URL?.startsWith("https://");
@@ -91,20 +93,19 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const parsed = createSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: zodMsg(parsed.error) }, { status: 400 });
   }
 
-  const { colaboradorId, servicoIds, data, hora, observacoes, clienteId, salonId: bodySalonId } =
+  const { colaboradorId, servicoIds, data, hora, observacoes, clienteId, salonId: bodySalonId, taxaRemarcacao } =
     parsed.data;
 
-  // For CLIENT bookings, salonId comes from the request body.
-  // For staff bookings, use the session/cookie salonId.
+  // salonId: body sempre tem prioridade (página pública /agendar envia para todos os roles).
+  // Fallback para requireSalon quando não vem no body (dashboard interno).
   let salonId: string | null = null;
-  if (session!.user.role === "CLIENT") {
-    if (!bodySalonId) {
-      return NextResponse.json({ error: "Salão não informado" }, { status: 400 });
-    }
+  if (bodySalonId) {
     salonId = bodySalonId;
+  } else if (session!.user.role === "CLIENT") {
+    return NextResponse.json({ error: "Salão não informado" }, { status: 400 });
   } else {
     const { salonId: sessionSalonId, error: salonError } = await requireSalon(session!);
     if (salonError) return salonError;
@@ -134,6 +135,7 @@ export async function POST(req: NextRequest) {
 
   const duracaoTotal = servicos.reduce((acc, s) => acc + s.duracao, 0);
   let totalPrice = servicos.reduce((acc, s) => acc + Number(s.preco), 0);
+  if (taxaRemarcacao && taxaRemarcacao > 0) totalPrice += taxaRemarcacao;
 
   // Check for pending fines (CLIENT only) — collect multa from previous no-shows/late cancellations
   let multasPendentes: { id: string; multaValor: number }[] = [];

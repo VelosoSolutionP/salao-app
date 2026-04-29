@@ -186,7 +186,7 @@ function normalizePixKey(raw: string): string {
   return raw;
 }
 
-export function buildFallbackBrCode(txid: string, valor: string, overrideKey?: string): string {
+export function buildFallbackBrCode(txid: string, valor: string, overrideKey?: string, merchantName?: string): string {
   const amount   = parseFloat(valor).toFixed(2);
   const rawKey   = overrideKey ?? process.env.EFI_PIX_KEY ?? "contato@bellefy.com.br";
   const pixKey   = normalizePixKey(rawKey);
@@ -199,6 +199,9 @@ export function buildFallbackBrCode(txid: string, valor: string, overrideKey?: s
   const txidSafe = txid.replace(/[^a-zA-Z0-9]/g, "").slice(0, 25).padEnd(25, "0");
   const addData  = `0525${txidSafe}`;
   const addLen   = String(addData.length).padStart(2, "0");
+  // Nome do recebedor: máx 25 chars, sem espaços trailing, somente ASCII imprimível
+  const rawName  = (merchantName ?? "Bellefy").replace(/[^\x20-\x7E]/g, "").slice(0, 25).trimEnd();
+  const nameLen  = String(rawName.length).padStart(2, "0");
   const base =
     `000201` +
     `26${maLen}${maInfo}` +
@@ -206,7 +209,7 @@ export function buildFallbackBrCode(txid: string, valor: string, overrideKey?: s
     `5303986` +
     `54${amtLen}${amount}` +
     `5802BR` +
-    `5913Bellefy PDV  ` +
+    `59${nameLen}${rawName}` +
     `6009SAO PAULO` +
     `62${addLen}${addData}` +
     `6304`;
@@ -413,4 +416,97 @@ export function generateEfiTxid(prefix: string): string {
   const rand = crypto.randomBytes(16).toString("hex"); // 32 chars
   const safe = (prefix.replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) + rand).slice(0, 35);
   return safe;
+}
+
+// ─── Cartão (link de pagamento Efi v1) ───────────────────────────────────────
+
+export interface EfiCartaoResult {
+  chargeId: number;
+  link: string;
+  status: string;
+  mockMode: boolean;
+}
+
+export async function efiCreateCartaoLink(params: {
+  valor: number; // in reais (e.g. 50.00)
+  descricao: string;
+  vencimento?: string; // YYYY-MM-DD, defaults to today+3
+}): Promise<EfiCartaoResult> {
+  if (isMockMode()) {
+    return {
+      chargeId: 0,
+      link: `https://pagar.me/demo?valor=${params.valor.toFixed(2)}`,
+      status: "link",
+      mockMode: true,
+    };
+  }
+
+  // Efi v1 API - different base URL than PIX
+  const V1_BASE = isSandbox()
+    ? "https://sandbox.gerencianet.com.br"
+    : "https://api.gerencianet.com.br";
+
+  // Get OAuth token using client credentials (same credentials as PIX)
+  const clientId = process.env.EFI_CLIENT_ID!;
+  const clientSecret = process.env.EFI_CLIENT_SECRET!;
+  const credentials = Buffer.from(`${clientId}:${clientSecret}`).toString("base64");
+
+  const tokenRes = await fetch(`${V1_BASE}/oauth/token`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Basic ${credentials}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: "grant_type=client_credentials",
+  });
+  const tokenData = await tokenRes.json() as { access_token: string };
+  const token = tokenData.access_token;
+
+  const valCentavos = Math.round(params.valor * 100);
+  const expire = params.vencimento ?? (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 3);
+    return d.toISOString().split("T")[0];
+  })();
+
+  // Step 1: create charge
+  const chargeRes = await fetch(`${V1_BASE}/v1/charge`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      items: [{ name: params.descricao.slice(0, 100), value: valCentavos, amount: 1 }],
+      expire_at: expire,
+    }),
+  });
+  const chargeData = await chargeRes.json() as { data: { charge_id: number } };
+  const chargeId = chargeData.data.charge_id;
+
+  // Step 2: generate payment link (supports credit + debit + boleto)
+  const linkRes = await fetch(`${V1_BASE}/v1/charge/${chargeId}/link`, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      billet_discount: 0,
+      card_discount: 0,
+      conditional_discount: { type: "percentage", value: 0, until_date: expire },
+      message: params.descricao,
+      expire_at: expire,
+      request_delivery_address: false,
+      payment_method: "all",
+    }),
+  });
+  const linkData = await linkRes.json() as { data: { charge_id: number; link: string; status: string } };
+
+  return {
+    chargeId: linkData.data.charge_id,
+    link: linkData.data.link,
+    status: linkData.data.status,
+    mockMode: false,
+  };
 }

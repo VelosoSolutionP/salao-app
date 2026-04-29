@@ -1,3 +1,4 @@
+import { zodMsg } from "@/lib/api-error";
 export const dynamic = "force-dynamic";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
@@ -14,12 +15,13 @@ const schema = z.object({
   logoUrl: z.string().url().optional().nullable(),
   coverUrl: z.string().url().optional().nullable(),
   brandColor: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
+  bgColor:    z.string().regex(/^#[0-9a-fA-F]{6}$/).optional().nullable(),
   // Política de cancelamento
   cancelamentoHorasMinimo: z.number().int().min(0).max(168).optional(),
-  multaValor: z.number().min(0).optional(),
+  multaValor: z.number().min(0).nullable().optional(),
   multaTipo: z.enum(["PERCENTUAL", "FIXO"]).optional().nullable(),
   // Lembretes WhatsApp
-  lembreteAntecedenciaMinutos: z.number().int().min(15).max(1440).optional(),
+  lembreteAntecedenciaMinutos: z.number().int().min(0).max(1440).optional(),
   horarios: z
     .array(
       z.object({
@@ -33,11 +35,13 @@ const schema = z.object({
 });
 
 export async function GET() {
-  const { session, error } = await requireRole(["OWNER"]);
+  const { session, error } = await requireRole(["OWNER", "BARBER"]);
   if (error) return error;
 
   const salon = await prisma.salon.findFirst({
-    where: { ownerId: session!.user.id },
+    where: session!.user.role === "OWNER"
+      ? { ownerId: session!.user.id }
+      : { colaboradores: { some: { userId: session!.user.id } } },
     include: { horarios: { orderBy: { diaSemana: "asc" } } },
   });
 
@@ -72,7 +76,7 @@ export async function PUT(req: NextRequest) {
   const body = await req.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json({ error: zodMsg(parsed.error) }, { status: 400 });
   }
 
   const { horarios, multaValor, ...rest } = parsed.data;

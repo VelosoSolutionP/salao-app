@@ -1,4 +1,5 @@
 "use client";
+import { errMsg } from "@/lib/api-error";
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -96,7 +97,7 @@ export function ServicosList() {
         }),
       });
       const data = await res.json();
-      if (!res.ok || data.error) { toast.error(data.error ?? "Erro ao salvar"); return; }
+      if (!res.ok || data.error) { toast.error(errMsg(data.error, "Erro ao salvar")); return; }
       toast.success(editingId ? "Serviço atualizado!" : "Serviço criado!");
       queryClient.invalidateQueries({ queryKey: ["servicos"] });
       setModalOpen(false);
@@ -155,7 +156,7 @@ export function ServicosList() {
                       </Badge>
                     )}
                   </div>
-                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1">
                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(s)}>
                       <Pencil className="w-3.5 h-3.5" />
                     </Button>

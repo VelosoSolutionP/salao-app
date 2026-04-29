@@ -57,9 +57,20 @@ class MemoryStore {
     return val;
   }
 
+  async lrange(key: string, start: number, stop: number): Promise<unknown[]> {
+    this.expired(key);
+    const list = (this.store.get(key)?.value ?? []) as unknown[];
+    const end = stop === -1 ? list.length : stop + 1;
+    return list.slice(start, end);
+  }
+
   async llen(key: string): Promise<number> {
     this.expired(key);
     return ((this.store.get(key)?.value ?? []) as unknown[]).length;
+  }
+
+  async publish(_channel: string, _message: string): Promise<number> {
+    return 0;
   }
 
   /** Alias for set(..., { ex: seconds }) — matches Redis SETEX signature */

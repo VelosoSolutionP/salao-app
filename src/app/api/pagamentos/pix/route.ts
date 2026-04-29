@@ -39,10 +39,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Valor inválido" }, { status: 400 });
   }
 
-  const pixKey = ag.salon?.pixKey ?? process.env.EFI_PIX_KEY ?? "";
-  if (!pixKey) {
-    return NextResponse.json({ error: "Chave PIX não configurada" }, { status: 400 });
-  }
+  // Prioridade: chave do salão → env → chave Inter padrão
+  const INTER_KEY = "8ab74c98-5042-4c52-9578-41e10b85cad1";
+  const pixKey = ag.salon?.pixKey || process.env.EFI_PIX_KEY || INTER_KEY;
 
   const txid    = generateEfiTxid("AGD");
   const brCode  = buildFallbackBrCode(txid, valor.toFixed(2), pixKey);

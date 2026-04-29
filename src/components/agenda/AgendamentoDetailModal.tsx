@@ -12,9 +12,10 @@ import { formatDateTime, formatBRL, minutesToHuman } from "@/lib/utils";
 import {
   Check, X, Play, MessageCircle, Loader2,
   Clock, CalendarDays, Scissors,
-  Store, Package,
+  Store, Package, Trash2, RotateCcw,
 } from "lucide-react";
 import { PagamentoModal } from "@/components/agenda/PagamentoModal";
+import { NovoAgendamentoModal } from "@/components/agenda/NovoAgendamentoModal";
 
 /* ─────────────────────── constants ─────────────────────── */
 
@@ -28,7 +29,7 @@ const STATUS_CFG: Record<string, {
   EM_ANDAMENTO:   { label: "Em andamento",   dot: "bg-violet-300",  gradient: "linear-gradient(135deg,#7c3aed,#4f46e5)" },
   CONCLUIDO:      { label: "Concluído",      dot: "bg-emerald-300", gradient: "linear-gradient(135deg,#059669,#047857)" },
   CANCELADO:      { label: "Cancelado",      dot: "bg-red-300",     gradient: "linear-gradient(135deg,#dc2626,#b91c1c)" },
-  NAO_COMPARECEU: { label: "Não compareceu", dot: "bg-gray-300",    gradient: "linear-gradient(135deg,#6b7280,#4b5563)" },
+  NAO_COMPARECEU: { label: "Não compareceu", dot: "bg-green-300",   gradient: "linear-gradient(135deg,#16a34a,#15803d)" },
 };
 
 
@@ -73,6 +74,8 @@ export function AgendamentoDetailModal({
   const queryClient = useQueryClient();
   const [usouProprioProduto, setUsouProprioProduto] = useState(false);
   const [showPagamento, setShowPagamento] = useState(false);
+  const [remarcando, setRemarcando] = useState(false);
+  const [taxaRemarcacao, setTaxaRemarcacao] = useState<number | null>(null);
 
   const { data: ag, isLoading } = useQuery({
     queryKey: ["agendamento", id],
@@ -97,13 +100,28 @@ export function AgendamentoDetailModal({
 
   const busy = mutation.isPending;
 
+  const deleteMutation = useMutation({
+    mutationFn: async () => {
+      const res = await fetch(`/api/agendamentos/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Erro ao excluir");
+    },
+    onSuccess: () => {
+      toast.success("Agendamento excluído");
+      queryClient.invalidateQueries({ queryKey: ["agendamentos"] });
+      onClose();
+    },
+    onError: () => toast.error("Erro ao excluir agendamento"),
+  });
+
   function act(payload: Record<string, unknown>) { mutation.mutate(payload); }
   function confirmar()     { act({ status: "CONFIRMADO" }); }
   function iniciar()       { act({ status: "EM_ANDAMENTO" }); }
   function cancelar()      { act({ status: "CANCELADO" }); }
   function naoCompareceu() { act({ status: "NAO_COMPARECEU" }); }
-  function concluir() {
-    setShowPagamento(true);
+  function concluir()      { setShowPagamento(true); }
+  function excluir() {
+    if (!window.confirm("Excluir agendamento permanentemente?")) return;
+    deleteMutation.mutate();
   }
 
   function openWhatsApp() {
@@ -307,7 +325,7 @@ export function AgendamentoDetailModal({
                       <button
                         onClick={naoCompareceu}
                         disabled={busy}
-                        className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors disabled:opacity-60"
+                        className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-green-700 bg-green-50 hover:bg-green-100 transition-colors disabled:opacity-60"
                       >
                         <X className="w-4 h-4" /> Não veio
                       </button>
@@ -361,6 +379,50 @@ export function AgendamentoDetailModal({
                     Concluir e registrar pagamento
                   </button>
                 )}
+
+                {(status === "CONCLUIDO" || status === "NAO_COMPARECEU") && (
+                  <button
+                    onClick={cancelar}
+                    disabled={busy}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-red-600 bg-red-50 hover:bg-red-100 transition-colors disabled:opacity-60"
+                  >
+                    <X className="w-4 h-4" /> Marcar como cancelado
+                  </button>
+                )}
+
+                {(status === "CANCELADO" || status === "NAO_COMPARECEU") && (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+                      <RotateCcw className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                      <span className="text-xs text-amber-700 flex-1">Taxa de remarcação (R$)</span>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        placeholder="0,00"
+                        value={taxaRemarcacao ?? ""}
+                        onChange={(e) => setTaxaRemarcacao(e.target.value ? parseFloat(e.target.value) : null)}
+                        className="w-20 text-right text-sm font-bold text-amber-700 bg-transparent border-none outline-none"
+                      />
+                    </div>
+                    <button
+                      onClick={() => setRemarcando(true)}
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold text-white transition-opacity"
+                      style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}
+                    >
+                      <RotateCcw className="w-4 h-4" /> Remarcar agendamento
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={excluir}
+                  disabled={deleteMutation.isPending}
+                  className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-60 mt-1"
+                >
+                  {deleteMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  Excluir permanentemente
+                </button>
               </div>
             </div>
           </>
@@ -370,6 +432,24 @@ export function AgendamentoDetailModal({
           </div>
         )}
       </DialogContent>
+
+      {/* Modal de remarcação */}
+      {remarcando && ag && (
+        <NovoAgendamentoModal
+          open={remarcando}
+          initialClienteId={ag.cliente?.id}
+          initialColaboradorId={ag.colaborador?.id}
+          initialServicoIds={ag.servicos?.map((sv: any) => sv.servico?.id).filter(Boolean)}
+          taxaRemarcacao={taxaRemarcacao ?? undefined}
+          onClose={() => setRemarcando(false)}
+          onSuccess={() => {
+            setRemarcando(false);
+            queryClient.invalidateQueries({ queryKey: ["agendamentos"] });
+            toast.success("Remarcado com sucesso!");
+            onClose();
+          }}
+        />
+      )}
 
       {/* Modal de pagamento — abre sobre o modal de detalhes */}
       {showPagamento && ag && (

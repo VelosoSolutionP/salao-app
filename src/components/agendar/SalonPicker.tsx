@@ -12,22 +12,24 @@ interface Props {
 }
 
 export function SalonPicker({ salons, totalMultaPendente }: Props) {
+  const onlySalon = salons.length === 1;
   const [selected, setSelected] = useState<Salon | null>(
-    // Auto-select if only one salon has services
-    salons.length === 1 ? salons[0] : null
+    onlySalon ? salons[0] : null
   );
 
   if (selected) {
     return (
       <div>
-        {/* Salon indicator + back button */}
+        {/* Salon indicator — back button only when multiple salons */}
         <div className="flex items-center gap-2 mb-4">
-          <button
-            onClick={() => setSelected(null)}
-            className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 transition-colors flex-shrink-0"
-          >
-            <ChevronLeft className="w-4 h-4 text-white" />
-          </button>
+          {!onlySalon && (
+            <button
+              onClick={() => setSelected(null)}
+              className="w-8 h-8 rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 transition-colors flex-shrink-0"
+            >
+              <ChevronLeft className="w-4 h-4 text-white" />
+            </button>
+          )}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-white/10 backdrop-blur-sm border border-white/15 flex-1 min-w-0">
             <div className="w-6 h-6 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
               <Scissors className="w-3 h-3 text-white" />

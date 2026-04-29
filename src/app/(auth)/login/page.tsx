@@ -3,7 +3,6 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { LoginForm } from "@/components/auth/LoginForm";
-import { BellefyIcon } from "@/components/brand/BrandLogo";
 import {
   CalendarDays, ChevronRight,
   Users, BarChart3, Package, Sparkles,
@@ -168,24 +167,14 @@ export default function LoginPage() {
         >
           <div className="bf-brand flex items-center gap-4">
             <div style={{
-              position:"relative",
               width:60, height:60, borderRadius:18, flexShrink:0,
-              background:"linear-gradient(145deg,#8b5cf6 0%,#6d28d9 55%,#4338ca 100%)",
+              background: "#000 url('/logo.jpeg') no-repeat center top",
+              backgroundSize: "94px auto",
               boxShadow:
-                "0 2px 0 rgba(255,255,255,.14) inset," +
-                "0 -1px 0 rgba(0,0,0,.25) inset," +
-                "0 16px 40px rgba(109,40,217,.7)," +
+                "0 16px 40px rgba(196,163,90,.4)," +
                 "0 6px 16px rgba(0,0,0,.45)",
-              display:"flex", alignItems:"center", justifyContent:"center",
               transform:"perspective(200px) rotateX(5deg) rotateY(-3deg)",
-            }}>
-              <div style={{
-                position:"absolute", top:0, left:0, right:0, height:"44%",
-                borderRadius:"18px 18px 60% 60%",
-                background:"linear-gradient(180deg,rgba(255,255,255,.18) 0%,transparent 100%)",
-              }}/>
-              <BellefyIcon size={26} className="text-white" />
-            </div>
+            }} />
 
             <div className="flex flex-col gap-1">
               <span className="bf-wordmark">Bellefy</span>
@@ -311,28 +300,20 @@ function SplashOverlay({ phase }: { phase: "in" | "float" | "out" }) {
         <div style={{
           position:"relative",
           width:72, height:72, borderRadius:22, flexShrink:0,
-          background:"linear-gradient(145deg,#8b5cf6 0%,#6d28d9 55%,#4338ca 100%)",
+          background: "#000 url('/logo.jpeg') no-repeat center top",
+          backgroundSize: "113px auto",
           boxShadow:
-            "0 2px 0 rgba(255,255,255,.15) inset," +
-            "0 -1px 0 rgba(0,0,0,.28) inset," +
-            "0 20px 60px rgba(109,40,217,.75)," +
+            "0 20px 60px rgba(196,163,90,.5)," +
             "0 8px 20px rgba(0,0,0,.5)",
-          display:"flex", alignItems:"center", justifyContent:"center",
           transform:"perspective(240px) rotateX(6deg) rotateY(-4deg)",
           animation:"sp-icon .7s cubic-bezier(.22,1,.36,1) both",
           marginBottom:20,
         }}>
           <div style={{
-            position:"absolute", top:0, left:0, right:0, height:"44%",
-            borderRadius:"22px 22px 60% 60%",
-            background:"linear-gradient(180deg,rgba(255,255,255,.2) 0%,transparent 100%)",
-          }}/>
-          <div style={{
             position:"absolute", inset:-8, borderRadius:30,
-            background:"radial-gradient(circle,rgba(124,58,237,.35) 0%,transparent 70%)",
+            background:"radial-gradient(circle,rgba(196,163,90,.2) 0%,transparent 70%)",
             animation:"sp-glow-pulse 2s ease-in-out .5s infinite",
           }}/>
-          <BellefyIcon size={32} className="text-white" />
         </div>
 
         <div style={{
