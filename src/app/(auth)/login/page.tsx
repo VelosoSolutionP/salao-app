@@ -172,13 +172,9 @@ export default function LoginPage() {
                 "0 16px 40px rgba(196,163,90,.4)," +
                 "0 6px 16px rgba(0,0,0,.45)",
             }}>
-              <div style={{
-                width:"100%", height:"100%",
-                backgroundColor:"#000",
-                backgroundImage:"url('/logo.jpeg')",
-                backgroundRepeat:"no-repeat",
-                backgroundPosition:"center top",
-                backgroundSize:"94px auto",
+              <div className="w-full h-full" style={{
+                background: "#000 url('/logo.jpeg') no-repeat center top",
+                backgroundSize: "94px auto",
               }} />
             </div>
 
@@ -311,13 +307,9 @@ function SplashOverlay({ phase }: { phase: "in" | "float" | "out" }) {
           animation:"sp-icon .7s cubic-bezier(.22,1,.36,1) both",
           marginBottom:20,
         }}>
-          <div style={{
-            width:"100%", height:"100%",
-            backgroundColor:"#000",
-            backgroundImage:"url('/logo.jpeg')",
-            backgroundRepeat:"no-repeat",
-            backgroundPosition:"center top",
-            backgroundSize:"113px auto",
+          <div className="w-full h-full" style={{
+            background: "#000 url('/logo.jpeg') no-repeat center top",
+            backgroundSize: "113px auto",
           }} />
         </div>
 
