@@ -5,7 +5,8 @@ import { useState, useRef } from "react";
 import { upload } from "@vercel/blob/client";
 import {
   Plus, Search, XCircle, CheckCircle, Clock, DollarSign,
-  Loader2, X, Store, Pencil, ImageIcon,
+  Loader2, X, Store, Pencil, ImageIcon, Users, UserPlus,
+  KeyRound, Trash2, Eye, EyeOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow, addDays } from "date-fns";
@@ -27,6 +28,26 @@ interface SalonItem {
     blocked: boolean;
     trialExpires: string | null;
   };
+}
+
+interface SalonUser {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  active: boolean;
+  blocked: boolean;
+  role: string;
+  createdAt?: string;
+}
+
+interface SalonUsersData {
+  salon: { id: string; name: string };
+  owner: SalonUser;
+  barbers: { id: string; active: boolean; user: SalonUser }[];
+  plano: string;
+  maxFuncionarios: number | null;
+  totalBarbers: number;
 }
 
 function fmt(v: number) {
@@ -90,6 +111,17 @@ export function MasterSaloes() {
   const [editForm, setEditForm] = useState({ salonName: "", ownerName: "", phone: "", city: "", logoUrl: "" });
   const [editLogoUploading, setEditLogoUploading] = useState(false);
   const [editSaving, setEditSaving] = useState(false);
+
+  // Usuários modal
+  const [usuariosModal, setUsuariosModal] = useState<SalonItem | null>(null);
+  const [usuariosData, setUsuariosData] = useState<SalonUsersData | null>(null);
+  const [usuariosLoading, setUsuariosLoading] = useState(false);
+  const [novoUserForm, setNovoUserForm] = useState({ name: "", email: "", phone: "", password: "", showPass: false });
+  const [novoUserSaving, setNovoUserSaving] = useState(false);
+  const [novoUserSenha, setNovoUserSenha] = useState<string | null>(null);
+  const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
+  const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [userActionId, setUserActionId] = useState<string | null>(null);
 
   const { data: saloes = [], isLoading } = useQuery<SalonItem[]>({
     queryKey: ["master-saloes"],
@@ -276,6 +308,119 @@ export function MasterSaloes() {
     setContratoPlano(salon.contratos[0]?.plano as any ?? "BASICO");
   }
 
+  /* ── Usuários ───────────────────────────────────────── */
+  async function openUsuarios(salon: SalonItem) {
+    setUsuariosModal(salon);
+    setUsuariosData(null);
+    setNovoUserForm({ name: "", email: "", phone: "", password: "", showPass: false });
+    setNovoUserSenha(null);
+    setResetPasswordUserId(null);
+    setUsuariosLoading(true);
+    try {
+      const res = await fetch(`/api/master/saloes/${salon.id}/usuarios`);
+      const json = await res.json();
+      setUsuariosData(json);
+    } catch {
+      toast.error("Erro ao carregar usuários");
+    } finally {
+      setUsuariosLoading(false);
+    }
+  }
+
+  async function criarUsuario() {
+    if (!usuariosModal || !novoUserForm.name.trim() || !novoUserForm.email.trim()) return;
+    setNovoUserSaving(true);
+    try {
+      const res = await fetch(`/api/master/saloes/${usuariosModal.id}/usuarios`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: novoUserForm.name,
+          email: novoUserForm.email,
+          phone: novoUserForm.phone,
+          password: novoUserForm.password,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) { toast.error(json.error ?? "Erro ao criar usuário"); return; }
+      toast.success("Usuário criado!");
+      if (json.senhaGerada) setNovoUserSenha(json.senhaGerada);
+      setNovoUserForm({ name: "", email: "", phone: "", password: "", showPass: false });
+      // Reload users list
+      const updated = await fetch(`/api/master/saloes/${usuariosModal.id}/usuarios`).then((r) => r.json());
+      setUsuariosData(updated);
+    } catch {
+      toast.error("Erro de conexão");
+    } finally {
+      setNovoUserSaving(false);
+    }
+  }
+
+  async function toggleUserActive(userId: string, currentActive: boolean, isOwner: boolean) {
+    if (!usuariosModal) return;
+    setUserActionId(userId);
+    try {
+      const url = isOwner
+        ? `/api/master/usuarios`
+        : `/api/master/saloes/${usuariosModal.id}/usuarios/${userId}`;
+      const body = isOwner
+        ? { id: userId, blocked: currentActive }
+        : { active: !currentActive };
+      const res = await fetch(url, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(currentActive ? "Usuário desativado" : "Usuário ativado");
+      const updated = await fetch(`/api/master/saloes/${usuariosModal.id}/usuarios`).then((r) => r.json());
+      setUsuariosData(updated);
+      qc.invalidateQueries({ queryKey: ["master-saloes"] });
+    } catch {
+      toast.error("Erro ao atualizar usuário");
+    } finally {
+      setUserActionId(null);
+    }
+  }
+
+  async function resetarSenha(userId: string) {
+    if (!usuariosModal || !resetPasswordValue.trim()) return;
+    setUserActionId(userId);
+    try {
+      const res = await fetch(`/api/master/saloes/${usuariosModal.id}/usuarios/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: resetPasswordValue }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Senha redefinida");
+      setResetPasswordUserId(null);
+      setResetPasswordValue("");
+    } catch {
+      toast.error("Erro ao redefinir senha");
+    } finally {
+      setUserActionId(null);
+    }
+  }
+
+  async function removerUsuario(userId: string) {
+    if (!usuariosModal) return;
+    setUserActionId(userId);
+    try {
+      const res = await fetch(`/api/master/saloes/${usuariosModal.id}/usuarios/${userId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Usuário removido do salão");
+      const updated = await fetch(`/api/master/saloes/${usuariosModal.id}/usuarios`).then((r) => r.json());
+      setUsuariosData(updated);
+    } catch {
+      toast.error("Erro ao remover usuário");
+    } finally {
+      setUserActionId(null);
+    }
+  }
+
   /* ── RENDER ─────────────────────────────────────────── */
   return (
     <div className="p-6 space-y-5 max-w-6xl mx-auto">
@@ -353,7 +498,7 @@ export function MasterSaloes() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button
                     onClick={() => openContrato(salon)}
                     className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-colors"
@@ -367,6 +512,13 @@ export function MasterSaloes() {
                     style={{ background: "rgba(245,158,11,0.12)", color: "#f59e0b" }}
                   >
                     <Clock className="w-3 h-3" /> Trial
+                  </button>
+                  <button
+                    onClick={() => openUsuarios(salon)}
+                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition-colors"
+                    style={{ background: "rgba(59,130,246,0.12)", color: "#60a5fa" }}
+                  >
+                    <Users className="w-3 h-3" /> Usuários
                   </button>
                   <button
                     onClick={() => openEdit(salon)}
@@ -740,6 +892,232 @@ export function MasterSaloes() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Usuários ───────────────────────────────── */}
+      {usuariosModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl overflow-hidden flex flex-col max-h-[90vh]" style={{ background: "#1a1040", border: "1px solid rgba(59,130,246,0.3)" }}>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10 flex-shrink-0">
+              <div>
+                <p className="text-white font-black text-sm flex items-center gap-2">
+                  <Users className="w-4 h-4 text-blue-400" />
+                  Usuários — {usuariosModal.name}
+                </p>
+                {usuariosData && (
+                  <p className="text-zinc-500 text-xs mt-0.5">
+                    {usuariosData.totalBarbers} profissional(is)
+                    {usuariosData.maxFuncionarios !== null ? ` / máx ${usuariosData.maxFuncionarios} (${usuariosData.plano})` : " (ilimitado)"}
+                  </p>
+                )}
+              </div>
+              <button onClick={() => setUsuariosModal(null)}><X className="w-4 h-4 text-zinc-500 hover:text-zinc-300" /></button>
+            </div>
+
+            <div className="overflow-y-auto flex-1">
+              {usuariosLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-5 h-5 text-blue-400 animate-spin" />
+                </div>
+              ) : usuariosData ? (
+                <div className="px-5 py-4 space-y-4">
+
+                  {/* Owner */}
+                  <div>
+                    <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-2">Proprietário</p>
+                    <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white flex-shrink-0"
+                        style={{ background: "linear-gradient(135deg,#7c3aed,#4f46e5)" }}>
+                        {usuariosData.owner.name.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-semibold truncate">{usuariosData.owner.name}</p>
+                        <p className="text-zinc-500 text-xs truncate">{usuariosData.owner.email}</p>
+                      </div>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full" style={{ background: "rgba(124,58,237,0.2)", color: "#a78bfa" }}>
+                        OWNER
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Barbers list */}
+                  {usuariosData.barbers.length > 0 && (
+                    <div>
+                      <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-2">Profissionais</p>
+                      <div className="space-y-2">
+                        {usuariosData.barbers.map((b) => (
+                          <div key={b.id}>
+                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white flex-shrink-0"
+                                style={{ background: b.active ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.1)" }}>
+                                {b.user.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className={`text-sm font-semibold truncate ${b.active ? "text-white" : "text-zinc-500"}`}>{b.user.name}</p>
+                                <p className="text-zinc-500 text-xs truncate">{b.user.email}</p>
+                              </div>
+                              <div className="flex items-center gap-1.5 flex-shrink-0">
+                                {!b.active && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">Inativo</span>}
+                                {/* Reset password toggle */}
+                                <button
+                                  title="Redefinir senha"
+                                  onClick={() => { setResetPasswordUserId(resetPasswordUserId === b.user.id ? null : b.user.id); setResetPasswordValue(""); }}
+                                  className="p-1.5 rounded-lg transition-colors hover:bg-white/10 text-zinc-500 hover:text-yellow-400"
+                                >
+                                  <KeyRound className="w-3.5 h-3.5" />
+                                </button>
+                                {/* Toggle active */}
+                                <button
+                                  title={b.active ? "Desativar" : "Ativar"}
+                                  disabled={userActionId === b.user.id}
+                                  onClick={() => toggleUserActive(b.user.id, b.active, false)}
+                                  className="p-1.5 rounded-lg transition-colors hover:bg-white/10"
+                                  style={{ color: b.active ? "#ef4444" : "#10b981" }}
+                                >
+                                  {userActionId === b.user.id
+                                    ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    : b.active ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                                {/* Remove */}
+                                <button
+                                  title="Remover do salão"
+                                  disabled={userActionId === b.user.id}
+                                  onClick={() => removerUsuario(b.user.id)}
+                                  className="p-1.5 rounded-lg transition-colors hover:bg-white/10 text-zinc-600 hover:text-red-400"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                            {/* Inline reset password */}
+                            {resetPasswordUserId === b.user.id && (
+                              <div className="mt-1.5 flex gap-2 px-1">
+                                <input
+                                  type="text"
+                                  placeholder="Nova senha"
+                                  value={resetPasswordValue}
+                                  onChange={(e) => setResetPasswordValue(e.target.value)}
+                                  className={fieldClass + " flex-1"}
+                                />
+                                <button
+                                  onClick={() => resetarSenha(b.user.id)}
+                                  disabled={!resetPasswordValue.trim() || userActionId === b.user.id}
+                                  className="px-3 py-2 rounded-lg text-xs font-bold text-white disabled:opacity-50"
+                                  style={{ background: "linear-gradient(135deg,#d97706,#b45309)" }}
+                                >
+                                  {userActionId === b.user.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Salvar"}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Senha gerada */}
+                  {novoUserSenha && (
+                    <div className="rounded-xl px-4 py-3 space-y-1.5" style={{ background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)" }}>
+                      <p className="text-emerald-400 text-xs font-bold">Usuário criado! Anote a senha gerada:</p>
+                      <div className="flex items-center gap-2">
+                        <code className="text-emerald-300 text-sm font-mono flex-1 select-all">{novoUserSenha}</code>
+                        <button onClick={() => setNovoUserSenha(null)} className="text-zinc-500 hover:text-zinc-300">
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Add new user form */}
+                  {(usuariosData.maxFuncionarios === null || usuariosData.totalBarbers < usuariosData.maxFuncionarios) ? (
+                    <div className="rounded-xl overflow-hidden" style={{ background: "rgba(59,130,246,0.06)", border: "1px solid rgba(59,130,246,0.2)" }}>
+                      <div className="px-4 pt-3 pb-2 border-b border-white/5">
+                        <p className="text-blue-400 text-xs font-bold flex items-center gap-2">
+                          <UserPlus className="w-3.5 h-3.5" /> Adicionar profissional
+                        </p>
+                      </div>
+                      <div className="px-4 py-3 space-y-2.5">
+                        <div>
+                          <label className={labelClass}>Nome *</label>
+                          <input
+                            value={novoUserForm.name}
+                            onChange={(e) => setNovoUserForm((f) => ({ ...f, name: e.target.value }))}
+                            placeholder="Nome completo"
+                            className={fieldClass}
+                          />
+                        </div>
+                        <div>
+                          <label className={labelClass}>E-mail *</label>
+                          <input
+                            type="email"
+                            value={novoUserForm.email}
+                            onChange={(e) => setNovoUserForm((f) => ({ ...f, email: e.target.value }))}
+                            placeholder="email@exemplo.com"
+                            className={fieldClass}
+                          />
+                        </div>
+                        <div>
+                          <label className={labelClass}>WhatsApp</label>
+                          <input
+                            type="tel"
+                            value={novoUserForm.phone}
+                            onChange={(e) => setNovoUserForm((f) => ({ ...f, phone: e.target.value }))}
+                            placeholder="(11) 99999-9999"
+                            className={fieldClass}
+                          />
+                        </div>
+                        <div>
+                          <label className={labelClass}>Senha (deixe em branco para gerar)</label>
+                          <div className="relative">
+                            <input
+                              type={novoUserForm.showPass ? "text" : "password"}
+                              value={novoUserForm.password}
+                              onChange={(e) => setNovoUserForm((f) => ({ ...f, password: e.target.value }))}
+                              placeholder="••••••••"
+                              className={fieldClass + " pr-9"}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setNovoUserForm((f) => ({ ...f, showPass: !f.showPass }))}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
+                            >
+                              {novoUserForm.showPass ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                            </button>
+                          </div>
+                        </div>
+                        <button
+                          onClick={criarUsuario}
+                          disabled={!novoUserForm.name.trim() || !novoUserForm.email.trim() || novoUserSaving}
+                          className="w-full py-2.5 rounded-xl text-sm font-bold text-white disabled:opacity-50 flex items-center justify-center gap-2"
+                          style={{ background: "linear-gradient(135deg,#2563eb,#1d4ed8)" }}
+                        >
+                          {novoUserSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <><UserPlus className="w-4 h-4" /> Criar usuário</>}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl px-4 py-3 text-center" style={{ background: "rgba(239,68,68,0.08)", border: "1px solid rgba(239,68,68,0.2)" }}>
+                      <p className="text-red-400 text-xs font-semibold">
+                        Limite de {usuariosData.maxFuncionarios} funcionário(s) atingido no plano {usuariosData.plano}.
+                      </p>
+                      <p className="text-zinc-600 text-xs mt-0.5">Faça upgrade do contrato para adicionar mais usuários.</p>
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="px-5 py-3 border-t border-white/5 flex-shrink-0">
+              <button
+                onClick={() => setUsuariosModal(null)}
+                className="w-full py-2.5 rounded-xl text-sm font-bold text-zinc-500 hover:text-zinc-300 transition-colors"
+              >
+                Fechar
+              </button>
+            </div>
           </div>
         </div>
       )}
