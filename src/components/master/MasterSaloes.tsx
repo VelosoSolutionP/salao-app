@@ -6,7 +6,7 @@ import { upload } from "@vercel/blob/client";
 import {
   Plus, Search, XCircle, CheckCircle, Clock, DollarSign,
   Loader2, X, Store, Pencil, ImageIcon, Users, UserPlus,
-  KeyRound, Trash2, Eye, EyeOff,
+  KeyRound, Trash2, Eye, EyeOff, Save,
 } from "lucide-react";
 import { toast } from "sonner";
 import { formatDistanceToNow, addDays } from "date-fns";
@@ -121,6 +121,8 @@ export function MasterSaloes() {
   const [novoUserSenha, setNovoUserSenha] = useState<string | null>(null);
   const [resetPasswordUserId, setResetPasswordUserId] = useState<string | null>(null);
   const [resetPasswordValue, setResetPasswordValue] = useState("");
+  const [editUserId, setEditUserId] = useState<string | null>(null);
+  const [editUserForm, setEditUserForm] = useState({ name: "", email: "", phone: "" });
   const [userActionId, setUserActionId] = useState<string | null>(null);
 
   const { data: saloes = [], isLoading } = useQuery<SalonItem[]>({
@@ -315,6 +317,7 @@ export function MasterSaloes() {
     setNovoUserForm({ name: "", email: "", phone: "", password: "", showPass: false });
     setNovoUserSenha(null);
     setResetPasswordUserId(null);
+    setEditUserId(null);
     setUsuariosLoading(true);
     try {
       const res = await fetch(`/api/master/saloes/${salon.id}/usuarios`);
@@ -398,6 +401,31 @@ export function MasterSaloes() {
       setResetPasswordValue("");
     } catch {
       toast.error("Erro ao redefinir senha");
+    } finally {
+      setUserActionId(null);
+    }
+  }
+
+  async function editarUsuario(userId: string) {
+    if (!usuariosModal) return;
+    setUserActionId(userId);
+    try {
+      const res = await fetch(`/api/master/saloes/${usuariosModal.id}/usuarios/${userId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editUserForm.name,
+          phone: editUserForm.phone,
+          email: editUserForm.email,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success("Usuário atualizado");
+      setEditUserId(null);
+      const updated = await fetch(`/api/master/saloes/${usuariosModal.id}/usuarios`).then((r) => r.json());
+      setUsuariosData(updated);
+    } catch {
+      toast.error("Erro ao atualizar usuário");
     } finally {
       setUserActionId(null);
     }
@@ -949,8 +977,9 @@ export function MasterSaloes() {
                       <p className="text-zinc-500 text-[10px] font-bold uppercase tracking-widest mb-2">Profissionais</p>
                       <div className="space-y-2">
                         {usuariosData.barbers.map((b) => (
-                          <div key={b.id}>
-                            <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                          <div key={b.id} className="rounded-xl overflow-hidden" style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.07)" }}>
+                            {/* Row */}
+                            <div className="flex items-center gap-3 px-3 py-2.5">
                               <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-black text-white flex-shrink-0"
                                 style={{ background: b.active ? "rgba(59,130,246,0.3)" : "rgba(255,255,255,0.1)" }}>
                                 {b.user.name.charAt(0).toUpperCase()}
@@ -959,13 +988,32 @@ export function MasterSaloes() {
                                 <p className={`text-sm font-semibold truncate ${b.active ? "text-white" : "text-zinc-500"}`}>{b.user.name}</p>
                                 <p className="text-zinc-500 text-xs truncate">{b.user.email}</p>
                               </div>
-                              <div className="flex items-center gap-1.5 flex-shrink-0">
-                                {!b.active && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400">Inativo</span>}
+                              <div className="flex items-center gap-1 flex-shrink-0">
+                                {!b.active && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-red-500/20 text-red-400 mr-1">Inativo</span>}
+                                {/* Edit toggle */}
+                                <button
+                                  title="Editar"
+                                  onClick={() => {
+                                    if (editUserId === b.user.id) { setEditUserId(null); return; }
+                                    setEditUserId(b.user.id);
+                                    setEditUserForm({ name: b.user.name, email: b.user.email, phone: b.user.phone ?? "" });
+                                    setResetPasswordUserId(null);
+                                  }}
+                                  className="p-1.5 rounded-lg transition-colors hover:bg-white/10"
+                                  style={{ color: editUserId === b.user.id ? "#a78bfa" : "#6b7280" }}
+                                >
+                                  <Pencil className="w-3.5 h-3.5" />
+                                </button>
                                 {/* Reset password toggle */}
                                 <button
                                   title="Redefinir senha"
-                                  onClick={() => { setResetPasswordUserId(resetPasswordUserId === b.user.id ? null : b.user.id); setResetPasswordValue(""); }}
-                                  className="p-1.5 rounded-lg transition-colors hover:bg-white/10 text-zinc-500 hover:text-yellow-400"
+                                  onClick={() => {
+                                    setResetPasswordUserId(resetPasswordUserId === b.user.id ? null : b.user.id);
+                                    setResetPasswordValue("");
+                                    setEditUserId(null);
+                                  }}
+                                  className="p-1.5 rounded-lg transition-colors hover:bg-white/10"
+                                  style={{ color: resetPasswordUserId === b.user.id ? "#fbbf24" : "#6b7280" }}
                                 >
                                   <KeyRound className="w-3.5 h-3.5" />
                                 </button>
@@ -992,24 +1040,68 @@ export function MasterSaloes() {
                                 </button>
                               </div>
                             </div>
+                            {/* Inline edit form */}
+                            {editUserId === b.user.id && (
+                              <div className="px-3 pb-3 pt-1 border-t border-white/5 space-y-2">
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className={labelClass}>Nome</label>
+                                    <input
+                                      value={editUserForm.name}
+                                      onChange={(e) => setEditUserForm((f) => ({ ...f, name: e.target.value }))}
+                                      className={fieldClass}
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className={labelClass}>WhatsApp</label>
+                                    <input
+                                      type="tel"
+                                      value={editUserForm.phone}
+                                      onChange={(e) => setEditUserForm((f) => ({ ...f, phone: e.target.value }))}
+                                      className={fieldClass}
+                                    />
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className={labelClass}>E-mail</label>
+                                  <input
+                                    type="email"
+                                    value={editUserForm.email}
+                                    onChange={(e) => setEditUserForm((f) => ({ ...f, email: e.target.value }))}
+                                    className={fieldClass}
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => editarUsuario(b.user.id)}
+                                  disabled={!editUserForm.name.trim() || userActionId === b.user.id}
+                                  className="w-full py-2 rounded-lg text-xs font-bold text-white disabled:opacity-50 flex items-center justify-center gap-1.5"
+                                  style={{ background: "linear-gradient(135deg,#7c3aed,#6d28d9)" }}
+                                >
+                                  {userActionId === b.user.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Save className="w-3.5 h-3.5" /> Salvar alterações</>}
+                                </button>
+                              </div>
+                            )}
                             {/* Inline reset password */}
                             {resetPasswordUserId === b.user.id && (
-                              <div className="mt-1.5 flex gap-2 px-1">
-                                <input
-                                  type="text"
-                                  placeholder="Nova senha"
-                                  value={resetPasswordValue}
-                                  onChange={(e) => setResetPasswordValue(e.target.value)}
-                                  className={fieldClass + " flex-1"}
-                                />
-                                <button
-                                  onClick={() => resetarSenha(b.user.id)}
-                                  disabled={!resetPasswordValue.trim() || userActionId === b.user.id}
-                                  className="px-3 py-2 rounded-lg text-xs font-bold text-white disabled:opacity-50"
-                                  style={{ background: "linear-gradient(135deg,#d97706,#b45309)" }}
-                                >
-                                  {userActionId === b.user.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : "Salvar"}
-                                </button>
+                              <div className="px-3 pb-3 pt-1 border-t border-white/5">
+                                <label className={labelClass}>Nova senha</label>
+                                <div className="flex gap-2">
+                                  <input
+                                    type="text"
+                                    placeholder="Mínimo 6 caracteres"
+                                    value={resetPasswordValue}
+                                    onChange={(e) => setResetPasswordValue(e.target.value)}
+                                    className={fieldClass + " flex-1"}
+                                  />
+                                  <button
+                                    onClick={() => resetarSenha(b.user.id)}
+                                    disabled={!resetPasswordValue.trim() || userActionId === b.user.id}
+                                    className="px-3 py-2 rounded-lg text-xs font-bold text-white disabled:opacity-50 flex items-center gap-1.5"
+                                    style={{ background: "linear-gradient(135deg,#d97706,#b45309)" }}
+                                  >
+                                    {userActionId === b.user.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <><Save className="w-3.5 h-3.5" /> Salvar</>}
+                                  </button>
+                                </div>
                               </div>
                             )}
                           </div>

@@ -20,10 +20,16 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!colaborador && !isOwner) return NextResponse.json({ error: "Usuário não pertence a este salão" }, { status: 404 });
 
   const body = await req.json();
-  const { name, phone, password, active, blocked } = body;
+  const { name, email, phone, password, active, blocked } = body;
+
+  if (email?.trim()) {
+    const conflict = await prisma.user.findFirst({ where: { email: email.toLowerCase().trim(), NOT: { id: userId } } });
+    if (conflict) return NextResponse.json({ error: "E-mail já está em uso por outro usuário" }, { status: 409 });
+  }
 
   const userUpdate: Record<string, unknown> = {};
   if (name?.trim()) userUpdate.name = name.trim();
+  if (email?.trim()) userUpdate.email = email.toLowerCase().trim();
   if (phone !== undefined) userUpdate.phone = phone?.trim() || null;
   if (password?.trim()) userUpdate.passwordHash = await bcrypt.hash(password.trim(), 12);
   if (active !== undefined) userUpdate.active = Boolean(active);
